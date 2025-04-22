@@ -1,15 +1,19 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import UserSlice from "./UserSlice";
-import BusinessSlice from "./BusinessSlice";
+import UserSlice from "./UserSlice.ts";
+import AdminSlice from "./AdminSlice.ts";
+
+const rootReducer = combineReducers({
+  UserSlice,
+  AdminSlice,
+});
 
 const store = configureStore({
-    reducer : {UserSlice, BusinessSlice},
-    middleware: (getDefaultMiddleware) => {
-        return getDefaultMiddleware({
-            serializableCheck: false,
-        });
-    },
+  reducer: rootReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false,
+    }),
 });
-const rootReducer = combineReducers({UserSlice, BusinessSlice});
-export type TRootState = ReturnType <typeof rootReducer>;
+
+export type TRootState = ReturnType<typeof rootReducer>;
 export default store;

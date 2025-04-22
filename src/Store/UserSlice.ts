@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { TUser } from "../Types/TUser";
-
+import { TUser } from "../Types/TUser.ts";
 
 const initialState = {
     isLoggedIn: false,
@@ -11,15 +10,14 @@ const userSlice = createSlice({
     name: "user",
     initialState,
     reducers: {
-    login: (state: TUserState, data: PayloadAction<TUser>) => {
-        state.isLoggedIn = true;
-        state.user = data.payload;
-    },
-    logout: (state: TUserState) => {
-        state.isLoggedIn = false;
-        state.user = null;
-        
-    },
+        login: (state: TUserState, data: PayloadAction<TUser>) => {
+            state.isLoggedIn = true;
+            state.user = data.payload;
+        },
+        logout: (state: TUserState) => {
+            state.isLoggedIn = false;
+            state.user = null;
+        },
     },
 });
 

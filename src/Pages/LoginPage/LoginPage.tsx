@@ -18,28 +18,37 @@ const LoginPage = () => {
         password: "",
     };
 
-    const { register, handleSubmit, formState: { errors, isValid } } = useForm({
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isValid },
+    } = useForm({
         defaultValues: initialData,
         mode: "onChange",
-        resolver: joiResolver(LoginSchema)
+        resolver: joiResolver(LoginSchema),
     });
 
     const onSubmit = async (form: typeof initialData) => {
         try {
             const token = await axios.post("http://localhost:8080/users/login", form);
             localStorage.setItem("token", token.data);
-            const id = decode(token.data)._id;
+            console.log("RAW TOKEN:", token.data);
+            const decoded = decode(token.data);
+            console.log("DECODED:", decoded);
             axios.defaults.headers.common["x-auth-token"] = token.data;
-            const user = await axios.get("http://localhost:8080/users/" + id);
+        
+            const userResponse = await axios.get(`http://localhost:8080/users/${decoded._id}`);
+            
+            const userData = userResponse.data;
 
-            dispatch(userActions.login(user.data));
+            dispatch(userActions.login(userData)); 
 
             Swal.fire({
                 position: "top-end",
                 icon: "success",
                 title: "Your Login Success",
                 showConfirmButton: false,
-                timer: 1500
+                timer: 1500,
             });
 
             nav("/home");
@@ -50,7 +59,7 @@ const LoginPage = () => {
                 icon: "error",
                 title: "Your email or password is incorrect",
                 showConfirmButton: false,
-                timer: 1500
+                timer: 1500,
             });
         }
     };
@@ -59,16 +68,14 @@ const LoginPage = () => {
         <div className="relative flex items-center justify-center min-h-screen bg-[#CBB279] overflow-hidden">
             <div className="absolute inset-0 bg-[#EAD8A3] opacity-50 rounded-3xl transform scale-125 blur-lg"></div>
 
-            {/* Motion div for the slow entrance animation */}
             <motion.div
-                initial={{ opacity: 0, y: -100 }}  // התחל ממקום גבוה עם שקיפות נמוכה
-                animate={{ opacity: 1, y: 0 }}  // התפשט לשקיפות מלאה והמקום הנכון
-                transition={{ duration: 1.5, ease: "easeOut" }}  // תוצא תנועה איטית עם חצי שניה להחלקה
+                initial={{ opacity: 0, y: -100 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
                 className="relative z-10 w-full max-w-md p-8 bg-[#F1F3C2] shadow-2xl rounded-3xl"
             >
                 <h1 className="mb-6 text-4xl font-extrabold text-center text-[#8C7351]">Login</h1>
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-                    {/* Email Input */}
                     <div className="relative">
                         <FloatingLabel
                             type="email"
@@ -81,7 +88,6 @@ const LoginPage = () => {
                         <span className="text-sm text-red-500">{errors.email?.message}</span>
                     </div>
 
-                    {/* Password Input */}
                     <div className="relative">
                         <FloatingLabel
                             type="password"
@@ -94,7 +100,6 @@ const LoginPage = () => {
                         <span className="text-sm text-red-500">{errors.password?.message}</span>
                     </div>
 
-                    {/* Submit Button */}
                     <Button
                         type="submit"
                         disabled={!isValid}
@@ -103,10 +108,9 @@ const LoginPage = () => {
                         Login
                     </Button>
                 </form>
-
-                {/* Footer text */}
                 <div className="mt-4 text-center">
-                    <p className="text-sm text-[#8C7351]">Don't have an account?
+                    <p className="text-sm text-[#8C7351]">
+                        Don't have an account?{" "}
                         <Link to="/register" className="text-[#8C7351] font-bold hover:underline">
                             Sign Up
                         </Link>

@@ -9,19 +9,25 @@ import Footer from "./components/Layout/Footer/Footer";
 import LoginPage from "./Pages/LoginPage/LoginPage";
 import UpdateUserDetails from "./Pages/UpdateUserPage/UpdateUserPage";
 import GalleryPage from "./Pages/GalleryPage/GalleryPage";
+import AdminPage from "./Pages/AdminPage/AdminPage"
+import ApplySketchPage from "./Pages/SimulatorPage/SimulatorPage"
+
 
 function App() {
   const user = useSelector((state: TRootState) => state.UserSlice.user);
 
+  
   return (
     <div className="" >
-    <Header />
-    <Routes>
+      <Header />
+      <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/updateUser" element={<RoutGuard user={user!}> <UpdateUserDetails /> </RoutGuard>} />
         <Route path="/gallery/:category" element={<GalleryPage />} />
+        <Route path="/apply-sketch" element={<ApplySketchPage />} />
+        <Route path="/AdminPage" element={<AdminPage />} />
         <Route path="/login" element={<LoginPage />} />
       </Routes>
       <Footer />

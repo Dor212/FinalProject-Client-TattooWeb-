@@ -1,15 +1,11 @@
-import {  Navbar } from "flowbite-react";
+import { Navbar } from "flowbite-react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { TRootState } from "../../../Store/BigPie";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { decode } from "../../../Services/tokenServices.ts";
-import { userActions } from "../../../Store/UserSlice.ts";   
-import { useState } from "react";
-
-
-
+import { userActions } from "../../../Store/UserSlice.ts";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -18,11 +14,10 @@ const Header = () => {
   const dispatch = useDispatch();
   const nav = useNavigate();
 
-  
   const logout = () => {
     dispatch(userActions.logout());
-    nav("/") 
-  }
+    nav("/");
+  };
 
   const toggleNavbar = () => {
     setIsOpen(prev => !prev);
@@ -30,30 +25,6 @@ const Header = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-
-    if (token) {
-      try {
-        const decoded = decode(token);
-
-        axios.defaults.headers.common["x-auth-token"] = token;
-
-        axios.get(`http://localhost:8080/users/${decoded._id}`)
-          .then(res => {
-            
-            dispatch(userActions.login(res.data));
-          })
-          .catch(err => {
-            console.error("שגיאה בטעינת המשתמש מהשרת:", err);
-            localStorage.removeItem("token");
-          });
-      } catch (err) {
-        console.error("טוקן לא תקין:", err);
-        localStorage.removeItem("token");
-      }
-    }
-  }, []); useEffect(() => {
-    const token = localStorage.getItem("token");
-
     if (token) {
       try {
         const decoded = decode(token);
@@ -61,49 +32,84 @@ const Header = () => {
 
         axios.get(`http://localhost:8080/users/${decoded._id}`)
           .then(res => {
-            if (typeof res.data === "object" && res.data._id) {
-              console.log("USER FROM SERVER:", res.data);
+            if (res.data && res.data._id) {
               dispatch(userActions.login(res.data));
             } else {
-              console.error("השרת לא החזיר משתמש תקין:", res.data);
               localStorage.removeItem("token");
             }
           })
-          .catch(err => {
-            console.error("שגיאה בטעינת המשתמש מהשרת:", err);
-            localStorage.removeItem("token");
-          });
-      } catch (err) {
-        console.error("טוקן לא תקין:", err);
+          .catch(() => localStorage.removeItem("token"));
+      } catch {
         localStorage.removeItem("token");
       }
     }
   }, []);
 
   return (
-    <Navbar fluid rounded className="bg-[#F1F3C2] text-gray-800" >
+    <Navbar
+      fluid
+      rounded
+      className="fixed top-0 left-0 z-50 w-full bg-[#F1F3C2]/90 backdrop-blur-md shadow-md text-[#3B3024]"
+    >
+      <Navbar.Brand as={Link} to="/home" className="flex items-center gap-3">
+        <img
+          src="/backgrounds/LogoOmerTattoo_transparent.png"
+          alt="Omer Logo"
+          className="w-auto h-10 transition-transform duration-300 hover:scale-105"
+        />
+      </Navbar.Brand>
+
       <Navbar.Toggle onClick={toggleNavbar} />
-      <Navbar.Brand as={Link} to="/home">OMER</Navbar.Brand>
-      <Navbar.Collapse className={`flex flex-col items-center md:flex-row space-x-4 text-inherit ${isOpen ? 'block' : 'hidden'}`}>
-        {!user && <Navbar.Link as={Link} href="/register" to="/register" active={location === "/register" || location === "/"} className="text-2xl">
-          Register
-        </Navbar.Link>}
-        {!user && <Navbar.Link as={Link} href="/login" to="/login" active={location === "/login" || location === "/"} className="text-2xl">
-          Login
-        </Navbar.Link>}
+
+      <Navbar.Collapse
+        className={`${isOpen ? "block" : "hidden"
+          } md:flex md:items-center md:space-x-6 text-lg`}
+      >
+        {!user && (
+          <>
+            <Navbar.Link
+              as={Link}
+              to="/register"
+              className={`hover:underline hover:text-[#97BE5A] ${location === "/register" ? "font-bold" : ""
+                }`}
+            >
+              Register
+            </Navbar.Link>
+            <Navbar.Link
+              as={Link}
+              to="/login"
+              className={`hover:underline hover:text-[#97BE5A] ${location === "/login" ? "font-bold" : ""
+                }`}
+            >
+              Login
+            </Navbar.Link>
+          </>
+        )}
+
         {user?.isAdmin && (
-          <Navbar.Link as={Link} to="/AdminPage" className="text-2xl">
-            AdminPage
+          <Navbar.Link
+            as={Link}
+            to="/AdminPage"
+            className={`hover:underline hover:text-[#97BE5A] ${location === "/AdminPage" ? "font-bold" : ""
+              }`}
+          >
+            Admin
           </Navbar.Link>
         )}
-        {user && <Navbar.Link as={Link} className="text-2xl" onClick={logout}>
-          Logout
-        </Navbar.Link>}
-        <Navbar.Brand>
-        </Navbar.Brand>
+
+        {user && (
+          <Navbar.Link
+            as={Link}
+            to="#"
+            onClick={logout}
+            className="hover:underline hover:text-red-500"
+          >
+            Logout
+          </Navbar.Link>
+        )}
       </Navbar.Collapse>
     </Navbar>
-  )
-}
+  );
+};
 
 export default Header;

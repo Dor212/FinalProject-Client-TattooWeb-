@@ -31,17 +31,13 @@ const LoginPage = () => {
     const onSubmit = async (form: typeof initialData) => {
         try {
             const token = await axios.post("http://localhost:8080/users/login", form);
-            localStorage.setItem("token", token.data);
-            console.log("RAW TOKEN:", token.data);
-            const decoded = decode(token.data);
-            console.log("DECODED:", decoded);
-            axios.defaults.headers.common["x-auth-token"] = token.data;
-        
-            const userResponse = await axios.get(`http://localhost:8080/users/${decoded._id}`);
-            
-            const userData = userResponse.data;
+            const tokenStr = token.data.token;
+            localStorage.setItem("token", tokenStr);
+            const decoded = decode(tokenStr);
+            axios.defaults.headers.common["x-auth-token"] = tokenStr;
 
-            dispatch(userActions.login(userData)); 
+            const userResponse = await axios.get(`http://localhost:8080/users/${decoded._id}`);
+            dispatch(userActions.login(userResponse.data));
 
             Swal.fire({
                 position: "top-end",
@@ -50,7 +46,6 @@ const LoginPage = () => {
                 showConfirmButton: false,
                 timer: 1500,
             });
-
             nav("/home");
         } catch (error) {
             console.log(error);
@@ -65,56 +60,58 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="relative flex items-center justify-center min-h-screen bg-[#CBB279] overflow-hidden">
-            <div className="absolute inset-0 bg-[#EAD8A3] opacity-50 rounded-3xl transform scale-125 blur-lg"></div>
-
+        <div
+            className="min-h-screen pt-20 px-4 flex items-center justify-center bg-[#FFFFFF] font-serif text-[#3B3024]"
+            style={{
+                backgroundImage: "url('/backgrounds/BG4.png')",
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "contain",
+                backgroundPosition: "right top",
+                backgroundAttachment: "fixed",
+            }}
+        >
             <motion.div
-                initial={{ opacity: 0, y: -100 }}
+                initial={{ opacity: 0, y: -50 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1.5, ease: "easeOut" }}
-                className="relative z-10 w-full max-w-md p-8 bg-[#F1F3C2] shadow-2xl rounded-3xl"
+                transition={{ duration: 1.2 }}
+                className="w-full max-w-lg p-8 bg-[#F1F3C2] rounded-3xl shadow-2xl border border-[#CBB279]/50"
             >
-                <h1 className="mb-6 text-4xl font-extrabold text-center text-[#8C7351]">Login</h1>
-                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
-                    <div className="relative">
-                        <FloatingLabel
-                            type="email"
-                            label="Email"
-                            variant="standard"
-                            {...register("email")}
-                            color={errors.email ? "error" : "success"}
-                            className="text-lg text-[#4B4B4B]"
-                        />
-                        <span className="text-sm text-red-500">{errors.email?.message}</span>
-                    </div>
+                <h1 className="mb-6 text-4xl font-extrabold text-center text-[#8C7351] tracking-wide">
+                    Login
+                </h1>
+                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
+                    <FloatingLabel
+                        label="Email"
+                        type="email"
+                        variant="standard"
+                        className="text-[#4B4B4B]"
+                        {...register("email")}
+                    />
+                    {errors.email && <p className="text-sm text-red-600">{errors.email.message}</p>}
 
-                    <div className="relative">
-                        <FloatingLabel
-                            type="password"
-                            label="Password"
-                            variant="standard"
-                            {...register("password")}
-                            color={errors.password ? "error" : "success"}
-                            className="text-lg text-[#4B4B4B]"
-                        />
-                        <span className="text-sm text-red-500">{errors.password?.message}</span>
-                    </div>
+                    <FloatingLabel
+                        label="Password"
+                        type="password"
+                        variant="standard"
+                        className="text-[#4B4B4B]"
+                        {...register("password")}
+                    />
+                    {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
 
                     <Button
                         type="submit"
                         disabled={!isValid}
-                        className="mt-4 py-3 px-6 bg-[#A68B5B] text-white font-bold rounded-lg hover:bg-[#8C7351] transition duration-300 ease-in-out shadow-md"
+                        className="mt-4 bg-[#97BE5A] text-white font-semibold rounded-lg py-2 hover:bg-[#7ea649] transition duration-300"
                     >
                         Login
                     </Button>
                 </form>
-                <div className="mt-4 text-center">
-                    <p className="text-sm text-[#8C7351]">
-                        Don't have an account?{" "}
-                        <Link to="/register" className="text-[#8C7351] font-bold hover:underline">
-                            Sign Up
-                        </Link>
-                    </p>
+
+                <div className="mt-6 text-center text-sm text-[#5A4B36]">
+                    Don't have an account?{' '}
+                    <Link to="/register" className="font-semibold text-[#8C7351] hover:underline">
+                        Sign Up
+                    </Link>
                 </div>
             </motion.div>
         </div>

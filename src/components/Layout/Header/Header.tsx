@@ -73,7 +73,7 @@ const Header = () => {
               className={`hover:underline hover:text-[#97BE5A] ${location === "/register" ? "font-bold" : ""
                 }`}
             >
-              Register
+              הרשמה
             </Navbar.Link>
             <Navbar.Link
               as={Link}
@@ -81,7 +81,7 @@ const Header = () => {
               className={`hover:underline hover:text-[#97BE5A] ${location === "/login" ? "font-bold" : ""
                 }`}
             >
-              Login
+              התחבר
             </Navbar.Link>
           </>
         )}
@@ -104,7 +104,7 @@ const Header = () => {
             onClick={logout}
             className="hover:underline hover:text-red-500"
           >
-            Logout
+            התנתק
           </Navbar.Link>
         )}
       </Navbar.Collapse>

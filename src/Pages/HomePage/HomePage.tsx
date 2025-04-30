@@ -184,12 +184,23 @@ const HomePage = () => {
             </motion.section>
 
             {/* Shop Merch Section */}
-            <motion.section id="shop" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }} viewport={{ once: true }} className="container px-5 py-20 mx-auto text-center">
-                <h2 className="mb-6 text-3xl font-semibold text-[#8C734A]">Shop Merch</h2>
+            <motion.section
+                id="shop"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ duration: 1 }}
+                viewport={{ once: true }}
+                className="container px-5 py-20 mx-auto text-center"
+                dir="rtl"
+            >
+                
+
+
                 <div className="flex flex-wrap justify-center gap-10">
                     {products.map((product, index) => {
                         const totalStock = Object.values(product.stock || {}).reduce((a, b) => a + b, 0);
                         const isOutOfStock = totalStock === 0;
+
                         return (
                             <motion.div
                                 whileHover={{ scale: 1.03, boxShadow: "0px 5px 12px rgba(0,0,0,0.15)" }}
@@ -197,10 +208,19 @@ const HomePage = () => {
                                 key={index}
                                 className="relative p-4 bg-[#CBB279] rounded-xl shadow-md w-72"
                             >
-                                <img src={`http://localhost:8080${product.imageUrl}`} alt={product.title} className={`object-cover w-full h-80 rounded-md ${isOutOfStock ? "opacity-40" : ""}`} />
-                                {isOutOfStock && <div className="absolute inset-0 flex items-center justify-center bg-white/70">Out of Stock</div>}
+                                <img
+                                    src={`http://localhost:8080${product.imageUrl}`}
+                                    alt={product.title}
+                                    className={`object-cover w-full h-80 rounded-md ${isOutOfStock ? "opacity-40" : ""}`}
+                                />
+                                {isOutOfStock && (
+                                    <div className="absolute inset-0 flex items-center justify-center text-lg font-bold bg-white/70">
+                                        אזל מהמלאי
+                                    </div>
+                                )}
                                 <p className="mt-2 text-xl font-medium">{product.title}</p>
-                                <p className="text-lg">${Number(product.price).toFixed(2)}</p>
+                                <p className="text-lg">{Number(product.price).toFixed(2)} ₪</p>
+
                                 {!isOutOfStock && (
                                     <>
                                         <select
@@ -213,7 +233,7 @@ const HomePage = () => {
                                             }
                                             className="w-full p-2 mt-2 border rounded-md"
                                         >
-                                            <option value="">Select Size</option>
+                                            <option value="">בחר מידה</option>
                                             {Object.entries(product.stock).map(
                                                 ([size, qty]) => qty > 0 && <option key={size}>{size}</option>
                                             )}
@@ -230,7 +250,9 @@ const HomePage = () => {
                                                 }))
                                             }
                                             className="w-full p-2 mt-2 border rounded-md"
+                                            placeholder="כמות"
                                         />
+
                                         <button
                                             onClick={() =>
                                                 addToCart(
@@ -241,7 +263,7 @@ const HomePage = () => {
                                             }
                                             className="w-full px-4 py-2 mt-4 text-white transition-all duration-300 bg-[#97BE5A] rounded hover:bg-[#7ea649] hover:scale-105"
                                         >
-                                            Add to Cart
+                                            הוסף לסל
                                         </button>
                                     </>
                                 )}
@@ -257,23 +279,35 @@ const HomePage = () => {
                     <img src={mainP} alt="main" className="w-[500px] h-[600px] rounded-lg shadow-lg mx-auto" />
                 </div>
                 <div className="w-full text-center text-[#8C734A] md:w-1/2">
-                    <h2 className="mb-4 text-3xl font-semibold">Courses</h2>
+                    <h2 className="mb-4 text-3xl font-semibold">קורס קעקועים אינטימי ומעמיק</h2>
                     <p className="max-w-lg mx-auto mb-8 text-lg leading-relaxed">
-                        Learn the art of tattooing in our immersive studio courses. Hands-on guidance, professional tools, and real-world techniques.
+                        אם תמיד חלמתם להיכנס לעולם הקעקועים – זה המקום להתחיל בו.
+                        בקורס קטן ואינטימי (עד 3 משתתפים בלבד) נצלול לעומק האמנות, באווירה קלילה, אישית ומקצועית.
+                        חוויה כיפית ופרקטית, שתיתן לכם את כל הכלים להתחיל לקעקע מהלב, בביטחון ובסטייל
                     </p>
                     
                     <div className="flex justify-center gap-2">
-                        {["10/04/2025", "15/05/2025", "20/06/2025"].map((date, index) => (
-                            <motion.div
-                                key={index}
-                                className="px-3 py-1 text-sm bg-white border border-gray-400 rounded-md cursor-pointer"
-                                whileHover={{ scale: 1.1, backgroundColor: "#97BE5A", color: "#fff" }}
-                                transition={{ duration: 0.2 }}
-                            >
-                                {date}
-                            </motion.div>
-                        ))}
+                        {["10/07/2025", "15/08/2025", "20/09/2025"].map((date, index) => {
+                            const phoneNumber = "972528787419"; 
+                            const message = `היי, אני מעוניין בפרטים על קורס שמתחיל ב- ${date}`;
+                            const whatsappLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
+                            return (
+                                <motion.a
+                                    key={index}
+                                    href={whatsappLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-3 py-1 text-sm bg-white border border-gray-400 rounded-md cursor-pointer"
+                                    whileHover={{ scale: 1.1, backgroundColor: "#97BE5A", color: "#fff" }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    {date}
+                                </motion.a>
+                            );
+                        })}
                     </div>
+
                 </div>
             </motion.section>
 
@@ -296,46 +330,83 @@ const HomePage = () => {
                         ))}
                     </div>
                     <div className="w-full p-8 text-center md:w-3/5 text-[#8C734A]">
-                        <h3 className="mb-5 text-4xl font-semibold">Simulation Area</h3>
+                        <h3 className="mb-5 text-4xl font-semibold">הדמיית קעקוע – לראות לפני שמרגישים</h3>
                         <p className="text-lg leading-relaxed">
-                            Try out tattoo sketches on your own body image, resize, move, and get a feel for the final result — all from your browser.
+                            כדי לעזור לכם לדמיין איך הקעקוע ייראה בדיוק עליכם, יצרנו מערכת נוחה להדמיה.
+                            כל מה שצריך לעשות: לבחור את העיצוב שמדבר אליכם, להעלות תמונה איכותית של האזור שבו תרצו למקם את הקעקוע – צילום חד, בגובה העיניים, כשהגוף רפוי (ללא מתיחה או תנוחות לא טבעיות).
+                            דרך ההדמיה תוכלו למקם את הקעקוע על התמונה, לשחק עם הגודל ולהתאים אותו בדיוק כמו שתרצו.
+                            בסיום, ההדמיה תישלח אליי ישירות למייל – ומשם נמשיך לתיאום תור ולתכנון סופי
                         </p>
                     </div>
                 </div>
             </motion.section>
 
-            {/* Contact Section */}
-            <motion.section id="contact" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }} viewport={{ once: true }} className="container flex justify-center px-6 py-20 mx-auto">
-                <div className="w-full max-w-3xl p-8 bg-[#CBB279] rounded-lg shadow-md">
-                    <h2 className="mb-4 text-3xl font-semibold text-center text-[#3B3024]">Contact Us</h2>
-                    <p className="mb-6 text-center text-[#5A4B36]">Have questions? Fill out the form and we’ll get back to you soon.</p>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="block mb-1 text-[#3B3024]">Full Name</label>
-                            <input name="name" type="text" value={formData.name} onChange={handleChange}
-                                placeholder="Your Name"
-                                className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#97BE5A]" />
+            {/*Contact us section*/}
+            <motion.section
+                id="contact"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ duration: 1 }}
+                viewport={{ once: true }}
+                className="container flex justify-center px-6 py-20 mx-auto"
+                dir="rtl"
+            >
+                <div className="w-full max-w-xl px-10 py-16 bg-[#CBB279] rounded-[80px] shadow-md flex flex-col items-center">
+                    <h2 className="mb-4 text-2xl font-semibold text-center text-[#3B3024]">
+                        צרו קשר
+                    </h2>
+                    <p className="mb-6 text-center text-[#5A4B36] text-sm">
+                        יש לכם שאלות? מלאו את הטופס ונחזור אליכם בהקדם.
+                    </p>
+
+                    <form onSubmit={handleSubmit} className="flex flex-col items-center w-full gap-4">
+                        <div className="w-1/2">
+                            <label className="block mb-1 text-sm text-[#3B3024]">שם מלא</label>
+                            <input
+                                name="name"
+                                type="text"
+                                value={formData.name}
+                                onChange={handleChange}
+                                placeholder="השם שלך"
+                                className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#97BE5A]"
+                            />
                         </div>
-                        <div>
-                            <label className="block mb-1 text-[#3B3024]">Email Address</label>
-                            <input name="email" type="email" value={formData.email} onChange={handleChange}
-                                placeholder="Your Email"
-                                className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#97BE5A]" />
+
+                        <div className="w-1/2">
+                            <label className="block mb-1 text-sm text-[#3B3024]">כתובת אימייל</label>
+                            <input
+                                name="email"
+                                type="email"
+                                value={formData.email}
+                                onChange={handleChange}
+                                placeholder="האימייל שלך"
+                                className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#97BE5A]"
+                            />
                         </div>
-                        <div>
-                            <label className="block mb-1 text-[#3B3024]">Message</label>
-                            <textarea name="message" value={formData.message} onChange={handleChange}
-                                placeholder="Your Message"
-                                className="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#97BE5A]"></textarea>
+
+                        <div className="w-1/2">
+                            <label className="block mb-1 text-sm text-[#3B3024]">הודעה</label>
+                            <textarea
+                                name="message"
+                                value={formData.message}
+                                onChange={handleChange}
+                                placeholder="ההודעה שלך"
+                                rows={3}
+                                className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#97BE5A]"
+                            ></textarea>
                         </div>
-                        <button type="submit"
-                            className="w-full px-4 py-2 mt-4 text-[#97BE5A] bg-[#FAF4E7] rounded-md shadow-md hover:bg-[#97BE5A] hover:text-[#FAF4E7]">
-                            Send Message
+
+                        <button
+                            type="submit"
+                            className="w-1/2 px-4 py-2 mt-2 text-sm text-[#97BE5A] bg-[#FAF4E7] rounded-md shadow-md hover:bg-[#97BE5A] hover:text-[#FAF4E7]"
+                        >
+                            שלח הודעה
                         </button>
                     </form>
-
                 </div>
             </motion.section>
+
+
 
 
             <SideCart

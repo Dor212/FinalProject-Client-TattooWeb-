@@ -1,5 +1,4 @@
-import { useSelector } from "react-redux";
-import { TRootState } from "../../Store/BigPie";
+
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -12,21 +11,24 @@ import mainP from "../../Imges/mainPic.jpg";
 import tattoS from "../../Imges/tattooS.jpg";
 import tattoM from "../../Imges/tattooM.jpg";
 import tattoL from "../../Imges/tattooL.jpg";
+import { Product } from "../../Types/TProduct.ts";
+
 
 
 const HomePage = () => {
-    const user = useSelector((state: TRootState) => state.UserSlice);
+    
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
-    const [cart, setCart] = useState<any[]>([]);
+    const [cart, setCart] = useState<{ _id: string; size: string; quantity: number; title: string; price: number; imageUrl: string }[]>([]);
     const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const { VITE_API_URL }= import.meta.env;
 
     useEffect(() => {
         const fetchMerch = async () => {
             try {
-                const response = await axios.get("http://localhost:8080/products");
+                const response = await axios.get(VITE_API_URL+"/products");
                 setProducts(response.data);
             } catch (err) {
                 console.error("Error loading products:", err);
@@ -46,7 +48,7 @@ const HomePage = () => {
         localStorage.setItem("cart", JSON.stringify(cart));
     }, [cart]);
 
-    const addToCart = (product, size, quantity) => {
+    const addToCart = (product:Product, size, quantity) => {
         if (!size) {
             Swal.fire("Select Size", "Please choose a size before adding to cart", "warning", );
             return;
@@ -112,7 +114,7 @@ const HomePage = () => {
         }).then(async ({ isConfirmed, value }) => {
             if (isConfirmed) {
                 try {
-                    await axios.post("http://localhost:8080/users/orders", { customerDetails: value, cart });
+                    await axios.post(VITE_API_URL + "/users/orders", { customerDetails: value, cart });
                     Swal.fire("Success", "Your order has been placed!", "success");
                     setCart([]);
                     setIsCartOpen(false);
@@ -135,14 +137,14 @@ const HomePage = () => {
 
     const [formData, setFormData] = useState({ name: "", email: "", message: "" });
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.post("http://localhost:8080/users/contact", formData);
+            await axios.post(VITE_API_URL +"/users/contact", formData);
             Swal.fire("Message Sent!", "We’ll get back to you soon.", "success");
             setFormData({ name: "", email: "", message: "" });
         } catch (err) {
@@ -197,7 +199,7 @@ const HomePage = () => {
 
 
                 <div className="flex flex-wrap justify-center gap-10">
-                    {products.map((product, index) => {
+                    {products.map((product:Product, index) => {
                         const totalStock = Object.values(product.stock || {}).reduce((a, b) => a + b, 0);
                         const isOutOfStock = totalStock === 0;
 
@@ -209,7 +211,7 @@ const HomePage = () => {
                                 className="relative p-4 bg-[#CBB279] rounded-xl shadow-md w-72"
                             >
                                 <img
-                                    src={`http://localhost:8080${product.imageUrl}`}
+                                    src={`VITE_API_URL+${product.imageUrl}`}
                                     alt={product.title}
                                     className={`object-cover w-full h-80 rounded-md ${isOutOfStock ? "opacity-40" : ""}`}
                                 />

@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 import Swal from "sweetalert2";
-import { Tabs } from "flowbite-react";
-import { FaPlus, FaBoxOpen, FaExclamationTriangle, FaPaintBrush } from "react-icons/fa";
+import {  FaBoxOpen, FaExclamationTriangle, FaPaintBrush } from "react-icons/fa";
+
 
 
 const categories = ["small", "medium", "large"];
 
 const AdminPage = () => {
+    const { VITE_API_URL } = import.meta.env;
     const [imagesByCategory, setImagesByCategory] = useState<Record<string, string[]>>({});
     const [selectedCategory, setSelectedCategory] = useState("small");
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -18,14 +19,14 @@ const AdminPage = () => {
     const [stockSmall, setStockSmall] = useState("");
     const [stockMedium, setStockMedium] = useState("");
     const [stockLarge, setStockLarge] = useState("");
-    const [allProducts, setAllProducts] = useState([]);
+    const [allProducts, setAllProducts] = useState<{ _id: string; title: string; price: number; imageUrl: string; stock?: { small: number; medium: number; large: number } }[]>([]);
 
     useEffect(() => {
         const fetchAllImages = async () => {
             try {
                 const results: Record<string, string[]> = {};
                 for (const category of categories) {
-                    const res = await axios.get(`http://localhost:8080/gallery/${category}`);
+                    const res = await axios.get(VITE_API_URL +`/gallery/${category}`);
                     results[category] = Array.isArray(res.data) ? res.data : [];
                 }
                 setImagesByCategory(results);
@@ -36,7 +37,7 @@ const AdminPage = () => {
 
         const fetchProducts = async () => {
             try {
-                const res = await axios.get("http://localhost:8080/products");
+                const res = await axios.get(VITE_API_URL + "/products");
                 setAllProducts(res.data);
             } catch (err) {
                 Swal.fire("Error", "Failed to load products", "error");
@@ -53,7 +54,7 @@ const AdminPage = () => {
         formData.append("image", imageFile);
 
         try {
-            await axios.post(`http://localhost:8080/gallery/upload/${selectedCategory}`, formData, {
+            await axios.post(VITE_API_URL +`/gallery/upload/${selectedCategory}`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
             Swal.fire("Success", "Sketch uploaded and processed", "success").then(() => window.location.reload());
@@ -76,7 +77,7 @@ const AdminPage = () => {
         if (!confirmed.isConfirmed) return;
 
         try {
-            await axios.delete(`http://localhost:8080/gallery/${category}/${filename}`);
+            await axios.delete(VITE_API_URL +`/gallery/${category}/${filename}`);
             setImagesByCategory((prev) => ({
                 ...prev,
                 [category]: prev[category].filter((img) => img !== fileUrl),
@@ -99,7 +100,7 @@ const AdminPage = () => {
         formData.append("stockLarge", stockLarge);
 
         try {
-            await axios.post("http://localhost:8080/products/upload", formData, {
+            await axios.post(VITE_API_URL + "/products/upload", formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
@@ -129,7 +130,7 @@ const AdminPage = () => {
         if (!confirmed.isConfirmed) return;
 
         try {
-            await axios.delete(`http://localhost:8080/products/${id}`);
+            await axios.delete(VITE_API_URL +`/products/${id}`);
             setAllProducts((prev) => prev.filter((p: any) => p._id !== id));
             Swal.fire("Success", "Product deleted successfully", "success");
         } catch (err) {
@@ -182,7 +183,7 @@ const AdminPage = () => {
             <section className="max-w-6xl mx-auto mb-20">
                 <h2 className="mb-6 text-3xl font-bold text-center">Product List</h2>
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                    {allProducts.map((product: any) => {
+                    {allProducts.map((product) => {
                         const total = (product.stock?.small || 0) + (product.stock?.medium || 0) + (product.stock?.large || 0);
                         const isOutOfStock = total === 0;
 
@@ -240,7 +241,7 @@ const AdminPage = () => {
                                 whileHover={{ scale: 1.03 }}
                             >
                                 <img
-                                    src={`http://localhost:8080${imgUrl}`}
+                                    src={`VITE_API_URL+${imgUrl}`}
                                     alt="sketch"
                                     className="object-cover w-full h-full aspect-square"
                                 />

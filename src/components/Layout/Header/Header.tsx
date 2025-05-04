@@ -8,6 +8,7 @@ import { decode } from "../../../Services/tokenServices.ts";
 import { userActions } from "../../../Store/UserSlice.ts";
 
 const Header = () => {
+  const { VITE_API_URL } = import.meta.env;
   const [isOpen, setIsOpen] = useState(false);
   const user = useSelector((state: TRootState) => state.UserSlice.user);
   const location = useLocation().pathname;
@@ -15,6 +16,7 @@ const Header = () => {
   const nav = useNavigate();
 
   const logout = () => {
+    
     dispatch(userActions.logout());
     nav("/");
   };
@@ -30,7 +32,7 @@ const Header = () => {
         const decoded = decode(token);
         axios.defaults.headers.common["x-auth-token"] = token;
 
-        axios.get(`http://localhost:8080/users/${decoded._id}`)
+        axios.get(VITE_API_URL +`/users/${decoded._id}`)
           .then(res => {
             if (res.data && res.data._id) {
               dispatch(userActions.login(res.data));
@@ -43,8 +45,9 @@ const Header = () => {
         localStorage.removeItem("token");
       }
     }
-  }, []);
+  }, [VITE_API_URL, dispatch]);
 
+  console.log("user", user);
   return (
     <Navbar
       fluid

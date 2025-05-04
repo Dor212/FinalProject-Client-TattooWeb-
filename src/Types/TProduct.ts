@@ -1,7 +1,13 @@
 export type Product = {
   title: string;
-  image: string;
+  imageUrl: string;
   price: number;
-  sizes: string[];
+  stock:{
+    small:number;
+    medium:number;
+    large:number;
+  }
+  /* sizes: string[]; */
   _id:string;
 };
+

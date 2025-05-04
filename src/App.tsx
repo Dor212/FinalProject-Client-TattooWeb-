@@ -2,8 +2,6 @@ import { Route, Routes } from "react-router-dom";
 import Header from "./components/Layout/Header/Header";
 import HomePage from "./Pages/HomePage/HomePage";
 import RegisterPage from "./Pages/RegisterPage/RegisterPage";
-import { useSelector } from "react-redux";
-import { TRootState } from "./Store/BigPie";
 import Footer from "./components/Layout/Footer/Footer";
 import LoginPage from "./Pages/LoginPage/LoginPage";
 import GalleryPage from "./Pages/GalleryPage/GalleryPage";
@@ -12,7 +10,6 @@ import ApplySketchPage from "./Pages/SimulatorPage/SimulatorPage"
 
 
 function App() {
-  const user = useSelector((state: TRootState) => state.UserSlice.user);
 
   
   return (

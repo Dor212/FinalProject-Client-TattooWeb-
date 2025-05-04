@@ -9,6 +9,7 @@ interface SideCartProps {
     removeFromCart: (productId: string, size: string) => void;
     handleCheckout: () => void;
 }
+const { VITE_API_URL } = import.meta.env;
 
 const SideCart = ({
     isOpen,
@@ -28,14 +29,14 @@ const SideCart = ({
             {isOpen && (
                 <>
                     <motion.div
-                        className="fixed inset-0 bg-black/50 z-40"
+                        className="fixed inset-0 z-40 bg-black/50"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
                     />
                     <motion.div
-                        className="fixed top-0 left-0 h-full w-80 bg-white shadow-lg z-50 p-6 flex flex-col overflow-y-auto"
+                        className="fixed top-0 left-0 z-50 flex flex-col h-full p-6 overflow-y-auto bg-white shadow-lg w-80"
                         initial={{ x: "-100%" }}
                         animate={{ x: 0 }}
                         exit={{ x: "-100%" }}
@@ -49,16 +50,16 @@ const SideCart = ({
                         </div>
 
                         {cart.length === 0 ? (
-                            <p className="text-gray-500 text-center mt-10">Your cart is empty.</p>
+                            <p className="mt-10 text-center text-gray-500">Your cart is empty.</p>
                         ) : (
                             <>
-                                <div className="flex flex-col gap-4 flex-1">
+                                <div className="flex flex-col flex-1 gap-4">
                                     {cart.map((item, index) => (
-                                        <div key={index} className="flex items-center gap-3 border-b pb-3">
+                                        <div key={index} className="flex items-center gap-3 pb-3 border-b">
                                             <img
-                                                src={`http://localhost:8080${item.imageUrl}`}
+                                                src={`VITE_API_URL+${item.imageUrl}`}
                                                 alt={item.title}
-                                                className="w-16 h-16 rounded object-cover"
+                                                className="object-cover w-16 h-16 rounded"
                                             />
                                             <div className="flex-1">
                                                 <h3 className="font-semibold">{item.title}</h3>
@@ -78,7 +79,7 @@ const SideCart = ({
                                             </div>
                                             <button
                                                 onClick={() => removeFromCart(item._id, item.size)}
-                                                className="text-red-500 text-lg"
+                                                className="text-lg text-red-500"
                                             >
                                                 ×
                                             </button>
@@ -87,7 +88,7 @@ const SideCart = ({
                                 </div>
 
                                 <div className="mt-6">
-                                    <p className="text-lg font-bold mb-4">
+                                    <p className="mb-4 text-lg font-bold">
                                         Total: ${totalPrice.toFixed(2)}
                                     </p>
                                     <button

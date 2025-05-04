@@ -8,6 +8,7 @@ import Swal from "sweetalert2";
 import { motion } from "framer-motion";
 
 const RegisterPage = () => {
+    const { VITE_API_URL } = import.meta.env;
     const initialData = {
         name: {
             first: "",
@@ -30,7 +31,7 @@ const RegisterPage = () => {
 
     const onSubmit = async (form: typeof initialData) => {
         try {
-            const res = await axios.post("http://localhost:8080/users/register", form);
+            const res = await axios.post(VITE_API_URL + "/users/register", form);
             if (res.status >= 200 && res.status < 300) {
                 Swal.fire({
                     position: "top",

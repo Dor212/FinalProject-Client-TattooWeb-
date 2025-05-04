@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const GalleryPage = () => {
+    const { VITE_API_URL } = import.meta.env;
     const { category } = useParams();
     const [images, setImages] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
@@ -12,7 +13,7 @@ const GalleryPage = () => {
     useEffect(() => {
         const fetchImages = async () => {
             try {
-                const response = await axios.get(`http://localhost:8080/gallery/${category}`);
+                const response = await axios.get(VITE_API_URL +`/gallery/${category}`);
                 if (Array.isArray(response.data)) {
                     setImages(response.data);
                 } else {
@@ -47,7 +48,7 @@ const GalleryPage = () => {
                             src={`http://localhost:8080${img}`}
                             alt={`Sketch ${index}`}
                             className="object-cover w-56 h-56 transition duration-300 transform rounded-lg cursor-pointer hover:scale-110"
-                            onClick={() => handleSketchClick(`http://localhost:8080${img}`)} // שולח את כתובת הסקיצה
+                            onClick={() => handleSketchClick(`VITE_API_URL+${img}`)} 
                         />
                         <h2 className="mt-4 text-lg font-semibold text-[#3B3024]">Sketch {index + 1}</h2>
                     </div>

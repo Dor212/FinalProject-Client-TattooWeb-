@@ -10,7 +10,9 @@ import { userActions } from "../../Store/UserSlice";
 import { decode } from "../../Services/tokenServices";
 import { motion } from "framer-motion";
 
+
 const LoginPage = () => {
+    const { VITE_API_URL } = import.meta.env;
     const dispatch = useDispatch();
     const nav = useNavigate();
     const initialData = {
@@ -27,16 +29,15 @@ const LoginPage = () => {
         mode: "onChange",
         resolver: joiResolver(LoginSchema),
     });
-
     const onSubmit = async (form: typeof initialData) => {
         try {
-            const token = await axios.post("http://localhost:8080/users/login", form);
+            const token = await axios.post(VITE_API_URL +"/users/login", form);
             const tokenStr = token.data.token;
             localStorage.setItem("token", tokenStr);
             const decoded = decode(tokenStr);
             axios.defaults.headers.common["x-auth-token"] = tokenStr;
 
-            const userResponse = await axios.get(`http://localhost:8080/users/${decoded._id}`);
+            const userResponse = await axios.get(`${VITE_API_URL}/users/${decoded._id}`);
             dispatch(userActions.login(userResponse.data));
 
             Swal.fire({

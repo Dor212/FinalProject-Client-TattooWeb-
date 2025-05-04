@@ -137,7 +137,7 @@ const AdminPage = () => {
             Swal.fire("Error", "Failed to delete product", "error");
         }
     };
-    const totalStock = allProducts.reduce((sum, p) => sum + (p.stock?.small || 0) + (p.stock?.medium || 0) + (p.stock?.large || 0), 0);
+   /*  const totalStock = allProducts.reduce((sum, p) => sum + (p.stock?.small || 0) + (p.stock?.medium || 0) + (p.stock?.large || 0), 0); */
     const outOfStockCount = allProducts.filter((p) => ((p.stock?.small || 0) + (p.stock?.medium || 0) + (p.stock?.large || 0)) === 0).length;
     const totalSketches = Object.values(imagesByCategory).reduce((sum, arr) => sum + arr.length, 0);
 

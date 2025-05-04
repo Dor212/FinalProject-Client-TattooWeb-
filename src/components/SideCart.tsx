@@ -9,7 +9,7 @@ interface SideCartProps {
     removeFromCart: (productId: string, size: string) => void;
     handleCheckout: () => void;
 }
-const { VITE_API_URL } = import.meta.env;
+/* const { VITE_API_URL } = import.meta.env; */
 
 const SideCart = ({
     isOpen,

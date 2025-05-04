@@ -48,7 +48,7 @@ const HomePage = () => {
         localStorage.setItem("cart", JSON.stringify(cart));
     }, [cart]);
 
-    const addToCart = (product:Product, size, quantity) => {
+    const addToCart = (product:Product, size: string, quantity: number) => {
         if (!size) {
             Swal.fire("Select Size", "Please choose a size before adding to cart", "warning", );
             return;
@@ -141,7 +141,7 @@ const HomePage = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: { preventDefault: () => void; }) => {
         e.preventDefault();
         try {
             await axios.post(VITE_API_URL +"/users/contact", formData);

@@ -189,7 +189,7 @@ const AdminPage = () => {
 
                         return (
                             <div key={product._id} className="bg-white text-[#3B3024] p-4 rounded-lg shadow relative">
-                                <img src={`http://localhost:8080${product.imageUrl}`} alt={product.title} className={`w-full h-48 object-cover rounded-md mb-4 ${isOutOfStock ? "opacity-40" : ""}`} />
+                                <img src={`${VITE_API_URL}${product.imageUrl}`} alt={product.title} className={`w-full h-48 object-cover rounded-md mb-4 ${isOutOfStock ? "opacity-40" : ""}`} />
                                 <h3 className="mb-1 text-xl font-semibold">{product.title}</h3>
                                 <p className="mb-2">Price: ${product.price}</p>
                                 <p className="text-sm">Stock: S({product.stock?.small || 0}), M({product.stock?.medium || 0}), L({product.stock?.large || 0})</p>
@@ -240,8 +240,7 @@ const AdminPage = () => {
                                 className="relative group bg-white rounded-xl overflow-hidden border border-[#e2d9c3] shadow transition-all hover:shadow-lg"
                                 whileHover={{ scale: 1.03 }}
                             >
-                                <img
-                                    src={`VITE_API_URL+${imgUrl}`}
+                                <img src={`${VITE_API_URL}${imgUrl}`}
                                     alt="sketch"
                                     className="object-cover w-full h-full aspect-square"
                                 />

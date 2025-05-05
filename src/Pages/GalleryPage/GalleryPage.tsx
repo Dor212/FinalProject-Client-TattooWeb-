@@ -48,7 +48,8 @@ const GalleryPage = () => {
                             src={`${VITE_API_URL}${img}`}
                             alt={`Sketch ${index}`}
                             className="object-cover w-56 h-56 transition duration-300 transform rounded-lg cursor-pointer hover:scale-110"
-                            onClick={() => handleSketchClick(`VITE_API_URL+${img}`)} 
+                            onClick={() => handleSketchClick(`${VITE_API_URL}${img}`)}
+
                         />
                         <h2 className="mt-4 text-lg font-semibold text-[#3B3024]">Sketch {index + 1}</h2>
                     </div>

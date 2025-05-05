@@ -26,7 +26,7 @@ const AdminPage = () => {
             try {
                 const results: Record<string, string[]> = {};
                 for (const category of categories) {
-                    const res = await axios.get(VITE_API_URL +`/gallery/${category}`);
+                    const res = await axios.get(`${VITE_API_URL}/gallery/${category}`);
                     results[category] = Array.isArray(res.data) ? res.data : [];
                 }
                 setImagesByCategory(results);
@@ -37,7 +37,7 @@ const AdminPage = () => {
 
         const fetchProducts = async () => {
             try {
-                const res = await axios.get(VITE_API_URL + "/products");
+                const res = await axios.get(`${VITE_API_URL}/products`);
                 setAllProducts(res.data);
             } catch (err) {
                 Swal.fire("Error", "Failed to load products", "error");
@@ -54,7 +54,7 @@ const AdminPage = () => {
         formData.append("image", imageFile);
 
         try {
-            await axios.post(VITE_API_URL +`/gallery/upload/${selectedCategory}`, formData, {
+            await axios.post(`${VITE_API_URL}/gallery/upload/${selectedCategory}`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
             Swal.fire("Success", "Sketch uploaded and processed", "success").then(() => window.location.reload());
@@ -77,7 +77,7 @@ const AdminPage = () => {
         if (!confirmed.isConfirmed) return;
 
         try {
-            await axios.delete(VITE_API_URL +`/gallery/${category}/${filename}`);
+            await axios.delete(`${VITE_API_URL}/gallery/${category}/${filename}`);
             setImagesByCategory((prev) => ({
                 ...prev,
                 [category]: prev[category].filter((img) => img !== fileUrl),
@@ -130,8 +130,8 @@ const AdminPage = () => {
         if (!confirmed.isConfirmed) return;
 
         try {
-            await axios.delete(VITE_API_URL +`/products/${id}`);
-            setAllProducts((prev) => prev.filter((p: any) => p._id !== id));
+            await axios.delete(`${VITE_API_URL}/products/${id}`);
+            setAllProducts((prev) => prev.filter((p: { _id: string }) => p._id !== id));
             Swal.fire("Success", "Product deleted successfully", "success");
         } catch (err) {
             Swal.fire("Error", "Failed to delete product", "error");

@@ -34,7 +34,7 @@ const ApplySketchPage = () => {
         });
         const image = canvas.toDataURL("image/png");
         try {
-            await axios.post(VITE_API_URL + "/users/send-image", { image, name, phone });
+            await axios.post(`${VITE_API_URL}/users/send-image`, { image, name, phone });
             alert("Sent to tattoo artist via email!");
         } catch (err) {
             console.error("Error sending:", err);

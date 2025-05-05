@@ -31,7 +31,7 @@ const RegisterPage = () => {
 
     const onSubmit = async (form: typeof initialData) => {
         try {
-            const res = await axios.post(VITE_API_URL + "/users/register", form);
+            const res = await axios.post(`${VITE_API_URL}/users/register`, form);
             if (res.status >= 200 && res.status < 300) {
                 Swal.fire({
                     position: "top",

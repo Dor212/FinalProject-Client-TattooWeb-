@@ -13,7 +13,7 @@ const GalleryPage = () => {
     useEffect(() => {
         const fetchImages = async () => {
             try {
-                const response = await axios.get(VITE_API_URL +`/gallery/${category}`);
+                const response = await axios.get(`${VITE_API_URL}/gallery/${category}`);
                 if (Array.isArray(response.data)) {
                     setImages(response.data);
                 } else {
@@ -45,7 +45,7 @@ const GalleryPage = () => {
                 {images.map((img, index) => (
                     <div key={index} className="flex flex-col items-center p-4 transition duration-300 transform bg-white shadow-lg rounded-2xl hover:scale-105 hover:shadow-2xl">
                         <img
-                            src={`http://localhost:8080${img}`}
+                            src={`${VITE_API_URL}${img}`}
                             alt={`Sketch ${index}`}
                             className="object-cover w-56 h-56 transition duration-300 transform rounded-lg cursor-pointer hover:scale-110"
                             onClick={() => handleSketchClick(`VITE_API_URL+${img}`)} 

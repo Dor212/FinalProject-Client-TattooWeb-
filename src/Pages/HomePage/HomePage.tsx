@@ -28,7 +28,7 @@ const HomePage = () => {
     useEffect(() => {
         const fetchMerch = async () => {
             try {
-                const response = await axios.get(VITE_API_URL+"/products");
+                const response = await axios.get(`${VITE_API_URL}/products`);
                 setProducts(response.data);
             } catch (err) {
                 console.error("Error loading products:", err);
@@ -114,7 +114,7 @@ const HomePage = () => {
         }).then(async ({ isConfirmed, value }) => {
             if (isConfirmed) {
                 try {
-                    await axios.post(VITE_API_URL + "/users/orders", { customerDetails: value, cart });
+                    await axios.post(`${VITE_API_URL}/users/orders`, { customerDetails: value, cart });
                     Swal.fire("Success", "Your order has been placed!", "success");
                     setCart([]);
                     setIsCartOpen(false);
@@ -144,7 +144,7 @@ const HomePage = () => {
     const handleSubmit = async (e: { preventDefault: () => void; }) => {
         e.preventDefault();
         try {
-            await axios.post(VITE_API_URL +"/users/contact", formData);
+            await axios.post(`${VITE_API_URL}/users/contact`, formData);
             Swal.fire("Message Sent!", "We’ll get back to you soon.", "success");
             setFormData({ name: "", email: "", message: "" });
         } catch (err) {

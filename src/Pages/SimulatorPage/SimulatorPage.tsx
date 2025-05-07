@@ -6,7 +6,7 @@ import axios from "axios";
 import { Mail } from "lucide-react";
 
 const ApplySketchPage = () => {
-    const { VITE_API_URL } = import.meta.env;
+    
     const location = useLocation();
     const { selectedSketch } = location.state || {};
     const [userImage, setUserImage] = useState<string | null>(null);
@@ -34,7 +34,7 @@ const ApplySketchPage = () => {
         });
         const image = canvas.toDataURL("image/png");
         try {
-            await axios.post(`${VITE_API_URL}/users/send-image`, { image, name, phone });
+            await axios.post(`${import.meta.env.VITE_API_URL}/users/send-image`, { image, name, phone });
             alert("Sent to tattoo artist via email!");
         } catch (err) {
             console.error("Error sending:", err);

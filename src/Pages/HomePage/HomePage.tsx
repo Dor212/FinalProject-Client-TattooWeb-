@@ -211,7 +211,7 @@ const HomePage = () => {
                                 className="relative p-4 bg-[#CBB279] rounded-xl shadow-md w-72"
                             >
                                 <img
-                                    src={`${VITE_API_URL}/${product.imageUrl}`}
+                                    src={`${VITE_API_URL}${product.imageUrl}`}
                                     alt={product.title}
                                     className={`object-cover w-full h-80 rounded-md ${isOutOfStock ? "opacity-40" : ""}`}
                                 />

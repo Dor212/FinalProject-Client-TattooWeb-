@@ -9,7 +9,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       manifest: {
         name: 'Omer Tattoo',
-        short_name: 'Tattoo',
+        short_name: 'OmerAviv',
         description: 'האפליקציה של המקעקע עומר אביב',
         theme_color: '#CBB279',
         background_color: '#F1F3C2',

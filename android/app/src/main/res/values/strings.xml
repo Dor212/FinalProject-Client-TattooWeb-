@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">OmerAvivTattoo</string>
+    <string name="title_activity_main">OmerAvivTattoo</string>
+    <string name="package_name">com.dorohana.OmerAvivTattoo</string>
+    <string name="custom_url_scheme">com.dorohana.OmerAvivTattoo</string>
+</resources>

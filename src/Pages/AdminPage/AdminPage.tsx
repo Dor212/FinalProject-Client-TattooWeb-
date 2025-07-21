@@ -191,7 +191,7 @@ const AdminPage = () => {
                             <div key={product._id} className="bg-white text-[#3B3024] p-4 rounded-lg shadow relative">
                                 <img src={product.imageUrl} alt={product.title} className={`w-full h-48 object-cover rounded-md mb-4 ${isOutOfStock ? "opacity-40" : ""}`} />
                                 <h3 className="mb-1 text-xl font-semibold">{product.title}</h3>
-                                <p className="mb-2">Price: ${product.price}</p>
+                                <p className="text-lg">{Number(product.price).toFixed(2)} ₪</p>
                                 <p className="text-sm">Stock: S({product.stock?.small || 0}), M({product.stock?.medium || 0}), L({product.stock?.large || 0})</p>
                                 {isOutOfStock && <p className="mt-2 font-bold text-red-600">Out of Stock</p>}
                                 <button onClick={() => handleProductDelete(product._id)} className="absolute px-2 py-1 text-white bg-red-600 rounded top-2 right-2 hover:bg-red-800">✕</button>

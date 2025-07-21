@@ -7,10 +7,11 @@ import LoginPage from "./Pages/LoginPage/LoginPage";
 import GalleryPage from "./Pages/GalleryPage/GalleryPage";
 import AdminPage from "./Pages/AdminPage/AdminPage"
 import ApplySketchPage from "./Pages/SimulatorPage/SimulatorPage"
+import useAuthInit from "./components/useAuthInit";
 
 
 function App() {
-
+  useAuthInit();
   
   return (
     <div className="" >

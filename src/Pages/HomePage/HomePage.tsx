@@ -28,7 +28,7 @@ const HomePage = () => {
     useEffect(() => {
         const fetchMerch = async () => {
             try {
-                const response = await axios.get(`${VITE_API_URL}/products`);
+                const response = await axios.get(`${VITE_API_URL}/products/`);
                 setProducts(response.data);
             } catch (err) {
                 console.error("Error loading products:", err);

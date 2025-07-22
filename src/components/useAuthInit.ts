@@ -16,11 +16,11 @@ const useAuthInit = () => {
     try {
       const decoded = decode(token); 
       const currentTime = Date.now() / 1000;
-      if (decoded.exp && decoded.  < currentTime) {
-        console.warn("🔒 Token expired");
-        localStorage.removeItem("token");
-        return;
-      }
+      if (decoded.exp && decoded.exp < currentTime) {
+  console.warn("🔒 Token expired");
+  localStorage.removeItem("token");
+  return;
+}
 
       axios.defaults.headers.common["x-auth-token"] = token;
 

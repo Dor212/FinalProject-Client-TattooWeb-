@@ -47,7 +47,7 @@ const LoginPage = () => {
                 showConfirmButton: false,
                 timer: 1500,
             });
-            nav("/home");
+            nav("#hero");
         } catch (error) {
             console.log(error);
             Swal.fire({

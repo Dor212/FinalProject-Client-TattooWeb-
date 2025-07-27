@@ -7,6 +7,7 @@ import axios from "axios";
 import { decode } from "../../../Services/tokenServices.ts";
 import { userActions } from "../../../Store/UserSlice.ts";
 
+
 const Header = () => {
   const { VITE_API_URL } = import.meta.env;
   const [isOpen, setIsOpen] = useState(false);
@@ -54,7 +55,7 @@ const Header = () => {
       rounded
       className="fixed top-0 left-0 z-50 w-full bg-[#F1F3C2]/90 backdrop-blur-md shadow-md text-[#3B3024]"
     >
-      <Navbar.Brand as={Link} to="#hero" className="flex items-center gap-3">
+      <Navbar.Brand as={Link} to="/" className="flex items-center gap-3">
         <img
           src="/backgrounds/LogoOmerTattoo_transparent.png"
           alt="Omer Logo"

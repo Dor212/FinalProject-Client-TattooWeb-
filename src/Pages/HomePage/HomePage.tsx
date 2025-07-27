@@ -5,13 +5,15 @@ import Swal from "sweetalert2";
 import { FaWhatsapp } from "react-icons/fa";
 import { FaShoppingCart } from "react-icons/fa";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import SideCart from "../../components/SideCart.tsx";
 import mainP from "../../Imges/mainPic.jpg";
 import tattoS from "../../Imges/tattooS.jpg";
 import tattoM from "../../Imges/tattooM.jpg";
 import tattoL from "../../Imges/tattooL.jpg";
 import { Product } from "../../Types/TProduct.ts";
+import { Element, scroller } from "react-scroll";
+
 
 
 
@@ -24,6 +26,17 @@ const HomePage = () => {
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [isCartOpen, setIsCartOpen] = useState(false);
     const { VITE_API_URL }= import.meta.env;
+
+    const location = useLocation();
+    useEffect(() => {
+        if (location.state?.scrollTo) {
+            scroller.scrollTo(location.state.scrollTo, {
+                duration: 800,
+                delay: 0,
+                smooth: "easeInOutQuart",
+            });
+        }
+    }, [location]);
 
     useEffect(() => {
         const fetchMerch = async () => {
@@ -173,7 +186,8 @@ const HomePage = () => {
 
 
             {/* Hero Section */}
-            <motion.section id="hero" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }}
+            <Element name="logo">
+            <motion.section id="logo" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }}
                 viewport={{ once: true }} className="h-[100vh] flex items-center justify-center">
                 <motion.img
                     initial={{ opacity: 0, scale: 0.8 }}
@@ -184,7 +198,7 @@ const HomePage = () => {
                     className="max-w-[80%] max-h-[80%]"
                 />
             </motion.section>
-
+            </Element>
             {/* Shop Merch Section */}
             <motion.section
                 id="shop"

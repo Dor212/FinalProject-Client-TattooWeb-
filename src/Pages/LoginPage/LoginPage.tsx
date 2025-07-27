@@ -47,7 +47,7 @@ const LoginPage = () => {
                 showConfirmButton: false,
                 timer: 1500,
             });
-            nav("#hero");
+            nav("/", { state: { scrollTo: "logo" } });
         } catch (error) {
             console.log(error);
             Swal.fire({

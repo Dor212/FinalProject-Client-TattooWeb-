@@ -114,9 +114,21 @@ const AdminPage = () => {
             setStockXL("");
             
 
-            Swal.fire("Success", "Product uploaded successfully", "success");
+            Swal.fire({
+                title: "Success",
+                text: "Product deleted successfully",
+                icon: "success",
+                timer: 1500,
+                showConfirmButton: false
+            });
         } catch (err) {
-            Swal.fire("Error", "Failed to upload product", "error");
+            Swal.fire({
+                title: "Error",
+                text: "Failed to delete product",
+                icon: "error",
+                timer: 1500,
+                showConfirmButton: false
+            });
         }
     };
 
@@ -135,9 +147,21 @@ const AdminPage = () => {
         try {
             await axios.delete(`${VITE_API_URL}/products/${id}`);
             setAllProducts((prev) => prev.filter((p: { _id: string }) => p._id !== id));
-            Swal.fire("Success", "Product deleted successfully", "success");
+            Swal.fire({
+                title: "Success",
+                text: "Product deleted successfully",
+                icon: "success",
+                timer: 1500,
+                showConfirmButton: false
+            });
         } catch (err) {
-            Swal.fire("Error", "Failed to delete product", "error");
+            Swal.fire({
+                title: "Error",
+                text: "Failed to delete product",
+                icon: "error",
+                timer: 1500,
+                showConfirmButton: false
+            });
         }
     };
    /*  const totalStock = allProducts.reduce((sum, p) => sum + (p.stock?.small || 0) + (p.stock?.medium || 0) + (p.stock?.large || 0), 0); */

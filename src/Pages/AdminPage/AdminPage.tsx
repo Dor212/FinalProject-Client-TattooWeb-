@@ -102,32 +102,38 @@ const AdminPage = () => {
         formData.append("stockXL", stockXL);
 
         try {
-            await axios.post(VITE_API_URL + "/products/upload", formData, {
+            const res = await axios.post(`${VITE_API_URL}/products/upload`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
+            // ניקוי הטופס
             setProductTitle("");
             setProductPrice("");
             setStockSmall("");
             setStockMedium("");
             setStockLarge("");
             setStockXL("");
-            
+            setProductImage(null);
 
+            // ✅ הוספת המוצר החדש ל-state
+            setAllProducts((prev) => [res.data, ...prev]);
+
+            // הודעת הצלחה
             Swal.fire({
                 title: "Success",
-                text: "Product deleted successfully",
+                text: "Product uploaded successfully",
                 icon: "success",
                 timer: 1500,
-                showConfirmButton: false
+                showConfirmButton: false,
             });
+
         } catch (err) {
             Swal.fire({
                 title: "Error",
-                text: "Failed to delete product",
+                text: "Failed to upload product",
                 icon: "error",
                 timer: 1500,
-                showConfirmButton: false
+                showConfirmButton: false,
             });
         }
     };

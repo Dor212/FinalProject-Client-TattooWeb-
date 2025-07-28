@@ -58,7 +58,7 @@ const SideCart = ({
                                     {cart.map((item, index) => (
                                         <div key={index} className="flex items-center gap-3 pb-3 border-b">
                                             <img
-                                                src={`${VITE_API_URL}${item.imageUrl}`}
+                                                src={item.imageUrl} // בלי VITE_API_URL
                                                 alt={item.title}
                                                 className="object-cover w-16 h-16 rounded"
                                             />
@@ -75,7 +75,7 @@ const SideCart = ({
                                                         }
                                                         className="w-16 p-1 border rounded"
                                                     />
-                                                    <p className="text-sm text-gray-600">${item.price}</p>
+                                                    <p className="text-sm text-gray-600">₪{item.price}</p>
                                                 </div>
                                             </div>
                                             <button
@@ -90,7 +90,7 @@ const SideCart = ({
 
                                 <div className="mt-6">
                                     <p className="mb-4 text-lg font-bold">
-                                        Total: ${totalPrice.toFixed(2)}
+                                            Total: {totalPrice.toFixed(2)}₪
                                     </p>
                                     <button
                                         onClick={handleCheckout}

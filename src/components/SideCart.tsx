@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { FaTimes } from "react-icons/fa";
 
+const { VITE_API_URL } = import.meta.env; 
+
 interface SideCartProps {
     isOpen: boolean;
     onClose: () => void;
@@ -9,7 +11,6 @@ interface SideCartProps {
     removeFromCart: (productId: string, size: string) => void;
     handleCheckout: () => void;
 }
-/* const { VITE_API_URL } = import.meta.env; */
 
 const SideCart = ({
     isOpen,
@@ -23,7 +24,7 @@ const SideCart = ({
         (sum, item) => sum + item.price * item.quantity,
         0
     );
-
+    
     return (
         <AnimatePresence>
             {isOpen && (
@@ -57,7 +58,7 @@ const SideCart = ({
                                     {cart.map((item, index) => (
                                         <div key={index} className="flex items-center gap-3 pb-3 border-b">
                                             <img
-                                                src={`VITE_API_URL+${item.imageUrl}`}
+                                                src={`${VITE_API_URL}${item.imageUrl}`}
                                                 alt={item.title}
                                                 className="object-cover w-16 h-16 rounded"
                                             />

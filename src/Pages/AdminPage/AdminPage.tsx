@@ -19,7 +19,8 @@ const AdminPage = () => {
     const [stockSmall, setStockSmall] = useState("");
     const [stockMedium, setStockMedium] = useState("");
     const [stockLarge, setStockLarge] = useState("");
-    const [allProducts, setAllProducts] = useState<{ _id: string; title: string; price: number; imageUrl: string; stock?: { small: number; medium: number; large: number } }[]>([]);
+    const [stockXL, setStockXL] = useState("");
+    const [allProducts, setAllProducts] = useState<{ _id: string; title: string; price: number; imageUrl: string; stock?: { small: number; medium: number; large: number; Xlarge: number } }[]>([]);
 
     useEffect(() => {
         const fetchAllImages = async () => {
@@ -98,6 +99,7 @@ const AdminPage = () => {
         formData.append("stockSmall", stockSmall);
         formData.append("stockMedium", stockMedium);
         formData.append("stockLarge", stockLarge);
+        formData.append("stockXL", stockXL);
 
         try {
             await axios.post(VITE_API_URL + "/products/upload", formData, {
@@ -106,10 +108,11 @@ const AdminPage = () => {
 
             setProductTitle("");
             setProductPrice("");
-            setProductImage(null);
             setStockSmall("");
             setStockMedium("");
             setStockLarge("");
+            setStockXL("");
+            
 
             Swal.fire("Success", "Product uploaded successfully", "success");
         } catch (err) {
@@ -172,6 +175,7 @@ const AdminPage = () => {
                     <input type="number" placeholder="Stock S" value={stockSmall} onChange={(e) => setStockSmall(e.target.value)} className="p-3 border rounded" />
                     <input type="number" placeholder="Stock M" value={stockMedium} onChange={(e) => setStockMedium(e.target.value)} className="p-3 border rounded" />
                     <input type="number" placeholder="Stock L" value={stockLarge} onChange={(e) => setStockLarge(e.target.value)} className="p-3 border rounded" />
+                    <input type="number" placeholder="Stock XL" value={stockXL} onChange={(e) => setStockXL(e.target.value)} className="p-3 border rounded" />
                     <input type="file" onChange={(e) => setProductImage(e.target.files?.[0] || null)} className="p-2 border rounded" />
                 </div>
                 <button onClick={handleProductUpload} className="w-full mt-4 bg-[#97BE5A] text-white py-2 px-4 rounded hover:bg-[#7ea649] transition">
@@ -184,7 +188,7 @@ const AdminPage = () => {
                 <h2 className="mb-6 text-3xl font-bold text-center">Product List</h2>
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                     {allProducts.map((product) => {
-                        const total = (product.stock?.small || 0) + (product.stock?.medium || 0) + (product.stock?.large || 0);
+                        const total = (product.stock?.small || 0) + (product.stock?.medium || 0) + (product.stock?.large || 0) + (product.stock?.Xlarge || 0);
                         const isOutOfStock = total === 0;
 
                         return (
@@ -192,7 +196,7 @@ const AdminPage = () => {
                                 <img src={product.imageUrl} alt={product.title} className={`w-full h-48 object-cover rounded-md mb-4 ${isOutOfStock ? "opacity-40" : ""}`} />
                                 <h3 className="mb-1 text-xl font-semibold">{product.title}</h3>
                                 <p className="text-lg">{Number(product.price).toFixed(2)} ₪</p>
-                                <p className="text-sm">Stock: S({product.stock?.small || 0}), M({product.stock?.medium || 0}), L({product.stock?.large || 0})</p>
+                                <p className="text-sm">Stock: S({product.stock?.small || 0}), M({product.stock?.medium || 0}), L({product.stock?.large || 0}), XL({product.stock?.Xlarge || 0})</p>
                                 {isOutOfStock && <p className="mt-2 font-bold text-red-600">Out of Stock</p>}
                                 <button onClick={() => handleProductDelete(product._id)} className="absolute px-2 py-1 text-white bg-red-600 rounded top-2 right-2 hover:bg-red-800">✕</button>
                             </div>

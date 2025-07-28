@@ -209,52 +209,70 @@ const HomePage = () => {
                 className="container px-5 py-20 mx-auto text-center"
                 dir="rtl"
             >
-                
-
-
                 <div className="flex flex-wrap justify-center gap-10">
-                    {products.map((product:Product, index) => {
+                    {products.map((product: Product, index) => {
                         const totalStock = Object.values(product.stock || {}).reduce((a, b) => a + b, 0);
                         const isOutOfStock = totalStock === 0;
 
                         return (
                             <motion.div
-                                whileHover={{ scale: 1.03, boxShadow: "0px 5px 12px rgba(0,0,0,0.15)" }}
-                                transition={{ duration: 0.3 }}
+                                whileHover={{ scale: 1.06, rotate: 0.5 }}
+                                transition={{ duration: 0.4, ease: "easeInOut" }}
                                 key={index}
-                                className="relative p-4 bg-[#CBB279] rounded-xl shadow-md w-72"
+                                className="relative w-72 p-5 rounded-3xl bg-white/30 backdrop-blur-md shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#e4d3a1] transition-all"
                             >
-                                <img
-                                    src={product.imageUrl}
-                                    alt={product.title}
-                                    className={`object-cover w-full h-80 rounded-md ${isOutOfStock ? "opacity-40" : ""}`}
-                                />
-                                {isOutOfStock && (
-                                    <div className="absolute inset-0 flex items-center justify-center text-lg font-bold bg-white/70">
-                                        אזל מהמלאי
-                                    </div>
-                                )}
-                                <p className="mt-2 text-xl font-medium">{product.title}</p>
-                                <p className="text-lg">{Number(product.price).toFixed(2)} ₪</p>
+                                {/* תמונה */}
+                                <div className="overflow-hidden rounded-2xl border border-[#f4e7b4] shadow-inner relative">
+                                    <img
+                                        src={product.imageUrl}
+                                        alt={product.title}
+                                        className={`object-cover w-full h-56 transition-transform duration-300 hover:scale-105 ${isOutOfStock ? "opacity-30" : ""
+                                            }`}
+                                    />
+                                    {isOutOfStock && (
+                                        <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-[#7a6b3b] bg-white/70 rounded-2xl">
+                                            ❌ אזל מהמלאי
+                                        </div>
+                                    )}
+                                </div>
 
+                                {/* כותרת ומחיר */}
+                                <div className="mt-4 text-[#3a3220]">
+                                    <h3 className="text-xl font-bold tracking-tight">{product.title}</h3>
+                                    <p className="text-lg font-semibold text-[#8b7c4a]">
+                                        {Number(product.price).toFixed(2)} ₪
+                                    </p>
+                                </div>
+
+                                {/* בחירת מידה וכמות */}
                                 {!isOutOfStock && (
-                                    <>
-                                        <select
-                                            value={selectedSizes[product._id] || ""}
-                                            onChange={(e) =>
-                                                setSelectedSizes((prev) => ({
-                                                    ...prev,
-                                                    [product._id]: e.target.value,
-                                                }))
-                                            }
-                                            className="w-full p-2 mt-2 border rounded-md"
-                                        >
-                                            <option value="">בחר מידה</option>
-                                            {Object.entries(product.stock).map(
-                                                ([size, qty]) => qty > 0 && <option key={size}>{size}</option>
-                                            )}
-                                        </select>
+                                    <div className="mt-3">
+                                        {/* כפתורי מידות */}
+                                        <div className="flex flex-wrap justify-center gap-2 mt-2">
+                                            {Object.entries(product.stock).map(([size, qty]) => (
+                                                <button
+                                                    key={size}
+                                                    disabled={qty === 0}
+                                                    onClick={() =>
+                                                        setSelectedSizes((prev) => ({
+                                                            ...prev,
+                                                            [product._id]: size,
+                                                        }))
+                                                    }
+                                                    className={`px-3 py-1 text-sm rounded-full border transition-all duration-200 
+                      ${qty === 0
+                                                            ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
+                                                            : selectedSizes[product._id] === size
+                                                                ? "bg-[#97BE5A] text-white border-[#7ea649] shadow-md"
+                                                                : "bg-white/80 text-[#3a3220] border-[#cbb279] hover:bg-[#f6f0d4]"
+                                                        }`}
+                                                >
+                                                    {size}
+                                                </button>
+                                            ))}
+                                        </div>
 
+                                        {/* שדה כמות */}
                                         <input
                                             type="number"
                                             min="1"
@@ -265,10 +283,11 @@ const HomePage = () => {
                                                     [product._id]: Number(e.target.value),
                                                 }))
                                             }
-                                            className="w-full p-2 mt-2 border rounded-md"
+                                            className="w-full px-3 py-2 mt-2 text-sm bg-white/70 border border-[#d7c793] rounded-xl focus:ring-2 focus:ring-[#bfa63b] outline-none"
                                             placeholder="כמות"
                                         />
 
+                                        {/* כפתור הוספה לסל */}
                                         <button
                                             onClick={() =>
                                                 addToCart(
@@ -277,17 +296,25 @@ const HomePage = () => {
                                                     quantities[product._id] || 1
                                                 )
                                             }
-                                            className="w-full px-4 py-2 mt-4 text-white transition-all duration-300 bg-[#97BE5A] rounded hover:bg-[#7ea649] hover:scale-105"
+                                            className="w-full mt-4 py-2 text-white font-semibold bg-gradient-to-r from-[#c1aa5f] to-[#97BE5A] rounded-full shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
                                         >
-                                            הוסף לסל
+                                            <span>הוסף לסל</span>
+                                            <motion.span
+                                                initial={{ rotate: 0 }}
+                                                animate={{ rotate: [0, 15, -10, 10, 0] }}
+                                                transition={{ repeat: Infinity, duration: 2 }}
+                                            >
+                                                🛒
+                                            </motion.span>
                                         </button>
-                                    </>
+                                    </div>
                                 )}
                             </motion.div>
                         );
                     })}
                 </div>
             </motion.section>
+
 
             {/* Courses Section */}
             <motion.section id="courses" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }} viewport={{ once: true }} className="container flex flex-col items-center justify-center gap-10 px-5 py-20 mx-auto md:flex-row">

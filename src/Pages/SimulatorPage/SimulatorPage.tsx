@@ -1,20 +1,44 @@
 import { useLocation } from "react-router-dom";
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Moveable from "react-moveable";
 import html2canvas from "html2canvas";
 import axios from "axios";
-import { Mail } from "lucide-react";
+import { Mail, RotateCcw, Download } from "lucide-react";
 
 const ApplySketchPage = () => {
-    
     const location = useLocation();
-    const { selectedSketch } = location.state || {};
+    const { selectedSketch, category = "small" } = location.state || {};
+    const { VITE_API_URL } = import.meta.env;
+
     const [userImage, setUserImage] = useState<string | null>(null);
-    const [frame, setFrame] = useState({ translate: [200, 200], rotate: 0, scale: [1, 1] });
+    const [availableSketches, setAvailableSketches] = useState<string[]>([]);
+    const [currentSketch, setCurrentSketch] = useState<string | null>(
+        selectedSketch || null
+    );
+    const [frame, setFrame] = useState({
+        translate: [200, 200],
+        rotate: 0,
+        scale: [1, 1],
+    });
     const [targetRef, setTargetRef] = useState<HTMLDivElement | null>(null);
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
     const workAreaRef = useRef<HTMLDivElement>(null);
+
+    // טעינת סקיצות מהשרת
+    useEffect(() => {
+        const fetchSketches = async () => {
+            try {
+                const response = await axios.get(`${VITE_API_URL}/gallery/${category}`);
+                if (Array.isArray(response.data)) {
+                    setAvailableSketches(response.data);
+                }
+            } catch (err) {
+                console.error("שגיאה בטעינת סקיצות:", err);
+            }
+        };
+        fetchSketches();
+    }, [category]);
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -29,17 +53,39 @@ const ApplySketchPage = () => {
         await new Promise((r) => setTimeout(r, 300));
         const canvas = await html2canvas(workAreaRef.current, {
             useCORS: true,
-            allowTaint: true,
             backgroundColor: null,
         });
         const image = canvas.toDataURL("image/png");
         try {
-            await axios.post(`${import.meta.env.VITE_API_URL}/users/send-image`, { image, name, phone });
-            alert("Sent to tattoo artist via email!");
+            await axios.post(`${VITE_API_URL}/users/send-image`, {
+                image,
+                name,
+                phone,
+            });
+            alert("נשלח בהצלחה!");
         } catch (err) {
-            console.error("Error sending:", err);
-            alert("Failed to send. Try again later.");
+            console.error("שגיאת שליחה:", err);
+            alert("שליחה נכשלה.");
         }
+    };
+
+    const handleDownload = async () => {
+        if (!workAreaRef.current) return;
+        const canvas = await html2canvas(workAreaRef.current, {
+            useCORS: true,
+            backgroundColor: null,
+        });
+        const link = document.createElement("a");
+        link.download = "tattoo_preview.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+    };
+
+    const rotateSketch = () => {
+        setFrame((prev) => ({
+            ...prev,
+            rotate: (prev.rotate + 90) % 360,
+        }));
     };
 
     const handleReset = () => {
@@ -48,7 +94,7 @@ const ApplySketchPage = () => {
 
     return (
         <div
-            className="min-h-screen pt-20 px-6 bg-[#FFFFFF] text-[#3B3024] font-serif"
+            className="min-h-screen pt-20 px-4 bg-[#FFFFFF] text-[#3B3024] font-serif"
             style={{
                 backgroundImage: "url('/backgrounds/BG4.png')",
                 backgroundRepeat: "no-repeat",
@@ -57,9 +103,12 @@ const ApplySketchPage = () => {
                 backgroundAttachment: "fixed",
             }}
         >
-            <h1 className="mb-10 text-4xl text-[#8C734A] font-bold text-center">Tattoo Sketch Preview</h1>
+            <h1 className="mb-6 text-3xl sm:text-4xl font-bold text-center text-[#8C734A]">
+                Tattoo Sketch Preview
+            </h1>
 
-            <div className="flex flex-col items-center gap-6">
+            {/* העלאת תמונה */}
+            <div className="flex flex-col items-center gap-4 sm:gap-6">
                 <label
                     htmlFor="upload"
                     className="px-6 py-2 text-sm font-medium bg-[#F1F3C2] text-gray-800 rounded cursor-pointer hover:brightness-110 transition"
@@ -70,10 +119,12 @@ const ApplySketchPage = () => {
                     id="upload"
                     type="file"
                     accept="image/*"
+                    capture="environment"
                     onChange={handleImageUpload}
                     className="hidden"
                 />
 
+                {/* פרטי משתמש */}
                 <div className="flex flex-col w-full max-w-md gap-4 text-left">
                     <input
                         type="text"
@@ -91,17 +142,30 @@ const ApplySketchPage = () => {
                     />
                 </div>
 
-                <div className="flex flex-col w-full gap-6 lg:flex-row max-w-7xl">
-                    <div className="flex flex-col w-full gap-4 p-4 bg-white shadow-xl lg:max-w-xs rounded-xl">
-                        <h2 className="text-xl font-semibold text-center text-gray-700">Selected Sketch</h2>
-                        {selectedSketch && (
-                            <img src={selectedSketch} alt="Selected Sketch" className="w-full h-auto rounded" />
-                        )}
+                {/* אזור עריכה */}
+                <div className="flex flex-col-reverse w-full gap-6 lg:flex-row max-w-7xl">
+                    {/* סרגל סקיצות */}
+                    <div className="w-full lg:w-[180px] p-4 flex flex-row lg:flex-col gap-4 bg-white shadow-lg rounded-xl">
+                        {availableSketches.map((imgPath, idx) => {
+                            const fullUrl = `${VITE_API_URL}${imgPath}`;
+                            return (
+                                <img
+                                    key={idx}
+                                    src={fullUrl}
+                                    onClick={() => setCurrentSketch(fullUrl)}
+                                    className={`w-16 h-16 object-contain border rounded cursor-pointer transition hover:scale-105 ${currentSketch === fullUrl
+                                            ? "border-[#97BE5A] shadow-md"
+                                            : "border-gray-300"
+                                        }`}
+                                />
+                            );
+                        })}
                     </div>
 
+                    {/* קנבס עריכה */}
                     <div
                         ref={workAreaRef}
-                        className="relative w-full h-[500px] sm:h-[700px] lg:w-[950px] lg:h-[800px] bg-white border shadow-xl rounded-xl overflow-hidden"
+                        className="relative w-full h-[500px] sm:h-[650px] lg:h-[800px] bg-white border shadow-xl rounded-xl overflow-hidden"
                     >
                         {userImage && (
                             <img
@@ -111,7 +175,7 @@ const ApplySketchPage = () => {
                             />
                         )}
 
-                        {selectedSketch && (
+                        {currentSketch && (
                             <>
                                 <div
                                     ref={setTargetRef}
@@ -121,7 +185,7 @@ const ApplySketchPage = () => {
                                         transformOrigin: "center center",
                                         width: "150px",
                                         height: "150px",
-                                        backgroundImage: `url(${encodeURI(selectedSketch)})`,
+                                        backgroundImage: `url(${encodeURI(currentSketch)})`,
                                         backgroundSize: "contain",
                                         backgroundRepeat: "no-repeat",
                                         backgroundPosition: "center",
@@ -130,16 +194,15 @@ const ApplySketchPage = () => {
                                         cursor: "move",
                                     }}
                                 />
-
                                 {targetRef && (
                                     <Moveable
                                         target={targetRef}
                                         draggable
                                         resizable
                                         rotatable
-                                        onDrag={({ beforeTranslate }) => {
-                                            setFrame({ ...frame, translate: beforeTranslate });
-                                        }}
+                                        onDrag={({ beforeTranslate }) =>
+                                            setFrame({ ...frame, translate: beforeTranslate })
+                                        }
                                         onResize={({ width, height, drag }) => {
                                             if (targetRef) {
                                                 targetRef.style.width = `${width}px`;
@@ -151,9 +214,9 @@ const ApplySketchPage = () => {
                                                 });
                                             }
                                         }}
-                                        onRotate={({ beforeRotate }) => {
-                                            setFrame({ ...frame, rotate: beforeRotate });
-                                        }}
+                                        onRotate={({ beforeRotate }) =>
+                                            setFrame({ ...frame, rotate: beforeRotate })
+                                        }
                                     />
                                 )}
                             </>
@@ -161,15 +224,32 @@ const ApplySketchPage = () => {
                     </div>
                 </div>
 
-                {userImage && selectedSketch && (
-                    <div className="flex flex-col gap-4 mt-6 sm:flex-row">
+                {/* כפתורים */}
+                {userImage && currentSketch && (
+                    <div className="flex flex-wrap justify-center gap-4 mt-6">
                         <button
                             onClick={handleSend}
-                            className="flex items-center justify-center gap-2 px-6 py-2 font-semibold text-white rounded-xl hover:bg-[#d3a85b] transition"
+                            className="flex items-center gap-2 px-6 py-2 font-semibold text-white rounded-xl hover:bg-[#d3a85b] transition"
                             style={{ backgroundColor: "#E8B86D" }}
                         >
                             <Mail size={20} />
                             Send to Email
+                        </button>
+
+                        <button
+                            onClick={rotateSketch}
+                            className="flex items-center gap-2 px-5 py-2 text-gray-800 bg-white border rounded-xl hover:bg-gray-100"
+                        >
+                            <RotateCcw size={18} />
+                            Rotate 90°
+                        </button>
+
+                        <button
+                            onClick={handleDownload}
+                            className="flex items-center gap-2 px-5 py-2 text-gray-800 bg-white border rounded-xl hover:bg-gray-100"
+                        >
+                            <Download size={18} />
+                            Save Image
                         </button>
 
                         <button

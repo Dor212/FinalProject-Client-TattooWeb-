@@ -1,12 +1,21 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { FaTimes } from "react-icons/fa";
 
-const { VITE_API_URL } = import.meta.env; 
+/* const { VITE_API_URL } = import.meta.env;  */
+
+interface CartItem {
+    _id: string;
+    title: string;
+    price: number;
+    quantity: number;
+    size: string;
+    imageUrl: string;
+}
 
 interface SideCartProps {
     isOpen: boolean;
     onClose: () => void;
-    cart: any[];
+    cart: CartItem[];
     updateQuantity: (productId: string, quantity: number) => void;
     removeFromCart: (productId: string, size: string) => void;
     handleCheckout: () => void;

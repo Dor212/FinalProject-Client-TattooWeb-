@@ -3,6 +3,7 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import Swal from "sweetalert2";
 import {  FaBoxOpen, FaExclamationTriangle, FaPaintBrush } from "react-icons/fa";
+import { Product } from "../../Types/TProduct.ts";
 
 
 
@@ -19,8 +20,8 @@ const AdminPage = () => {
     const [stockSmall, setStockSmall] = useState("");
     const [stockMedium, setStockMedium] = useState("");
     const [stockLarge, setStockLarge] = useState("");
-    const [allProducts, setAllProducts] = useState<{ _id: string; title: string; price: number; imageUrl: string; stock?: { small: number; medium: number; large: number; Xlarge: number } }[]>([]);
-
+    const [allProducts, setAllProducts] = useState<Product[]>([]);
+    
     useEffect(() => {
         const fetchAllImages = async () => {
             try {
@@ -82,7 +83,8 @@ const AdminPage = () => {
                 ...prev,
                 [category]: prev[category].filter((img) => img !== fileUrl),
             }));
-            Swal.fire("Success", "Sketch deleted successfully", "success");
+            
+            
         } catch (err) {
             Swal.fire("Error", "Failed to delete sketch", "error");
         }
@@ -166,7 +168,12 @@ const AdminPage = () => {
         }
     };
    /*  const totalStock = allProducts.reduce((sum, p) => sum + (p.stock?.small || 0) + (p.stock?.medium || 0) + (p.stock?.large || 0), 0); */
-    const outOfStockCount = allProducts.filter((p) => ((p.stock?.small || 0) + (p.stock?.medium || 0) + (p.stock?.large || 0)) === 0).length;
+    const outOfStockCount = allProducts.filter(
+        (p) =>
+            (p.stock?.small?.current || 0) +
+            (p.stock?.medium?.current || 0) +
+            (p.stock?.large?.current || 0) === 0
+    ).length;
     const totalSketches = Object.values(imagesByCategory).reduce((sum, arr) => sum + arr.length, 0);
 
     return (
@@ -212,7 +219,11 @@ const AdminPage = () => {
                 <h2 className="mb-6 text-3xl font-bold text-center">Product List</h2>
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                     {allProducts.map((product) => {
-                        const total = (product.stock?.small || 0) + (product.stock?.medium || 0) + (product.stock?.large || 0) + (product.stock?.Xlarge || 0);
+                        const total =
+                            (product.stock?.small?.current || 0) +
+                            (product.stock?.medium?.current || 0) +
+                            (product.stock?.large?.current || 0);
+
                         const isOutOfStock = total === 0;
 
                         return (
@@ -220,7 +231,12 @@ const AdminPage = () => {
                                 <img src={product.imageUrl} alt={product.title} className={`w-full h-48 object-cover rounded-md mb-4 ${isOutOfStock ? "opacity-40" : ""}`} />
                                 <h3 className="mb-1 text-xl font-semibold">{product.title}</h3>
                                 <p className="text-lg">{Number(product.price).toFixed(2)} ₪</p>
-                                <p className="text-sm">Stock: S({product.stock?.small || 0}), M({product.stock?.medium || 0}), L({product.stock?.large || 0})</p>
+                                <p className="text-sm">
+                                    Stock:
+                                    S({product.stock?.small?.current}/{product.stock?.small?.initial}),{" "}
+                                    M({product.stock?.medium?.current}/{product.stock?.medium?.initial}),{" "}
+                                    L({product.stock?.large?.current}/{product.stock?.large?.initial})
+                                </p>
                                 {isOutOfStock && <p className="mt-2 font-bold text-red-600">Out of Stock</p>}
                                 <button onClick={() => handleProductDelete(product._id)} className="absolute px-2 py-1 text-white bg-red-600 rounded top-2 right-2 hover:bg-red-800">✕</button>
                             </div>

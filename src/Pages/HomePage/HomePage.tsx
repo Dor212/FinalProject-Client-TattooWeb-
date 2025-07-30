@@ -211,7 +211,10 @@ const HomePage = () => {
             >
                 <div className="flex flex-wrap justify-center gap-10">
                     {products.map((product: Product, index) => {
-                        const totalStock = Object.values(product.stock || {}).reduce((a, b) => a + b, 0);
+                        const totalStock =
+                            (product.stock?.small?.current || 0) +
+                            (product.stock?.medium?.current || 0) +
+                            (product.stock?.large?.current || 0);
                         const isOutOfStock = totalStock === 0;
 
                         return (
@@ -249,10 +252,10 @@ const HomePage = () => {
                                     <div className="mt-3">
                                         
                                         <div className="flex flex-wrap justify-center gap-2 mt-2">
-                                            {Object.entries(product.stock).map(([size, qty]) => (
+                                            {Object.entries(product.stock).map(([size, data]) => (
                                                 <button
                                                     key={size}
-                                                    disabled={qty === 0}
+                                                    disabled={data.current === 0}
                                                     onClick={() =>
                                                         setSelectedSizes((prev) => ({
                                                             ...prev,
@@ -260,7 +263,7 @@ const HomePage = () => {
                                                         }))
                                                     }
                                                     className={`px-3 py-1 text-sm rounded-full border transition-all duration-200 
-                      ${qty === 0
+                      ${data.current == 0
                                                             ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
                                                             : selectedSizes[product._id] === size
                                                                 ? "bg-[#97BE5A] text-white border-[#7ea649] shadow-md"

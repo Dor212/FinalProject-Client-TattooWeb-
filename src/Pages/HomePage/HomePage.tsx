@@ -167,7 +167,7 @@ const HomePage = () => {
 
     return (
         <><Helmet>
-            <title>Omer Tattoo Studio - סטודיו לקעקועים אישי</title>
+            <title>Omer Aviv Tattoo - סטודיו לקעקועים</title>
             <meta name="description" content="סטודיו לקעקועים בעיצוב אישי, באווירה מקצועית וייחודית. הזמנת סשן, הדמיית קעקוע, קורסים ועוד." />
             <meta property="og:title" content="Omer Tattoo Studio" />
             <meta property="og:description" content="קעקועים ייחודיים, מוצרים, קורסים והדמיות – הכל במקום אחד." />

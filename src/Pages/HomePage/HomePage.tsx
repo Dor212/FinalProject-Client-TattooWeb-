@@ -13,7 +13,7 @@ import tattoM from "../../Imges/tattooM.jpg";
 import tattoL from "../../Imges/tattooL.jpg";
 import { Product } from "../../Types/TProduct.ts";
 import { Element, scroller } from "react-scroll";
-
+import { Helmet } from "react-helmet";
 
 
 
@@ -166,7 +166,13 @@ const HomePage = () => {
     };
 
     return (
-        <div className="w-full min-h-screen pt-20 text-[#3B3024] font-serif"
+        <><Helmet>
+            <title>Omer Tattoo Studio - סטודיו לקעקועים אישי</title>
+            <meta name="description" content="סטודיו לקעקועים בעיצוב אישי, באווירה מקצועית וייחודית. הזמנת סשן, הדמיית קעקוע, קורסים ועוד." />
+            <meta property="og:title" content="Omer Tattoo Studio" />
+            <meta property="og:description" content="קעקועים ייחודיים, מוצרים, קורסים והדמיות – הכל במקום אחד." />
+            <meta property="og:image" content="https://yourdomain.com/preview.jpg" />
+        </Helmet><div className="w-full min-h-screen pt-20 text-[#3B3024] font-serif"
             style={{
                 backgroundImage: "url('/backgrounds/BG4.png')",
                 backgroundRepeat: "no-repeat",
@@ -175,302 +181,286 @@ const HomePage = () => {
                 backgroundAttachment: "fixed",
                 backgroundColor: "#FFFFFF"
             }}>
-            <a
-                href="https://wa.me/972528787419"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="fixed z-50 flex items-center justify-center text-white bg-green-500 rounded-full shadow-md w-14 h-14 top-20 right-10 hover:bg-green-600"
-            >
-                <FaWhatsapp className="text-3xl" />
-            </a>
+                <a
+                    href="https://wa.me/972528787419"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="fixed z-50 flex items-center justify-center text-white bg-green-500 rounded-full shadow-md w-14 h-14 top-20 right-10 hover:bg-green-600"
+                >
+                    <FaWhatsapp className="text-3xl" />
+                </a>
 
 
-            {/* Hero Section */}
-            <Element name="logo">
-            <motion.section id="logo" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }}
-                viewport={{ once: true }} className="h-[100vh] flex items-center justify-center">
-                <motion.img
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 1.2 }}
-                    src="/backgrounds/LogoOmerTattoo_transparent.png"
-                    alt="Omer Tattoo Studio Logo"
-                    className="max-w-[80%] max-h-[80%]"
-                />
-            </motion.section>
-            </Element>
-            {/* Shop Merch Section */}
-            <motion.section
-                id="shop"
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                transition={{ duration: 1 }}
-                viewport={{ once: true }}
-                className="container px-5 py-20 mx-auto text-center"
-                dir="rtl"
-            >
-                <div className="flex flex-wrap justify-center gap-10">
-                    {products.map((product: Product, index) => {
-                        const totalStock =
-                            (product.stock?.small?.current || 0) +
-                            (product.stock?.medium?.current || 0) +
-                            (product.stock?.large?.current || 0);
-                        const isOutOfStock = totalStock === 0;
+                {/* Hero Section */}
+                <Element name="logo">
+                    <motion.section id="logo" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }}
+                        viewport={{ once: true }} className="h-[100vh] flex items-center justify-center">
+                        <motion.img
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 1.2 }}
+                            src="/backgrounds/LogoOmerTattoo_transparent.png"
+                            alt="Omer Tattoo Studio Logo"
+                            className="max-w-[80%] max-h-[80%]" />
+                    </motion.section>
+                </Element>
+                {/* Shop Merch Section */}
+                <motion.section
+                    id="shop"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    transition={{ duration: 1 }}
+                    viewport={{ once: true }}
+                    className="container px-5 py-20 mx-auto text-center"
+                    dir="rtl"
+                >
+                    <div className="flex flex-wrap justify-center gap-10">
+                        {products.map((product: Product, index) => {
+                            const totalStock = (product.stock?.small?.current || 0) +
+                                (product.stock?.medium?.current || 0) +
+                                (product.stock?.large?.current || 0);
+                            const isOutOfStock = totalStock === 0;
 
-                        return (
-                            <motion.div
-                                whileHover={{ scale: 1.06, rotate: 0.5 }}
-                                transition={{ duration: 0.4, ease: "easeInOut" }}
-                                key={index}
-                                className="relative w-72 p-5 rounded-3xl bg-white/30 backdrop-blur-md shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#e4d3a1] transition-all"
-                            >
-                                {/* תמונה */}
-                                <div className="overflow-hidden rounded-2xl border border-[#f4e7b4] shadow-inner relative">
-                                    <img
-                                        src={product.imageUrl}
-                                        alt={product.title}
-                                        className={`object-cover w-full h-56 transition-transform duration-300 hover:scale-105 ${isOutOfStock ? "opacity-30" : ""
-                                            }`}
-                                    />
-                                    {isOutOfStock && (
-                                        <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-[#7a6b3b] bg-white/70 rounded-2xl">
-                                            ❌ אזל מהמלאי
-                                        </div>
-                                    )}
-                                </div>
+                            return (
+                                <motion.div
+                                    whileHover={{ scale: 1.06, rotate: 0.5 }}
+                                    transition={{ duration: 0.4, ease: "easeInOut" }}
+                                    key={index}
+                                    className="relative w-72 p-5 rounded-3xl bg-white/30 backdrop-blur-md shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#e4d3a1] transition-all"
+                                >
+                                    {/* תמונה */}
+                                    <div className="overflow-hidden rounded-2xl border border-[#f4e7b4] shadow-inner relative">
+                                        <img
+                                            src={product.imageUrl}
+                                            alt={product.title}
+                                            className={`object-cover w-full h-56 transition-transform duration-300 hover:scale-105 ${isOutOfStock ? "opacity-30" : ""}`} />
+                                        {isOutOfStock && (
+                                            <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-[#7a6b3b] bg-white/70 rounded-2xl">
+                                                ❌ אזל מהמלאי
+                                            </div>
+                                        )}
+                                    </div>
 
-                                
-                                <div className="mt-4 text-[#3a3220]">
-                                    <h3 className="text-xl font-bold tracking-tight">{product.title}</h3>
-                                    <p className="text-lg font-semibold text-[#8b7c4a]">
-                                        {Number(product.price).toFixed(2)} ₪
-                                    </p>
-                                </div>
 
-                               
-                                {!isOutOfStock && (
-                                    <div className="mt-3">
-                                        
-                                        <div className="flex flex-wrap justify-center gap-2 mt-2">
-                                            {Object.entries(product.stock).map(([size, data]) => (
-                                                <button
-                                                    key={size}
-                                                    disabled={data.current === 0}
-                                                    onClick={() =>
-                                                        setSelectedSizes((prev) => ({
+                                    <div className="mt-4 text-[#3a3220]">
+                                        <h3 className="text-xl font-bold tracking-tight">{product.title}</h3>
+                                        <p className="text-lg font-semibold text-[#8b7c4a]">
+                                            {Number(product.price).toFixed(2)} ₪
+                                        </p>
+                                    </div>
+
+
+                                    {!isOutOfStock && (
+                                        <div className="mt-3">
+
+                                            <div className="flex flex-wrap justify-center gap-2 mt-2">
+                                                {Object.entries(product.stock).map(([size, data]) => (
+                                                    <button
+                                                        key={size}
+                                                        disabled={data.current === 0}
+                                                        onClick={() => setSelectedSizes((prev) => ({
                                                             ...prev,
                                                             [product._id]: size,
-                                                        }))
-                                                    }
-                                                    className={`px-3 py-1 text-sm rounded-full border transition-all duration-200 
+                                                        }))}
+                                                        className={`px-3 py-1 text-sm rounded-full border transition-all duration-200 
                       ${data.current == 0
-                                                            ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
-                                                            : selectedSizes[product._id] === size
-                                                                ? "bg-[#97BE5A] text-white border-[#7ea649] shadow-md"
-                                                                : "bg-white/80 text-[#3a3220] border-[#cbb279] hover:bg-[#f6f0d4]"
-                                                        }`}
-                                                >
-                                                    {size}
-                                                </button>
-                                            ))}
-                                        </div>
+                                                                ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
+                                                                : selectedSizes[product._id] === size
+                                                                    ? "bg-[#97BE5A] text-white border-[#7ea649] shadow-md"
+                                                                    : "bg-white/80 text-[#3a3220] border-[#cbb279] hover:bg-[#f6f0d4]"}`}
+                                                    >
+                                                        {size}
+                                                    </button>
+                                                ))}
+                                            </div>
 
-                                       
-                                        <input
-                                            type="number"
-                                            min="1"
-                                            value={quantities[product._id] || 1}
-                                            onChange={(e) =>
-                                                setQuantities((prev) => ({
+
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={quantities[product._id] || 1}
+                                                onChange={(e) => setQuantities((prev) => ({
                                                     ...prev,
                                                     [product._id]: Number(e.target.value),
-                                                }))
-                                            }
-                                            className="w-full px-3 py-2 mt-2 text-sm bg-white/70 border border-[#d7c793] rounded-xl focus:ring-2 focus:ring-[#bfa63b] outline-none"
-                                            placeholder="כמות"
-                                        />
+                                                }))}
+                                                className="w-full px-3 py-2 mt-2 text-sm bg-white/70 border border-[#d7c793] rounded-xl focus:ring-2 focus:ring-[#bfa63b] outline-none"
+                                                placeholder="כמות" />
 
-                                       
-                                        <button
-                                            onClick={() =>
-                                                addToCart(
+
+                                            <button
+                                                onClick={() => addToCart(
                                                     product,
                                                     selectedSizes[product._id],
                                                     quantities[product._id] || 1
-                                                )
-                                            }
-                                            className="w-full mt-4 py-2 text-white font-semibold bg-gradient-to-r from-[#c1aa5f] to-[#97BE5A] rounded-full shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
-                                        >
-                                            <span>הוסף לסל</span>
-                                            <motion.span
-                                                initial={{ rotate: 0 }}
-                                                animate={{ rotate: [0, 15, -10, 10, 0] }}
-                                                transition={{ repeat: Infinity, duration: 2 }}
+                                                )}
+                                                className="w-full mt-4 py-2 text-white font-semibold bg-gradient-to-r from-[#c1aa5f] to-[#97BE5A] rounded-full shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
                                             >
-                                                🛒
-                                            </motion.span>
-                                        </button>
-                                    </div>
-                                )}
-                            </motion.div>
-                        );
-                    })}
-                </div>
-            </motion.section>
-
-
-            {/* Courses Section */}
-            <motion.section id="courses" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }} viewport={{ once: true }} className="container flex flex-col items-center justify-center gap-10 px-5 py-20 mx-auto md:flex-row">
-                <div className="w-full md:w-1/2">
-                    <img src={mainP} alt="main" className="w-[500px] h-[600px] rounded-lg shadow-lg mx-auto" />
-                </div>
-                <div className="w-full text-center text-[#8C734A] md:w-1/2">
-                    <h2 className="mb-4 text-3xl font-semibold">קורס קעקועים אינטימי ומעמיק</h2>
-                    <p className="max-w-lg mx-auto mb-8 text-lg leading-relaxed">
-                        אם תמיד חלמתם להיכנס לעולם הקעקועים – זה המקום להתחיל בו.
-                        בקורס קטן ואינטימי (עד 3 משתתפים בלבד) נצלול לעומק האמנות, באווירה קלילה, אישית ומקצועית.
-                        חוויה כיפית ופרקטית, שתיתן לכם את כל הכלים להתחיל לקעקע מהלב, בביטחון ובסטייל
-                    </p>
-                    
-                    <div className="flex justify-center gap-2">
-                        {["10/07/2025", "15/08/2025", "20/09/2025"].map((date, index) => {
-                            const phoneNumber = "972528787419"; 
-                            const message = `היי, אני מעוניין בפרטים על קורס שמתחיל ב- ${date}`;
-                            const whatsappLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-
-                            return (
-                                <motion.a
-                                    key={index}
-                                    href={whatsappLink}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="px-3 py-1 text-sm bg-white border border-gray-400 rounded-md cursor-pointer"
-                                    whileHover={{ scale: 1.1, backgroundColor: "#97BE5A", color: "#fff" }}
-                                    transition={{ duration: 0.2 }}
-                                >
-                                    {date}
-                                </motion.a>
+                                                <span>הוסף לסל</span>
+                                                <motion.span
+                                                    initial={{ rotate: 0 }}
+                                                    animate={{ rotate: [0, 15, -10, 10, 0] }}
+                                                    transition={{ repeat: Infinity, duration: 2 }}
+                                                >
+                                                    🛒
+                                                </motion.span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </motion.div>
                             );
                         })}
                     </div>
+                </motion.section>
 
-                </div>
-            </motion.section>
 
-            {/* Simulation Area */}
-            <motion.section id="simulation" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }} viewport={{ once: true }} className="container px-5 py-20 mx-auto">
-                <div className="flex flex-col-reverse items-center gap-6 mx-auto max-w-7xl md:flex-row-reverse">
-                    <div className="grid grid-cols-2 gap-2 md:w-2/5 place-items-center">
-                        {imagesSketches.map((img, index) => (
-                            <div key={index} className={`flex flex-col items-center ${index === 2 ? "col-span-2" : ""}`}>
-                                <motion.img
-                                    src={img.src}
-                                    alt={img.title}
-                                    className="object-cover w-48 h-48 rounded-full shadow-md cursor-pointer"
-                                    whileHover={{ scale: 1.15, rotate: 2 }}
-                                    transition={{ duration: 0.4 }}
-                                    onClick={() => handleSelectCategory(img.title.toLowerCase())}
-                                />
-                                <h2 className="mt-3 text-lg font-semibold text-[#3B3024]">{img.title}</h2>
-                            </div>
-                        ))}
+                {/* Courses Section */}
+                <motion.section id="courses" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }} viewport={{ once: true }} className="container flex flex-col items-center justify-center gap-10 px-5 py-20 mx-auto md:flex-row">
+                    <div className="w-full md:w-1/2">
+                        <img src={mainP} alt="main" className="w-[500px] h-[600px] rounded-lg shadow-lg mx-auto" />
                     </div>
-                    <div className="w-full p-8 text-center md:w-3/5 text-[#8C734A]">
-                        <h3 className="mb-5 text-4xl font-semibold">הדמיית קעקוע – לראות לפני שמרגישים</h3>
-                        <p className="text-lg leading-relaxed">
-                            כדי לעזור לכם לדמיין איך הקעקוע ייראה בדיוק עליכם, יצרנו מערכת נוחה להדמיה.
-                            כל מה שצריך לעשות: לבחור את העיצוב שמדבר אליכם, להעלות תמונה איכותית של האזור שבו תרצו למקם את הקעקוע – צילום חד, בגובה העיניים, כשהגוף רפוי (ללא מתיחה או תנוחות לא טבעיות).
-                            דרך ההדמיה תוכלו למקם את הקעקוע על התמונה, לשחק עם הגודל ולהתאים אותו בדיוק כמו שתרצו.
-                            בסיום, ההדמיה תישלח אליי ישירות למייל – ומשם נמשיך לתיאום תור ולתכנון סופי
+                    <div className="w-full text-center text-[#8C734A] md:w-1/2">
+                        <h2 className="mb-4 text-3xl font-semibold">קורס קעקועים אינטימי ומעמיק</h2>
+                        <p className="max-w-lg mx-auto mb-8 text-lg leading-relaxed">
+                            אם תמיד חלמתם להיכנס לעולם הקעקועים – זה המקום להתחיל בו.
+                            בקורס קטן ואינטימי (עד 3 משתתפים בלבד) נצלול לעומק האמנות, באווירה קלילה, אישית ומקצועית.
+                            חוויה כיפית ופרקטית, שתיתן לכם את כל הכלים להתחיל לקעקע מהלב, בביטחון ובסטייל
                         </p>
+
+                        <div className="flex justify-center gap-2">
+                            {["10/07/2025", "15/08/2025", "20/09/2025"].map((date, index) => {
+                                const phoneNumber = "972528787419";
+                                const message = `היי, אני מעוניין בפרטים על קורס שמתחיל ב- ${date}`;
+                                const whatsappLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
+                                return (
+                                    <motion.a
+                                        key={index}
+                                        href={whatsappLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-3 py-1 text-sm bg-white border border-gray-400 rounded-md cursor-pointer"
+                                        whileHover={{ scale: 1.1, backgroundColor: "#97BE5A", color: "#fff" }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        {date}
+                                    </motion.a>
+                                );
+                            })}
+                        </div>
+
                     </div>
-                </div>
-            </motion.section>
+                </motion.section>
 
-            {/*Contact us section*/}
-            <motion.section
-                id="contact"
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                transition={{ duration: 1 }}
-                viewport={{ once: true }}
-                className="container flex justify-center px-6 py-20 mx-auto"
-                dir="rtl"
-            >
-                <div className="w-full max-w-xl px-10 py-16 bg-[#CBB279] rounded-[80px] shadow-md flex flex-col items-center">
-                    <h2 className="mb-4 text-2xl font-semibold text-center text-[#3B3024]">
-                        צרו קשר
-                    </h2>
-                    <p className="mb-6 text-center text-[#5A4B36] text-sm">
-                        יש לכם שאלות? מלאו את הטופס ונחזור אליכם בהקדם.
-                    </p>
-
-                    <form onSubmit={handleSubmit} className="flex flex-col items-center w-full gap-4">
-                        <div className="w-1/2">
-                            <label className="block mb-1 text-sm text-[#3B3024]">שם מלא</label>
-                            <input
-                                name="name"
-                                type="text"
-                                value={formData.name}
-                                onChange={handleChange}
-                                placeholder="השם שלך"
-                                className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#97BE5A]"
-                            />
+                {/* Simulation Area */}
+                <motion.section id="simulation" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }} viewport={{ once: true }} className="container px-5 py-20 mx-auto">
+                    <div className="flex flex-col-reverse items-center gap-6 mx-auto max-w-7xl md:flex-row-reverse">
+                        <div className="grid grid-cols-2 gap-2 md:w-2/5 place-items-center">
+                            {imagesSketches.map((img, index) => (
+                                <div key={index} className={`flex flex-col items-center ${index === 2 ? "col-span-2" : ""}`}>
+                                    <motion.img
+                                        src={img.src}
+                                        alt={img.title}
+                                        className="object-cover w-48 h-48 rounded-full shadow-md cursor-pointer"
+                                        whileHover={{ scale: 1.15, rotate: 2 }}
+                                        transition={{ duration: 0.4 }}
+                                        onClick={() => handleSelectCategory(img.title.toLowerCase())} />
+                                    <h2 className="mt-3 text-lg font-semibold text-[#3B3024]">{img.title}</h2>
+                                </div>
+                            ))}
                         </div>
-
-                        <div className="w-1/2">
-                            <label className="block mb-1 text-sm text-[#3B3024]">כתובת אימייל</label>
-                            <input
-                                name="email"
-                                type="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                                placeholder="האימייל שלך"
-                                className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#97BE5A]"
-                            />
+                        <div className="w-full p-8 text-center md:w-3/5 text-[#8C734A]">
+                            <h3 className="mb-5 text-4xl font-semibold">הדמיית קעקוע – לראות לפני שמרגישים</h3>
+                            <p className="text-lg leading-relaxed">
+                                כדי לעזור לכם לדמיין איך הקעקוע ייראה בדיוק עליכם, יצרנו מערכת נוחה להדמיה.
+                                כל מה שצריך לעשות: לבחור את העיצוב שמדבר אליכם, להעלות תמונה איכותית של האזור שבו תרצו למקם את הקעקוע – צילום חד, בגובה העיניים, כשהגוף רפוי (ללא מתיחה או תנוחות לא טבעיות).
+                                דרך ההדמיה תוכלו למקם את הקעקוע על התמונה, לשחק עם הגודל ולהתאים אותו בדיוק כמו שתרצו.
+                                בסיום, ההדמיה תישלח אליי ישירות למייל – ומשם נמשיך לתיאום תור ולתכנון סופי
+                            </p>
                         </div>
+                    </div>
+                </motion.section>
 
-                        <div className="w-1/2">
-                            <label className="block mb-1 text-sm text-[#3B3024]">הודעה</label>
-                            <textarea
-                                name="message"
-                                value={formData.message}
-                                onChange={handleChange}
-                                placeholder="ההודעה שלך"
-                                rows={3}
-                                className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#97BE5A]"
-                            ></textarea>
-                        </div>
+                {/*Contact us section*/}
+                <motion.section
+                    id="contact"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    transition={{ duration: 1 }}
+                    viewport={{ once: true }}
+                    className="container flex justify-center px-6 py-20 mx-auto"
+                    dir="rtl"
+                >
+                    <div className="w-full max-w-xl px-10 py-16 bg-[#CBB279] rounded-[80px] shadow-md flex flex-col items-center">
+                        <h2 className="mb-4 text-2xl font-semibold text-center text-[#3B3024]">
+                            צרו קשר
+                        </h2>
+                        <p className="mb-6 text-center text-[#5A4B36] text-sm">
+                            יש לכם שאלות? מלאו את הטופס ונחזור אליכם בהקדם.
+                        </p>
 
-                        <button
-                            type="submit"
-                            className="w-1/2 px-4 py-2 mt-2 text-sm text-[#97BE5A] bg-[#FAF4E7] rounded-md shadow-md hover:bg-[#97BE5A] hover:text-[#FAF4E7]"
-                        >
-                            שלח הודעה
-                        </button>
-                    </form>
-                </div>
-            </motion.section>
+                        <form onSubmit={handleSubmit} className="flex flex-col items-center w-full gap-4">
+                            <div className="w-1/2">
+                                <label className="block mb-1 text-sm text-[#3B3024]">שם מלא</label>
+                                <input
+                                    name="name"
+                                    type="text"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    placeholder="השם שלך"
+                                    className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#97BE5A]" />
+                            </div>
+
+                            <div className="w-1/2">
+                                <label className="block mb-1 text-sm text-[#3B3024]">כתובת אימייל</label>
+                                <input
+                                    name="email"
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    placeholder="האימייל שלך"
+                                    className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#97BE5A]" />
+                            </div>
+
+                            <div className="w-1/2">
+                                <label className="block mb-1 text-sm text-[#3B3024]">הודעה</label>
+                                <textarea
+                                    name="message"
+                                    value={formData.message}
+                                    onChange={handleChange}
+                                    placeholder="ההודעה שלך"
+                                    rows={3}
+                                    className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#97BE5A]"
+                                ></textarea>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="w-1/2 px-4 py-2 mt-2 text-sm text-[#97BE5A] bg-[#FAF4E7] rounded-md shadow-md hover:bg-[#97BE5A] hover:text-[#FAF4E7]"
+                            >
+                                שלח הודעה
+                            </button>
+                        </form>
+                    </div>
+                </motion.section>
 
 
 
 
-            <SideCart
-                isOpen={isCartOpen}
-                onClose={() => setIsCartOpen(false)}
-                cart={cart}
-                updateQuantity={updateQuantity}
-                removeFromCart={removeFromCart}
-                handleCheckout={handleCheckout}
-            />
-            <button
-                onClick={() => setIsCartOpen(true)}
-                className="fixed bottom-6 right-6 z-50 bg-[#97BE5A] hover:bg-[#7ea649] text-white p-4 rounded-full shadow-lg transition transform hover:scale-110"
-                title="Open Cart"
-            >
-                <FaShoppingCart className="text-xl" />
-            </button>
-        </div>
+                <SideCart
+                    isOpen={isCartOpen}
+                    onClose={() => setIsCartOpen(false)}
+                    cart={cart}
+                    updateQuantity={updateQuantity}
+                    removeFromCart={removeFromCart}
+                    handleCheckout={handleCheckout} />
+                <button
+                    onClick={() => setIsCartOpen(true)}
+                    className="fixed bottom-6 right-6 z-50 bg-[#97BE5A] hover:bg-[#7ea649] text-white p-4 rounded-full shadow-lg transition transform hover:scale-110"
+                    title="Open Cart"
+                >
+                    <FaShoppingCart className="text-xl" />
+                </button>
+            </div></>
     );
 };
 

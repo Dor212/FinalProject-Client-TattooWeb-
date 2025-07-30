@@ -236,7 +236,7 @@ const HomePage = () => {
                                     )}
                                 </div>
 
-                                {/* כותרת ומחיר */}
+                                
                                 <div className="mt-4 text-[#3a3220]">
                                     <h3 className="text-xl font-bold tracking-tight">{product.title}</h3>
                                     <p className="text-lg font-semibold text-[#8b7c4a]">
@@ -244,10 +244,10 @@ const HomePage = () => {
                                     </p>
                                 </div>
 
-                                {/* בחירת מידה וכמות */}
+                               
                                 {!isOutOfStock && (
                                     <div className="mt-3">
-                                        {/* כפתורי מידות */}
+                                        
                                         <div className="flex flex-wrap justify-center gap-2 mt-2">
                                             {Object.entries(product.stock).map(([size, qty]) => (
                                                 <button
@@ -272,7 +272,7 @@ const HomePage = () => {
                                             ))}
                                         </div>
 
-                                        {/* שדה כמות */}
+                                       
                                         <input
                                             type="number"
                                             min="1"
@@ -287,7 +287,7 @@ const HomePage = () => {
                                             placeholder="כמות"
                                         />
 
-                                        {/* כפתור הוספה לסל */}
+                                       
                                         <button
                                             onClick={() =>
                                                 addToCart(

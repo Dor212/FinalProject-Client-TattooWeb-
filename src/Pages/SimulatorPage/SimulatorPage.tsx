@@ -1,9 +1,10 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
-import Moveable from "react-moveable";
 import html2canvas from "html2canvas";
 import axios from "axios";
 import { Mail, RotateCcw, Download } from "lucide-react";
+import { useGesture } from "@use-gesture/react";
+import { useSpring, animated } from "@react-spring/web";
 
 const ApplySketchPage = () => {
     const location = useLocation();
@@ -12,20 +13,36 @@ const ApplySketchPage = () => {
 
     const [userImage, setUserImage] = useState<string | null>(null);
     const [availableSketches, setAvailableSketches] = useState<string[]>([]);
-    const [currentSketch, setCurrentSketch] = useState<string | null>(
-        selectedSketch || null
-    );
+    const [currentSketch, setCurrentSketch] = useState<string | null>(selectedSketch || null);
     const [frame, setFrame] = useState({
         translate: [200, 200],
         rotate: 0,
         scale: [1, 1],
     });
-    const [targetRef, setTargetRef] = useState<HTMLDivElement | null>(null);
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
     const workAreaRef = useRef<HTMLDivElement>(null);
 
-    // טעינת סקיצות מהשרת
+    const isMobile = typeof window !== "undefined" && window.innerWidth <= 768;
+
+    const [{ x, y, scale, rotateZ }, api] = useSpring(() => ({
+        x: 200,
+        y: 200,
+        scale: 1,
+        rotateZ: 0,
+    }));
+
+    const bind = useGesture(
+        {
+            onDrag: ({ offset: [dx, dy] }) => api.start({ x: dx, y: dy }),
+            onPinch: ({ offset: [d, a] }) => api.start({ scale: d / 100, rotateZ: a }),
+        },
+        {
+            drag: { from: () => [x.get(), y.get()] },
+            pinch: { scaleBounds: { min: 0.5, max: 3 }, rubberband: true },
+        }
+    );
+
     useEffect(() => {
         const fetchSketches = async () => {
             try {
@@ -107,44 +124,18 @@ const ApplySketchPage = () => {
                 Tattoo Sketch Preview
             </h1>
 
-            {/* העלאת תמונה */}
             <div className="flex flex-col items-center gap-4 sm:gap-6">
-                <label
-                    htmlFor="upload"
-                    className="px-6 py-2 text-sm font-medium bg-[#F1F3C2] text-gray-800 rounded cursor-pointer hover:brightness-110 transition"
-                >
+                <label htmlFor="upload" className="px-6 py-2 text-sm font-medium bg-[#F1F3C2] text-gray-800 rounded cursor-pointer hover:brightness-110 transition">
                     Upload Your Image
                 </label>
-                <input
-                    id="upload"
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                />
+                <input id="upload" type="file" accept="image/*" capture="environment" onChange={handleImageUpload} className="hidden" />
 
-                {/* פרטי משתמש */}
                 <div className="flex flex-col w-full max-w-md gap-4 text-left">
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Your Name"
-                        className="p-3 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#97BE5A]"
-                    />
-                    <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="Your Phone Number"
-                        className="p-3 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#97BE5A]"
-                    />
+                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your Name" className="p-3 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#97BE5A]" />
+                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Your Phone Number" className="p-3 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-[#97BE5A]" />
                 </div>
 
-                {/* אזור עריכה */}
                 <div className="flex flex-col-reverse w-full gap-6 lg:flex-row max-w-7xl">
-                    {/* סרגל סקיצות */}
                     <div className="w-full lg:w-[180px] p-4 flex flex-row lg:flex-col gap-4 bg-white shadow-lg rounded-xl">
                         {availableSketches.map((imgPath, idx) => {
                             const fullUrl = `${VITE_API_URL}${imgPath}`;
@@ -153,109 +144,75 @@ const ApplySketchPage = () => {
                                     key={idx}
                                     src={fullUrl}
                                     onClick={() => setCurrentSketch(fullUrl)}
-                                    className={`w-16 h-16 object-contain border rounded cursor-pointer transition hover:scale-105 ${currentSketch === fullUrl
-                                            ? "border-[#97BE5A] shadow-md"
-                                            : "border-gray-300"
+                                    className={`w-16 h-16 object-contain border rounded cursor-pointer transition hover:scale-105 ${currentSketch === fullUrl ? "border-[#97BE5A] shadow-md" : "border-gray-300"
                                         }`}
                                 />
                             );
                         })}
                     </div>
 
-                    {/* קנבס עריכה */}
-                    <div
-                        ref={workAreaRef}
-                        className="relative w-full h-[500px] sm:h-[650px] lg:h-[800px] bg-white border shadow-xl rounded-xl overflow-hidden"
-                    >
-                        {userImage && (
-                            <img
-                                src={userImage}
-                                alt="Uploaded"
-                                className="absolute object-contain w-full h-full"
-                            />
-                        )}
+                    <div ref={workAreaRef} className="relative w-full h-[500px] sm:h-[650px] lg:h-[800px] bg-white border shadow-xl rounded-xl overflow-hidden">
+                        {userImage && <img src={userImage} alt="Uploaded" className="absolute object-contain w-full h-full" />}
 
-                        {currentSketch && (
-                            <>
-                                <div
-                                    ref={setTargetRef}
-                                    style={{
-                                        position: "absolute",
-                                        transform: `translate(${frame.translate[0]}px, ${frame.translate[1]}px) rotate(${frame.rotate}deg) scale(${frame.scale[0]}, ${frame.scale[1]})`,
-                                        transformOrigin: "center center",
-                                        width: "150px",
-                                        height: "150px",
-                                        backgroundImage: `url(${encodeURI(currentSketch)})`,
-                                        backgroundSize: "contain",
-                                        backgroundRepeat: "no-repeat",
-                                        backgroundPosition: "center",
-                                        mixBlendMode: "multiply",
-                                        opacity: 0.6,
-                                        cursor: "move",
-                                    }}
-                                />
-                                {targetRef && (
-                                    <Moveable
-                                        target={targetRef}
-                                        draggable
-                                        resizable
-                                        rotatable
-                                        onDrag={({ beforeTranslate }) =>
-                                            setFrame({ ...frame, translate: beforeTranslate })
-                                        }
-                                        onResize={({ width, height, drag }) => {
-                                            if (targetRef) {
-                                                targetRef.style.width = `${width}px`;
-                                                targetRef.style.height = `${height}px`;
-                                                setFrame({
-                                                    ...frame,
-                                                    translate: drag.beforeTranslate,
-                                                    scale: [width / 150, height / 150],
-                                                });
-                                            }
-                                        }}
-                                        onRotate={({ beforeRotate }) =>
-                                            setFrame({ ...frame, rotate: beforeRotate })
-                                        }
-                                    />
-                                )}
-                            </>
+                        {currentSketch && isMobile ? (
+                            <animated.div
+                                {...bind()}
+                                style={{
+                                    x,
+                                    y,
+                                    scale,
+                                    rotateZ,
+                                    position: "absolute",
+                                    width: 150,
+                                    height: 150,
+                                    backgroundImage: `url(${encodeURI(currentSketch)})`,
+                                    backgroundSize: "contain",
+                                    backgroundRepeat: "no-repeat",
+                                    backgroundPosition: "center",
+                                    mixBlendMode: "multiply",
+                                    opacity: 0.6,
+                                    touchAction: "none",
+                                }}
+                            />
+                        ) : currentSketch && (
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    transform: `translate(${frame.translate[0]}px, ${frame.translate[1]}px) rotate(${frame.rotate}deg) scale(${frame.scale[0]}, ${frame.scale[1]})`,
+                                    transformOrigin: "center center",
+                                    width: "150px",
+                                    height: "150px",
+                                    backgroundImage: `url(${encodeURI(currentSketch)})`,
+                                    backgroundSize: "contain",
+                                    backgroundRepeat: "no-repeat",
+                                    backgroundPosition: "center",
+                                    mixBlendMode: "multiply",
+                                    opacity: 0.6,
+                                    cursor: "move",
+                                }}
+                            />
                         )}
                     </div>
                 </div>
 
-                {/* כפתורים */}
                 {userImage && currentSketch && (
                     <div className="flex flex-wrap justify-center gap-4 mt-6">
-                        <button
-                            onClick={handleSend}
-                            className="flex items-center gap-2 px-6 py-2 font-semibold text-white rounded-xl hover:bg-[#d3a85b] transition"
-                            style={{ backgroundColor: "#E8B86D" }}
-                        >
+                        <button onClick={handleSend} className="flex items-center gap-2 px-6 py-2 font-semibold text-white rounded-xl hover:bg-[#d3a85b] transition" style={{ backgroundColor: "#E8B86D" }}>
                             <Mail size={20} />
                             Send to Email
                         </button>
 
-                        <button
-                            onClick={rotateSketch}
-                            className="flex items-center gap-2 px-5 py-2 text-gray-800 bg-white border rounded-xl hover:bg-gray-100"
-                        >
+                        <button onClick={rotateSketch} className="flex items-center gap-2 px-5 py-2 text-gray-800 bg-white border rounded-xl hover:bg-gray-100">
                             <RotateCcw size={18} />
                             Rotate 90°
                         </button>
 
-                        <button
-                            onClick={handleDownload}
-                            className="flex items-center gap-2 px-5 py-2 text-gray-800 bg-white border rounded-xl hover:bg-gray-100"
-                        >
+                        <button onClick={handleDownload} className="flex items-center gap-2 px-5 py-2 text-gray-800 bg-white border rounded-xl hover:bg-gray-100">
                             <Download size={18} />
                             Save Image
                         </button>
 
-                        <button
-                            onClick={handleReset}
-                            className="px-6 py-2 font-semibold text-gray-800 transition bg-white border border-gray-500 rounded-xl hover:bg-gray-200"
-                        >
+                        <button onClick={handleReset} className="px-6 py-2 font-semibold text-gray-800 transition bg-white border border-gray-500 rounded-xl hover:bg-gray-200">
                             Reset Sketch
                         </button>
                     </div>

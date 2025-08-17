@@ -337,6 +337,7 @@ const HomePage = () => {
                                                             const data = product.stock?.[sizeKey];
                                                             const disabled = !data || (data.current ?? 0) === 0;
                                                             const selected = selectedSizes[product._id] === sizeKey;
+
                                                             return (
                                                                 <button
                                                                     key={sizeKey}
@@ -354,8 +355,7 @@ const HomePage = () => {
                                                                                 : "bg-white/80 text-[#3a3220] border-[#cbb279] hover:bg-[#f6f0d4]"
                                                                         }`}
                                                                 >
-                                                                    {sizeKey.toUpperCase()}&nbsp;(
-                                                                    {data?.current ?? 0}/{data?.initial ?? 0})
+                                                                    {sizeKey.toUpperCase()}
                                                                 </button>
                                                             );
                                                         })}
@@ -396,8 +396,8 @@ const HomePage = () => {
                                                     </button>
                                                 </>
                                             ) : (
+                                                // מוצר ללא מידות - ללא שינוי
                                                 <>
-                                                    {/* מוצר ללא מידות */}
                                                     <input
                                                         type="number"
                                                         min={1}
@@ -412,9 +412,7 @@ const HomePage = () => {
                                                         placeholder="כמות"
                                                     />
                                                     <button
-                                                        onClick={() =>
-                                                            addToCart(product, "ONE", quantities[product._id] || 1)
-                                                        }
+                                                        onClick={() => addToCart(product, "ONE", quantities[product._id] || 1)}
                                                         className="w-full mt-4 py-2 text-white font-semibold bg-gradient-to-r from-[#c1aa5f] to-[#97BE5A] rounded-full shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
                                                     >
                                                         <span>הוסף לסל</span>

@@ -6,7 +6,7 @@ import { FaBoxOpen, FaExclamationTriangle, FaPaintBrush } from "react-icons/fa";
 import { Product } from "../../Types/TProduct";
 import StockEditorModal from "../../components/admin/StockEditorModal";
 
-const categories = ["small", "medium", "large"]; // לגלריית הסקיצות בלבד
+const categories = ["small", "medium", "large"];
 
 const AdminPage = () => {
     const VITE_API_URL = import.meta.env.VITE_API_URL as string;
@@ -19,6 +19,7 @@ const AdminPage = () => {
     // Products
     const [productTitle, setProductTitle] = useState("");
     const [productPrice, setProductPrice] = useState("");
+    const [productDescription, setProductDescription] = useState(""); 
     const [productImage, setProductImage] = useState<File | null>(null);
 
     // סטוק למידות החדשות (אופציונלי)
@@ -56,7 +57,7 @@ const AdminPage = () => {
 
         const fetchProducts = async () => {
             try {
-                const res = await axios.get(`${VITE_API_URL}/products`);
+                const res = await axios.get<Product[]>(`${VITE_API_URL}/products`);
                 setAllProducts(res.data);
             } catch {
                 Swal.fire("Error", "Failed to load products", "error");
@@ -119,19 +120,25 @@ const AdminPage = () => {
         formData.append("price", productPrice);
         formData.append("image", productImage);
 
+       
+        if (productDescription.trim() !== "") {
+            formData.append("description", productDescription.trim());
+        }
+
         // מידות אופציונליות — נשלח רק אם מולאו
         if (stockL !== "") formData.append("stockL", stockL);
         if (stockXL !== "") formData.append("stockXL", stockXL);
         if (stockXXL !== "") formData.append("stockXXL", stockXXL);
 
         try {
-            const res = await axios.post(`${VITE_API_URL}/products/upload`, formData, {
+            const res = await axios.post<Product>(`${VITE_API_URL}/products/upload`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
             // אפס שדות
             setProductTitle("");
             setProductPrice("");
+            setProductDescription(""); 
             setStockL("");
             setStockXL("");
             setStockXXL("");
@@ -254,6 +261,14 @@ const AdminPage = () => {
                         min={0}
                     />
 
+                    {/* חדש — תיאור המוצר */}
+                    <textarea
+                        value={productDescription}
+                        onChange={(e) => setProductDescription(e.target.value)}
+                        placeholder="Product Description (optional)"
+                        className="p-3 border rounded md:col-span-2 min-h-24"
+                    />
+
                     {/* מידות אופציונליות */}
                     <input
                         type="number"
@@ -309,37 +324,41 @@ const AdminPage = () => {
                                 <img
                                     src={product.imageUrl}
                                     alt={product.title}
-                                    className={`w-full h-48 object-cover rounded-md mb-4 ${isOutOfStock ? "opacity-40" : ""
-                                        }`}
+                                    className={`w-full h-48 object-cover rounded-md mb-4 ${isOutOfStock ? "opacity-40" : ""}`}
                                 />
                                 <h3 className="mb-1 text-xl font-semibold">{product.title}</h3>
                                 <p className="text-lg">{Number(product.price).toFixed(2)} ₪</p>
 
+                                {/* תיאור (אם קיים) */}
+                                {product.description && (
+                                    <p className="mt-1 text-sm text-gray-600 line-clamp-2">{product.description}</p>
+                                )}
+
                                 {/* מציגים מלאי רק אם יש stock */}
                                 {product.stock ? (
-                                    <p className="text-sm">
+                                    <p className="mt-1 text-sm">
                                         Stock:&nbsp;
                                         L({getCur(product, "l")}/{getInit(product, "l")}),{" "}
                                         XL({getCur(product, "xl")}/{getInit(product, "xl")}),{" "}
                                         XXL({getCur(product, "xxl")}/{getInit(product, "xxl")})
                                     </p>
                                 ) : (
-                                    <p className="text-sm italic opacity-80">No size-based stock</p>
+                                    <p className="mt-1 text-sm italic opacity-80">No size-based stock</p>
                                 )}
 
                                 {isOutOfStock && <p className="mt-2 font-bold text-red-600">Out of Stock</p>}
 
-                                <div className="absolute top-2 right-2 flex gap-2">
+                                <div className="absolute flex gap-2 top-2 right-2">
                                     <button
                                         onClick={() => openStockEditor(product)}
-                                        className="rounded bg-blue-600 px-2 py-1 text-white hover:bg-blue-700"
+                                        className="px-2 py-1 text-white bg-blue-600 rounded hover:bg-blue-700"
                                         title="Edit stock"
                                     >
                                         מלאי
                                     </button>
                                     <button
                                         onClick={() => handleProductDelete(product._id)}
-                                        className="rounded bg-red-600 px-2 py-1 text-white hover:bg-red-800"
+                                        className="px-2 py-1 text-white bg-red-600 rounded hover:bg-red-800"
                                         title="Delete"
                                     >
                                         ✕

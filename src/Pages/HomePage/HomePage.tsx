@@ -18,7 +18,7 @@ import { trimTransparentPNG } from "../../utils/trimPng.ts";
 
 type CartItem = {
     _id: string;
-    size: string; // 'l' | 'xl' | 'xxl' | 'ONE' (למוצרים ללא מידות)
+    size: string; 
     quantity: number;
     title: string;
     price: number;
@@ -30,7 +30,7 @@ type SizeKey = (typeof SIZE_KEYS)[number];
 
 const HomePage = () => {
     const navigate = useNavigate();
-    const VITE_API_URL = import.meta.env.VITE_API_URL;
+    const VITE_API_URL = import.meta.env.VITE_API_URL as string;
 
     const [products, setProducts] = useState<Product[]>([]);
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -72,7 +72,6 @@ const HomePage = () => {
     }, [cart]);
 
     const addToCart = (product: Product, size: SizeKey | "ONE" | undefined, quantity: number) => {
-        // אם יש מידות – חייבים לבחור; אם אין stock (מוצר ללא מידות) – נסמן כ-ONE
         const hasSizes = !!product.stock;
         const finalSize: SizeKey | "ONE" = hasSizes ? (size as SizeKey) : "ONE";
 
@@ -204,7 +203,7 @@ const HomePage = () => {
         }
     };
 
-  
+    // מלאי ועזרי חישוב
     const getCur = (p: Product, k: SizeKey) => p.stock?.[k]?.current ?? 0;
     const hasAnySizeInStock = (p: Product) =>
         !!p.stock && (getCur(p, "l") + getCur(p, "xl") + getCur(p, "xxl")) > 0;
@@ -294,7 +293,7 @@ const HomePage = () => {
                     dir="rtl"
                 >
                     <div className="flex flex-wrap justify-center gap-10">
-                        {products.map((product: Product, index) => {
+                        {products.slice(0, 3).map((product: Product) => {
                             const withSizes = !!product.stock;
                             const outOfStock = isOutOfStock(product);
 
@@ -302,7 +301,7 @@ const HomePage = () => {
                                 <motion.div
                                     whileHover={{ scale: 1.06, rotate: 0.5 }}
                                     transition={{ duration: 0.4, ease: "easeInOut" }}
-                                    key={product._id ?? index}
+                                    key={product._id}
                                     className="relative w-72 p-5 rounded-3xl bg-white/30 backdrop-blur-md shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#e4d3a1] transition-all"
                                 >
                                     {/* תמונה */}
@@ -325,6 +324,10 @@ const HomePage = () => {
                                         <p className="text-lg font-semibold text-[#8b7c4a]">
                                             {Number(product.price).toFixed(2)} ₪
                                         </p>
+                                        {/* תיאור מוצר (אם קיים) */}
+                                        {product.description && (
+                                            <p className="mt-1 text-sm text-[#5b4c33] line-clamp-2">{product.description}</p>
+                                        )}
                                     </div>
 
                                     {/* בחירת מידה רק אם יש מידות בכלל */}
@@ -396,7 +399,7 @@ const HomePage = () => {
                                                     </button>
                                                 </>
                                             ) : (
-                                                // מוצר ללא מידות - ללא שינוי
+                                                // מוצר ללא מידות
                                                 <>
                                                     <input
                                                         type="number"
@@ -432,6 +435,16 @@ const HomePage = () => {
                             );
                         })}
                     </div>
+
+                    {/* See more */}
+                    <div className="flex justify-center mt-8">
+                        <button
+                            onClick={() => navigate("/products")} // עדכן לנתיב עמוד כל המוצרים שלך אם שונה
+                            className="px-5 py-2 rounded-full border border-[#cbb279] text-[#3a3220] bg-white/80 hover:bg-[#f6f0d4] transition"
+                        >
+                            See more
+                        </button>
+                    </div>
                 </motion.section>
 
                 {/* Courses Section */}
@@ -447,7 +460,7 @@ const HomePage = () => {
                         <img src={mainP} alt="main" className="w-[500px] h-[600px] rounded-lg shadow-lg mx-auto" />
                     </div>
                     <div className="w-full text-center text-[#8C734A] md:w-1/2">
-                        <h2 className="mb-4 text-3xl font-semibold">קורס קעקועים אינטימי ומעמיק</h2>
+                        <h2 className="mb-4 text-3ל font-semibold">קורס קעקועים אינטימי ומעמיק</h2>
                         <p className="max-w-lg mx-auto mb-8 text-lg leading-relaxed">
                             אם תמיד חלמתם להיכנס לעולם הקעקועים – זה המקום להתחיל בו.
                             בקורס קטן ואינטימי (עד 3 משתתפים בלבד) נצלול לעומק האמנות, באווירה קלילה, אישית ומקצועית.

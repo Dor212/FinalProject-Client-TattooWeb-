@@ -8,6 +8,7 @@ import GalleryPage from "./Pages/GalleryPage/GalleryPage";
 import AdminPage from "./Pages/AdminPage/AdminPage"
 import ApplySketchPage from "./Pages/SimulatorPage/SimulatorPage"
 import useAuthInit from "./components/useAuthInit";
+import AllProductsPage from "./Pages/AllProductsPage/AllProductsPage";
 
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
         <Route path="/apply-sketch" element={<ApplySketchPage />} />
         <Route path="/AdminPage" element={<AdminPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/products" element={<AllProductsPage />} />
       </Routes>
       <Footer />
     </div>

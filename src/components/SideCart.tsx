@@ -103,7 +103,7 @@ const SideCart = ({
                                     </p>
                                     <button
                                         onClick={handleCheckout}
-                                        className="w-full px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
+                                            className="w-full mt-4 py-2 text-white font-semibold bg-gradient-to-r from-[#c1aa5f] to-[#97BE5A] rounded-full shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
                                     >
                                         Checkout
                                     </button>

@@ -270,10 +270,7 @@ const HomePage = () => {
                             rel="noopener noreferrer"
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.98 }}
-                            className="inline-flex items-center gap-2 px-8 py-2 mt-4 text-sm font-semibold
-             rounded-md bg-[#F1F3C5] text-[#3B3024] border border-transparent shadow-sm
-             focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F0EDE5]
-             transition-transform duration-150 transform-gpu will-change-transform"
+                            className="w-full mt-4 py-2 text-white font-semibold bg-gradient-to-r from-[#c1aa5f] to-[#97BE5A] rounded-full shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
                             aria-label="שלחו הודעה בוואטסאפ"
                         >
                             <FaWhatsapp className="text-base" />

@@ -2,26 +2,44 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 import Swal from "sweetalert2";
-import {  FaBoxOpen, FaExclamationTriangle, FaPaintBrush } from "react-icons/fa";
-import { Product } from "../../Types/TProduct.ts";
+import { FaBoxOpen, FaExclamationTriangle, FaPaintBrush } from "react-icons/fa";
+import { Product } from "../../Types/TProduct";
+import StockEditorModal from "../../components/admin/StockEditorModal";
 
-
-
-const categories = ["small", "medium", "large"];
+const categories = ["small", "medium", "large"]; // לגלריית הסקיצות בלבד
 
 const AdminPage = () => {
-    const { VITE_API_URL } = import.meta.env;
+    const VITE_API_URL = import.meta.env.VITE_API_URL as string;
+
+    // Sketches
     const [imagesByCategory, setImagesByCategory] = useState<Record<string, string[]>>({});
     const [selectedCategory, setSelectedCategory] = useState("small");
     const [imageFile, setImageFile] = useState<File | null>(null);
+
+    // Products
     const [productTitle, setProductTitle] = useState("");
     const [productPrice, setProductPrice] = useState("");
     const [productImage, setProductImage] = useState<File | null>(null);
-    const [stockSmall, setStockSmall] = useState("");
-    const [stockMedium, setStockMedium] = useState("");
-    const [stockLarge, setStockLarge] = useState("");
+
+    // סטוק למידות החדשות (אופציונלי)
+    const [stockL, setStockL] = useState("");
+    const [stockXL, setStockXL] = useState("");
+    const [stockXXL, setStockXXL] = useState("");
+
     const [allProducts, setAllProducts] = useState<Product[]>([]);
-    
+
+    // Modal
+    const [stockModalOpen, setStockModalOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+    const openStockEditor = (p: Product) => {
+        setSelectedProduct(p);
+        setStockModalOpen(true);
+    };
+    const handleProductPatched = (updated: Product) => {
+        setAllProducts((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
+    };
+
     useEffect(() => {
         const fetchAllImages = async () => {
             try {
@@ -31,7 +49,7 @@ const AdminPage = () => {
                     results[category] = Array.isArray(res.data) ? res.data : [];
                 }
                 setImagesByCategory(results);
-            } catch (err) {
+            } catch {
                 Swal.fire("Error", "Failed to load sketches", "error");
             }
         };
@@ -40,14 +58,14 @@ const AdminPage = () => {
             try {
                 const res = await axios.get(`${VITE_API_URL}/products`);
                 setAllProducts(res.data);
-            } catch (err) {
+            } catch {
                 Swal.fire("Error", "Failed to load products", "error");
             }
         };
 
         fetchAllImages();
         fetchProducts();
-    }, []);
+    }, [VITE_API_URL]);
 
     const handleUploadSketch = async () => {
         if (!imageFile) return;
@@ -58,8 +76,10 @@ const AdminPage = () => {
             await axios.post(`${VITE_API_URL}/gallery/upload/${selectedCategory}`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
-            Swal.fire("Success", "Sketch uploaded and processed", "success").then(() => window.location.reload());
-        } catch (err) {
+            Swal.fire("Success", "Sketch uploaded and processed", "success").then(() =>
+                window.location.reload()
+            );
+        } catch {
             Swal.fire("Error", "Failed to upload sketch", "error");
         }
     };
@@ -83,35 +103,38 @@ const AdminPage = () => {
                 ...prev,
                 [category]: prev[category].filter((img) => img !== fileUrl),
             }));
-            
-            
-        } catch (err) {
+        } catch {
             Swal.fire("Error", "Failed to delete sketch", "error");
         }
     };
 
     const handleProductUpload = async () => {
-        if (!productTitle || !productPrice || !productImage) return;
+        if (!productTitle || !productPrice || !productImage) {
+            Swal.fire("Validation", "Please fill title, price and choose an image", "info");
+            return;
+        }
 
         const formData = new FormData();
         formData.append("title", productTitle);
         formData.append("price", productPrice);
         formData.append("image", productImage);
-        formData.append("stockSmall", stockSmall);
-        formData.append("stockMedium", stockMedium);
-        formData.append("stockLarge", stockLarge);
 
+        // מידות אופציונליות — נשלח רק אם מולאו
+        if (stockL !== "") formData.append("stockL", stockL);
+        if (stockXL !== "") formData.append("stockXL", stockXL);
+        if (stockXXL !== "") formData.append("stockXXL", stockXXL);
 
         try {
             const res = await axios.post(`${VITE_API_URL}/products/upload`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
+            // אפס שדות
             setProductTitle("");
             setProductPrice("");
-            setStockSmall("");
-            setStockMedium("");
-            setStockLarge("");
+            setStockL("");
+            setStockXL("");
+            setStockXXL("");
             setProductImage(null);
 
             setAllProducts((prev) => [res.data, ...prev]);
@@ -123,8 +146,7 @@ const AdminPage = () => {
                 timer: 1500,
                 showConfirmButton: false,
             });
-
-        } catch (err) {
+        } catch {
             Swal.fire({
                 title: "Error",
                 text: "Failed to upload product",
@@ -149,37 +171,51 @@ const AdminPage = () => {
 
         try {
             await axios.delete(`${VITE_API_URL}/products/${id}`);
-            setAllProducts((prev) => prev.filter((p: { _id: string }) => p._id !== id));
+            setAllProducts((prev) => prev.filter((p) => p._id !== id));
             Swal.fire({
                 title: "Success",
                 text: "Product deleted successfully",
                 icon: "success",
                 timer: 1500,
-                showConfirmButton: false
+                showConfirmButton: false,
             });
-        } catch (err) {
+        } catch {
             Swal.fire({
                 title: "Error",
                 text: "Failed to delete product",
                 icon: "error",
                 timer: 1500,
-                showConfirmButton: false
+                showConfirmButton: false,
             });
         }
     };
-   /*  const totalStock = allProducts.reduce((sum, p) => sum + (p.stock?.small || 0) + (p.stock?.medium || 0) + (p.stock?.large || 0), 0); */
-    const outOfStockCount = allProducts.filter(
-        (p) =>
-            (p.stock?.small?.current || 0) +
-            (p.stock?.medium?.current || 0) +
-            (p.stock?.large?.current || 0) === 0
-    ).length;
+
+    // עזרי תצוגה למלאי
+    const getCur = (p: Product, key: "l" | "xl" | "xxl") => p.stock?.[key]?.current ?? 0;
+    const getInit = (p: Product, key: "l" | "xl" | "xxl") => p.stock?.[key]?.initial ?? 0;
+
+    const outOfStockCount = allProducts.filter((p) => {
+        if (!p.stock) return false; // מוצרים ללא מידות לא נחשבים Out of Stock
+        const total = getCur(p, "l") + getCur(p, "xl") + getCur(p, "xxl");
+        return total === 0;
+    }).length;
+
     const totalSketches = Object.values(imagesByCategory).reduce((sum, arr) => sum + arr.length, 0);
 
     return (
-        <div className="min-h-screen pt-20 font-serif text-[#3B3024] bg-[#FFFFFF]" style={{ backgroundImage: "url('/backgrounds/BG4.png')", backgroundRepeat: "no-repeat", backgroundSize: "contain", backgroundPosition: "right top", backgroundAttachment: "fixed" }}>
+        <div
+            className="min-h-screen pt-20 font-serif text-[#3B3024] bg-[#FFFFFF]"
+            style={{
+                backgroundImage: "url('/backgrounds/BG4.png')",
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "contain",
+                backgroundPosition: "right top",
+                backgroundAttachment: "fixed",
+            }}
+        >
             <h1 className="mb-10 text-4xl font-bold text-center">Admin Dashboard</h1>
 
+            {/* KPIs */}
             <div className="grid grid-cols-1 gap-6 mx-auto mb-10 sm:grid-cols-3 max-w-7xl">
                 <div className="bg-[#CBB279] text-center rounded-xl p-6 shadow-lg">
                     <FaBoxOpen className="mx-auto mb-2 text-3xl" />
@@ -189,7 +225,7 @@ const AdminPage = () => {
                 <div className="bg-[#F1F3C2] text-center rounded-xl p-6 shadow-lg">
                     <FaExclamationTriangle className="mx-auto mb-2 text-3xl text-red-600" />
                     <p className="text-xl font-semibold">{outOfStockCount}</p>
-                    <p className="text-sm">Out of Stock</p>
+                    <p className="text-sm">Out of Stock (size-based)</p>
                 </div>
                 <div className="bg-[#97BE5A] text-white text-center rounded-xl p-6 shadow-lg">
                     <FaPaintBrush className="mx-auto mb-2 text-3xl" />
@@ -198,18 +234,62 @@ const AdminPage = () => {
                 </div>
             </div>
 
-            {/* Upload Product Section */}
+            {/* Upload Product */}
             <section className="bg-[#CBB279] text-[#3B3024] p-6 rounded-xl mb-12 max-w-3xl mx-auto shadow-md">
                 <h2 className="mb-4 text-2xl font-semibold text-center">Add New Product</h2>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <input type="text" value={productTitle} onChange={(e) => setProductTitle(e.target.value)} placeholder="Product Title" className="p-3 border rounded" />
-                    <input type="number" value={productPrice} onChange={(e) => setProductPrice(e.target.value)} placeholder="Price" className="p-3 border rounded" />
-                    <input type="number" placeholder="Stock S" value={stockSmall} onChange={(e) => setStockSmall(e.target.value)} className="p-3 border rounded" />
-                    <input type="number" placeholder="Stock M" value={stockMedium} onChange={(e) => setStockMedium(e.target.value)} className="p-3 border rounded" />
-                    <input type="number" placeholder="Stock L" value={stockLarge} onChange={(e) => setStockLarge(e.target.value)} className="p-3 border rounded" />
-                    <input type="file" onChange={(e) => setProductImage(e.target.files?.[0] || null)} className="p-2 border rounded" />
+                    <input
+                        type="text"
+                        value={productTitle}
+                        onChange={(e) => setProductTitle(e.target.value)}
+                        placeholder="Product Title"
+                        className="p-3 border rounded"
+                    />
+                    <input
+                        type="number"
+                        value={productPrice}
+                        onChange={(e) => setProductPrice(e.target.value)}
+                        placeholder="Price"
+                        className="p-3 border rounded"
+                        min={0}
+                    />
+
+                    {/* מידות אופציונליות */}
+                    <input
+                        type="number"
+                        placeholder="Stock L (optional)"
+                        value={stockL}
+                        onChange={(e) => setStockL(e.target.value)}
+                        className="p-3 border rounded"
+                        min={0}
+                    />
+                    <input
+                        type="number"
+                        placeholder="Stock XL (optional)"
+                        value={stockXL}
+                        onChange={(e) => setStockXL(e.target.value)}
+                        className="p-3 border rounded"
+                        min={0}
+                    />
+                    <input
+                        type="number"
+                        placeholder="Stock XXL (optional)"
+                        value={stockXXL}
+                        onChange={(e) => setStockXXL(e.target.value)}
+                        className="p-3 border rounded"
+                        min={0}
+                    />
+
+                    <input
+                        type="file"
+                        onChange={(e) => setProductImage(e.target.files?.[0] || null)}
+                        className="p-2 border rounded"
+                    />
                 </div>
-                <button onClick={handleProductUpload} className="w-full mt-4 bg-[#97BE5A] text-white py-2 px-4 rounded hover:bg-[#7ea649] transition">
+                <button
+                    onClick={handleProductUpload}
+                    className="w-full mt-4 bg-[#97BE5A] text-white py-2 px-4 rounded hover:bg-[#7ea649] transition"
+                >
                     Upload Product
                 </button>
             </section>
@@ -219,33 +299,59 @@ const AdminPage = () => {
                 <h2 className="mb-6 text-3xl font-bold text-center">Product List</h2>
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                     {allProducts.map((product) => {
-                        const total =
-                            (product.stock?.small?.current || 0) +
-                            (product.stock?.medium?.current || 0) +
-                            (product.stock?.large?.current || 0);
-
-                        const isOutOfStock = total === 0;
+                        const total = product.stock
+                            ? getCur(product, "l") + getCur(product, "xl") + getCur(product, "xxl")
+                            : -1;
+                        const isOutOfStock = product.stock ? total === 0 : false;
 
                         return (
                             <div key={product._id} className="bg-white text-[#3B3024] p-4 rounded-lg shadow relative">
-                                <img src={product.imageUrl} alt={product.title} className={`w-full h-48 object-cover rounded-md mb-4 ${isOutOfStock ? "opacity-40" : ""}`} />
+                                <img
+                                    src={product.imageUrl}
+                                    alt={product.title}
+                                    className={`w-full h-48 object-cover rounded-md mb-4 ${isOutOfStock ? "opacity-40" : ""
+                                        }`}
+                                />
                                 <h3 className="mb-1 text-xl font-semibold">{product.title}</h3>
                                 <p className="text-lg">{Number(product.price).toFixed(2)} ₪</p>
-                                <p className="text-sm">
-                                    Stock:
-                                    S({product.stock?.small?.current}/{product.stock?.small?.initial}),{" "}
-                                    M({product.stock?.medium?.current}/{product.stock?.medium?.initial}),{" "}
-                                    L({product.stock?.large?.current}/{product.stock?.large?.initial})
-                                </p>
+
+                                {/* מציגים מלאי רק אם יש stock */}
+                                {product.stock ? (
+                                    <p className="text-sm">
+                                        Stock:&nbsp;
+                                        L({getCur(product, "l")}/{getInit(product, "l")}),{" "}
+                                        XL({getCur(product, "xl")}/{getInit(product, "xl")}),{" "}
+                                        XXL({getCur(product, "xxl")}/{getInit(product, "xxl")})
+                                    </p>
+                                ) : (
+                                    <p className="text-sm italic opacity-80">No size-based stock</p>
+                                )}
+
                                 {isOutOfStock && <p className="mt-2 font-bold text-red-600">Out of Stock</p>}
-                                <button onClick={() => handleProductDelete(product._id)} className="absolute px-2 py-1 text-white bg-red-600 rounded top-2 right-2 hover:bg-red-800">✕</button>
+
+                                <div className="absolute top-2 right-2 flex gap-2">
+                                    <button
+                                        onClick={() => openStockEditor(product)}
+                                        className="rounded bg-blue-600 px-2 py-1 text-white hover:bg-blue-700"
+                                        title="Edit stock"
+                                    >
+                                        מלאי
+                                    </button>
+                                    <button
+                                        onClick={() => handleProductDelete(product._id)}
+                                        className="rounded bg-red-600 px-2 py-1 text-white hover:bg-red-800"
+                                        title="Delete"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
                             </div>
                         );
                     })}
                 </div>
             </section>
 
-            {/* Upload Sketches Section */}
+            {/* Upload Sketches */}
             <section className="bg-[#CBB279] text-[#3B3024] p-6 rounded-xl mb-12 max-w-3xl mx-auto shadow-md">
                 <h2 className="mb-4 text-2xl font-semibold text-center">Upload Sketch</h2>
                 <div className="flex flex-col items-center justify-center gap-4 md:flex-row">
@@ -255,7 +361,9 @@ const AdminPage = () => {
                         className="bg-white text-[#3B3024] px-4 py-2 rounded border w-full md:w-auto"
                     >
                         {categories.map((cat) => (
-                            <option key={cat} value={cat}>{cat.toUpperCase()}</option>
+                            <option key={cat} value={cat}>
+                                {cat.toUpperCase()}
+                            </option>
                         ))}
                     </select>
                     <input
@@ -271,6 +379,7 @@ const AdminPage = () => {
                     </button>
                 </div>
             </section>
+
             {/* Sketches Display */}
             {categories.map((category) => (
                 <section key={category} className="px-4 mb-20 sm:px-6">
@@ -284,7 +393,8 @@ const AdminPage = () => {
                                 className="relative group bg-white rounded-xl overflow-hidden border border-[#e2d9c3] shadow transition-all hover:shadow-lg"
                                 whileHover={{ scale: 1.03 }}
                             >
-                                <img src={`${VITE_API_URL}/${imgUrl}`}
+                                <img
+                                    src={`${VITE_API_URL}/${imgUrl}`}
                                     alt="sketch"
                                     className="object-cover w-full h-full aspect-square"
                                 />
@@ -302,6 +412,16 @@ const AdminPage = () => {
                 </section>
             ))}
 
+            {/* Stock Editor Modal */}
+            {selectedProduct && (
+                <StockEditorModal
+                    open={stockModalOpen}
+                    onClose={() => setStockModalOpen(false)}
+                    product={selectedProduct}
+                    apiBase={VITE_API_URL}
+                    onUpdated={handleProductPatched}
+                />
+            )}
         </div>
     );
 };

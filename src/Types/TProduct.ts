@@ -1,20 +1,22 @@
+
+export type TSizeStock = {
+  initial: number;
+  current: number;
+};
+
+
+export type SizeKey = "l" | "xl" | "xxl";
+
+
+export type TProductStock = Partial<Record<SizeKey, TSizeStock>>;
+
+
 export type Product = {
-  title: string;
-  imageUrl: string;
-  price: number;
-  stock: {
-    small: {
-      current: number;
-      initial: number;
-    };
-    medium: {
-      current: number;
-      initial: number;
-    };
-    large: {
-      current: number;
-      initial: number;
-    };
-  };
   _id: string;
+  title: string;
+  price: number;
+  imageUrl: string;
+  stock?: TProductStock; 
+  createdAt?: string;
+  updatedAt?: string;
 };

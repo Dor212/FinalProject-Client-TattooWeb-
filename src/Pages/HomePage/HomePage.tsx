@@ -1,4 +1,4 @@
-
+// src/pages/home/HomePage.tsx
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -14,18 +14,29 @@ import tattoL from "../../Imges/tattooL.jpg";
 import { Product } from "../../Types/TProduct.ts";
 import { Element, scroller } from "react-scroll";
 import { Helmet } from "react-helmet";
+import { trimTransparentPNG } from "../../utils/trimPng.ts";
 
+type CartItem = {
+    _id: string;
+    size: string; // 'l' | 'xl' | 'xxl' | 'ONE' (למוצרים ללא מידות)
+    quantity: number;
+    title: string;
+    price: number;
+    imageUrl: string;
+};
 
+const SIZE_KEYS = ["l", "xl", "xxl"] as const;
+type SizeKey = (typeof SIZE_KEYS)[number];
 
 const HomePage = () => {
-    
     const navigate = useNavigate();
-    const [products, setProducts] = useState([]);
-    const [cart, setCart] = useState<{ _id: string; size: string; quantity: number; title: string; price: number; imageUrl: string }[]>([]);
-    const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
+    const VITE_API_URL = import.meta.env.VITE_API_URL;
+
+    const [products, setProducts] = useState<Product[]>([]);
+    const [cart, setCart] = useState<CartItem[]>([]);
+    const [selectedSizes, setSelectedSizes] = useState<Record<string, SizeKey | "ONE">>({});
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [isCartOpen, setIsCartOpen] = useState(false);
-    const { VITE_API_URL }= import.meta.env;
 
     const location = useLocation();
     useEffect(() => {
@@ -41,14 +52,14 @@ const HomePage = () => {
     useEffect(() => {
         const fetchMerch = async () => {
             try {
-                const response = await axios.get(`${VITE_API_URL}/products/`);
+                const response = await axios.get<Product[]>(`${VITE_API_URL}/products/`);
                 setProducts(response.data);
             } catch (err) {
                 console.error("Error loading products:", err);
             }
         };
         fetchMerch();
-    }, []);
+    }, [VITE_API_URL]);
 
     useEffect(() => {
         const savedCart = localStorage.getItem("cart");
@@ -56,31 +67,46 @@ const HomePage = () => {
             setCart(JSON.parse(savedCart));
         }
     }, []);
-
     useEffect(() => {
         localStorage.setItem("cart", JSON.stringify(cart));
     }, [cart]);
 
-    const addToCart = (product:Product, size: string, quantity: number) => {
-        if (!size) {
-            Swal.fire("Select Size", "Please choose a size before adding to cart", "warning", );
+    const addToCart = (product: Product, size: SizeKey | "ONE" | undefined, quantity: number) => {
+        // אם יש מידות – חייבים לבחור; אם אין stock (מוצר ללא מידות) – נסמן כ-ONE
+        const hasSizes = !!product.stock;
+        const finalSize: SizeKey | "ONE" = hasSizes ? (size as SizeKey) : "ONE";
+
+        if (hasSizes && !finalSize) {
+            Swal.fire("Select Size", "Please choose a size before adding to cart", "warning");
             return;
         }
-        const existingItem = cart.find(item => item._id === product._id && item.size === size);
+
+        const safeQty = Math.max(1, Number(quantity) || 1);
+        const existingItem = cart.find((item) => item._id === product._id && item.size === finalSize);
         if (existingItem) {
-            const updatedCart = cart.map(item =>
-                item._id === product._id && item.size === size
-                    ? { ...item, quantity: item.quantity + quantity }
+            const updatedCart = cart.map((item) =>
+                item._id === product._id && item.size === finalSize
+                    ? { ...item, quantity: item.quantity + safeQty }
                     : item
             );
             setCart(updatedCart);
         } else {
-            setCart(prev => [...prev, { ...product, size, quantity }]);
+            setCart((prev) => [
+                ...prev,
+                {
+                    _id: product._id,
+                    size: finalSize,
+                    quantity: safeQty,
+                    title: product.title,
+                    price: product.price,
+                    imageUrl: product.imageUrl,
+                },
+            ]);
         }
         setIsCartOpen(true);
         Swal.fire({
             title: "Added to cart!",
-            text: `${product.title} (${size})`,
+            text: `${product.title}${hasSizes ? ` (${finalSize.toUpperCase()})` : ""}`,
             icon: "success",
             timer: 800,
             showConfirmButton: false,
@@ -88,15 +114,14 @@ const HomePage = () => {
     };
 
     const updateQuantity = (productId: string, quantity: number) => {
-        setCart(prev =>
-            prev.map(item =>
-                item._id === productId ? { ...item, quantity: quantity } : item
-            )
+        const safeQty = Math.max(1, Number(quantity) || 1);
+        setCart((prev) =>
+            prev.map((item) => (item._id === productId ? { ...item, quantity: safeQty } : item))
         );
     };
 
     const removeFromCart = (productId: string, size: string) => {
-        setCart(prev => prev.filter(item => !(item._id === productId && item.size === size)));
+        setCart((prev) => prev.filter((item) => !(item._id === productId && item.size === size)));
     };
 
     const handleCheckout = () => {
@@ -138,6 +163,22 @@ const HomePage = () => {
         });
     };
 
+    const [logoSrc, setLogoSrc] = useState("/backgrounds/omerlogo.png");
+    useEffect(() => {
+        let mounted = true;
+        (async () => {
+            try {
+                const trimmed = await trimTransparentPNG("/backgrounds/omerlogo.png");
+                if (mounted) setLogoSrc(trimmed);
+            } catch {
+                // Ignore errors while trimming PNG
+            }
+        })();
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
     const imagesSketches = [
         { src: tattoS, title: "small" },
         { src: tattoM, title: "medium" },
@@ -149,61 +190,99 @@ const HomePage = () => {
     };
 
     const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
-
-    const handleSubmit = async (e: { preventDefault: () => void; }) => {
+    const handleSubmit = async (e: { preventDefault: () => void }) => {
         e.preventDefault();
         try {
             await axios.post(`${VITE_API_URL}/users/contact`, formData);
             Swal.fire("Message Sent!", "We’ll get back to you soon.", "success");
             setFormData({ name: "", email: "", message: "" });
-        } catch (err) {
+        } catch {
             Swal.fire("Oops!", "Failed to send message", "error");
         }
     };
 
+  
+    const getCur = (p: Product, k: SizeKey) => p.stock?.[k]?.current ?? 0;
+    const hasAnySizeInStock = (p: Product) =>
+        !!p.stock && (getCur(p, "l") + getCur(p, "xl") + getCur(p, "xxl")) > 0;
+    const isOutOfStock = (p: Product) => !!p.stock && !hasAnySizeInStock(p);
+
     return (
-        <><Helmet>
-            <title>Omer Aviv Tattoo - סטודיו לקעקועים</title>
-            <meta name="description" content="סטודיו לקעקועים בעיצוב אישי, באווירה מקצועית וייחודית. הזמנת סשן, הדמיית קעקוע, קורסים ועוד." />
-            <meta property="og:title" content="Omer Tattoo Studio" />
-            <meta property="og:description" content="קעקועים ייחודיים, מוצרים, קורסים והדמיות – הכל במקום אחד." />
-            <meta property="og:image" content="https://yourdomain.com/preview.jpg" />
-        </Helmet><div className="w-full min-h-screen pt-20 text-[#3B3024] font-serif"
-            style={{
-                backgroundImage: "url('/backgrounds/BG4.png')",
-                backgroundRepeat: "no-repeat",
-                backgroundSize: "contain",
-                backgroundPosition: "right top",
-                backgroundAttachment: "fixed",
-                backgroundColor: "#FFFFFF"
-            }}>
+        <>
+            <Helmet>
+                <title>Omer Aviv Tattoo - סטודיו לקעקועים</title>
+                <meta
+                    name="description"
+                    content="סטודיו לקעקועים בעיצוב אישי, באווירה מקצועית וייחודית. הזמנת סשן, הדמיית קעקוע, קורסים ועוד."
+                />
+                <meta property="og:title" content="Omer Tattoo Studio" />
+                <meta
+                    property="og:description"
+                    content="קעקועים ייחודיים, מוצרים, קורסים והדמיות – הכל במקום אחד."
+                />
+                <meta property="og:image" content="https://yourdomain.com/preview.jpg" />
+            </Helmet>
+
+            <div
+                className="w-full min-h-screen pt-20 text-[#3B3024]"
+                style={{
+                    backgroundImage: "url('/backgrounds/BG4.png')",
+                    backgroundRepeat: "no-repeat",
+                    backgroundSize: "contain",
+                    backgroundPosition: "right top",
+                    backgroundAttachment: "fixed",
+                    backgroundColor: "#FFFFFF",
+                }}
+            >
                 <a
                     href="https://wa.me/972528787419"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="fixed z-50 flex items-center justify-center text-white bg-green-500 rounded-full shadow-md w-14 h-14 top-20 right-10 hover:bg-green-600"
+                    className="fixed z-50 flex items-center justify-center text-white bg-[#9FC87E] rounded-full shadow-md w-14 h-14 top-20 right-10 hover:bg-green-600"
                 >
                     <FaWhatsapp className="text-3xl" />
                 </a>
 
-
                 {/* Hero Section */}
                 <Element name="logo">
-                    <motion.section id="logo" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }}
-                        viewport={{ once: true }} className="h-[100vh] flex items-center justify-center">
+                    <motion.section
+                        id="logo"
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        transition={{ duration: 1 }}
+                        viewport={{ once: true }}
+                        className="h-[100vh] flex flex-col items-center justify-center text-center"
+                    >
                         <motion.img
                             initial={{ opacity: 0, scale: 0.8 }}
                             whileInView={{ opacity: 1, scale: 1 }}
                             transition={{ duration: 1.2 }}
-                            src="/backgrounds/LogoOmerTattoo_transparent.png"
+                            src={logoSrc}
                             alt="Omer Tattoo Studio Logo"
-                            className="max-w-[80%] max-h-[80%]" />
+                            className="block max-w-[120%] max-h-[120%]"
+                        />
+
+                        <motion.a
+                            href="https://wa.me/972528787419"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.98 }}
+                            className="inline-flex items-center gap-2 px-8 py-2 mt-4 text-sm font-semibold
+             rounded-md bg-[#F0EDE5] text-[#3B3024] border border-transparent shadow-sm
+             focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F0EDE5]
+             transition-transform duration-150 transform-gpu will-change-transform"
+                            aria-label="שלחו הודעה בוואטסאפ"
+                        >
+                            <FaWhatsapp className="text-base" />
+                            לקביעת תור
+                        </motion.a>
                     </motion.section>
                 </Element>
+
                 {/* Shop Merch Section */}
                 <motion.section
                     id="shop"
@@ -216,16 +295,14 @@ const HomePage = () => {
                 >
                     <div className="flex flex-wrap justify-center gap-10">
                         {products.map((product: Product, index) => {
-                            const totalStock = (product.stock?.small?.current || 0) +
-                                (product.stock?.medium?.current || 0) +
-                                (product.stock?.large?.current || 0);
-                            const isOutOfStock = totalStock === 0;
+                            const withSizes = !!product.stock;
+                            const outOfStock = isOutOfStock(product);
 
                             return (
                                 <motion.div
                                     whileHover={{ scale: 1.06, rotate: 0.5 }}
                                     transition={{ duration: 0.4, ease: "easeInOut" }}
-                                    key={index}
+                                    key={product._id ?? index}
                                     className="relative w-72 p-5 rounded-3xl bg-white/30 backdrop-blur-md shadow-[0_8px_30px_rgba(0,0,0,0.12)] border border-[#e4d3a1] transition-all"
                                 >
                                     {/* תמונה */}
@@ -233,14 +310,15 @@ const HomePage = () => {
                                         <img
                                             src={product.imageUrl}
                                             alt={product.title}
-                                            className={`object-cover w-full h-56 transition-transform duration-300 hover:scale-105 ${isOutOfStock ? "opacity-30" : ""}`} />
-                                        {isOutOfStock && (
+                                            className={`object-cover w-full h-56 transition-transform duration-300 hover:scale-105 ${outOfStock ? "opacity-30" : ""
+                                                }`}
+                                        />
+                                        {outOfStock && (
                                             <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-[#7a6b3b] bg-white/70 rounded-2xl">
                                                 ❌ אזל מהמלאי
                                             </div>
                                         )}
                                     </div>
-
 
                                     <div className="mt-4 text-[#3a3220]">
                                         <h3 className="text-xl font-bold tracking-tight">{product.title}</h3>
@@ -249,61 +327,107 @@ const HomePage = () => {
                                         </p>
                                     </div>
 
-
-                                    {!isOutOfStock && (
+                                    {/* בחירת מידה רק אם יש מידות בכלל */}
+                                    {!outOfStock && (
                                         <div className="mt-3">
+                                            {withSizes ? (
+                                                <>
+                                                    <div className="flex flex-wrap justify-center gap-2 mt-2">
+                                                        {SIZE_KEYS.map((sizeKey) => {
+                                                            const data = product.stock?.[sizeKey];
+                                                            const disabled = !data || (data.current ?? 0) === 0;
+                                                            const selected = selectedSizes[product._id] === sizeKey;
+                                                            return (
+                                                                <button
+                                                                    key={sizeKey}
+                                                                    disabled={disabled}
+                                                                    onClick={() =>
+                                                                        setSelectedSizes((prev) => ({
+                                                                            ...prev,
+                                                                            [product._id]: sizeKey,
+                                                                        }))
+                                                                    }
+                                                                    className={`px-3 py-1 text-sm rounded-full border transition-all duration-200 ${disabled
+                                                                            ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
+                                                                            : selected
+                                                                                ? "bg-[#97BE5A] text-white border-[#7ea649] shadow-md"
+                                                                                : "bg-white/80 text-[#3a3220] border-[#cbb279] hover:bg-[#f6f0d4]"
+                                                                        }`}
+                                                                >
+                                                                    {sizeKey.toUpperCase()}&nbsp;(
+                                                                    {data?.current ?? 0}/{data?.initial ?? 0})
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
 
-                                            <div className="flex flex-wrap justify-center gap-2 mt-2">
-                                                {Object.entries(product.stock).map(([size, data]) => (
+                                                    <input
+                                                        type="number"
+                                                        min={1}
+                                                        value={quantities[product._id] || 1}
+                                                        onChange={(e) =>
+                                                            setQuantities((prev) => ({
+                                                                ...prev,
+                                                                [product._id]: Math.max(1, Number(e.target.value) || 1),
+                                                            }))
+                                                        }
+                                                        className="w-full px-3 py-2 mt-2 text-sm bg-white/70 border border-[#d7c793] rounded-xl focus:ring-2 focus:ring-[#bfa63b] outline-none"
+                                                        placeholder="כמות"
+                                                    />
+
                                                     <button
-                                                        key={size}
-                                                        disabled={data.current === 0}
-                                                        onClick={() => setSelectedSizes((prev) => ({
-                                                            ...prev,
-                                                            [product._id]: size,
-                                                        }))}
-                                                        className={`px-3 py-1 text-sm rounded-full border transition-all duration-200 
-                      ${data.current == 0
-                                                                ? "bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed"
-                                                                : selectedSizes[product._id] === size
-                                                                    ? "bg-[#97BE5A] text-white border-[#7ea649] shadow-md"
-                                                                    : "bg-white/80 text-[#3a3220] border-[#cbb279] hover:bg-[#f6f0d4]"}`}
+                                                        onClick={() =>
+                                                            addToCart(
+                                                                product,
+                                                                selectedSizes[product._id] as SizeKey | undefined,
+                                                                quantities[product._id] || 1
+                                                            )
+                                                        }
+                                                        className="w-full mt-4 py-2 text-white font-semibold bg-gradient-to-r from-[#c1aa5f] to-[#97BE5A] rounded-full shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
                                                     >
-                                                        {size}
+                                                        <span>הוסף לסל</span>
+                                                        <motion.span
+                                                            initial={{ rotate: 0 }}
+                                                            animate={{ rotate: [0, 15, -10, 10, 0] }}
+                                                            transition={{ repeat: Infinity, duration: 2 }}
+                                                        >
+                                                            🛒
+                                                        </motion.span>
                                                     </button>
-                                                ))}
-                                            </div>
-
-
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                value={quantities[product._id] || 1}
-                                                onChange={(e) => setQuantities((prev) => ({
-                                                    ...prev,
-                                                    [product._id]: Number(e.target.value),
-                                                }))}
-                                                className="w-full px-3 py-2 mt-2 text-sm bg-white/70 border border-[#d7c793] rounded-xl focus:ring-2 focus:ring-[#bfa63b] outline-none"
-                                                placeholder="כמות" />
-
-
-                                            <button
-                                                onClick={() => addToCart(
-                                                    product,
-                                                    selectedSizes[product._id],
-                                                    quantities[product._id] || 1
-                                                )}
-                                                className="w-full mt-4 py-2 text-white font-semibold bg-gradient-to-r from-[#c1aa5f] to-[#97BE5A] rounded-full shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
-                                            >
-                                                <span>הוסף לסל</span>
-                                                <motion.span
-                                                    initial={{ rotate: 0 }}
-                                                    animate={{ rotate: [0, 15, -10, 10, 0] }}
-                                                    transition={{ repeat: Infinity, duration: 2 }}
-                                                >
-                                                    🛒
-                                                </motion.span>
-                                            </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    {/* מוצר ללא מידות */}
+                                                    <input
+                                                        type="number"
+                                                        min={1}
+                                                        value={quantities[product._id] || 1}
+                                                        onChange={(e) =>
+                                                            setQuantities((prev) => ({
+                                                                ...prev,
+                                                                [product._id]: Math.max(1, Number(e.target.value) || 1),
+                                                            }))
+                                                        }
+                                                        className="w-full px-3 py-2 mt-2 text-sm bg-white/70 border border-[#d7c793] rounded-xl focus:ring-2 focus:ring-[#bfa63b] outline-none"
+                                                        placeholder="כמות"
+                                                    />
+                                                    <button
+                                                        onClick={() =>
+                                                            addToCart(product, "ONE", quantities[product._id] || 1)
+                                                        }
+                                                        className="w-full mt-4 py-2 text-white font-semibold bg-gradient-to-r from-[#c1aa5f] to-[#97BE5A] rounded-full shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
+                                                    >
+                                                        <span>הוסף לסל</span>
+                                                        <motion.span
+                                                            initial={{ rotate: 0 }}
+                                                            animate={{ rotate: [0, 15, -10, 10, 0] }}
+                                                            transition={{ repeat: Infinity, duration: 2 }}
+                                                        >
+                                                            🛒
+                                                        </motion.span>
+                                                    </button>
+                                                </>
+                                            )}
                                         </div>
                                     )}
                                 </motion.div>
@@ -312,9 +436,15 @@ const HomePage = () => {
                     </div>
                 </motion.section>
 
-
                 {/* Courses Section */}
-                <motion.section id="courses" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }} viewport={{ once: true }} className="container flex flex-col items-center justify-center gap-10 px-5 py-20 mx-auto md:flex-row">
+                <motion.section
+                    id="courses"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    transition={{ duration: 1 }}
+                    viewport={{ once: true }}
+                    className="container flex flex-col items-center justify-center gap-10 px-5 py-20 mx-auto md:flex-row"
+                >
                     <div className="w-full md:w-1/2">
                         <img src={mainP} alt="main" className="w-[500px] h-[600px] rounded-lg shadow-lg mx-auto" />
                     </div>
@@ -347,12 +477,18 @@ const HomePage = () => {
                                 );
                             })}
                         </div>
-
                     </div>
                 </motion.section>
 
                 {/* Simulation Area */}
-                <motion.section id="simulation" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 1 }} viewport={{ once: true }} className="container px-5 py-20 mx-auto">
+                <motion.section
+                    id="simulation"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    transition={{ duration: 1 }}
+                    viewport={{ once: true }}
+                    className="container px-5 py-20 mx-auto"
+                >
                     <div className="flex flex-col-reverse items-center gap-6 mx-auto max-w-7xl md:flex-row-reverse">
                         <div className="grid grid-cols-2 gap-2 md:w-2/5 place-items-center">
                             {imagesSketches.map((img, index) => (
@@ -363,7 +499,8 @@ const HomePage = () => {
                                         className="object-cover w-48 h-48 rounded-full shadow-md cursor-pointer"
                                         whileHover={{ scale: 1.15, rotate: 2 }}
                                         transition={{ duration: 0.4 }}
-                                        onClick={() => handleSelectCategory(img.title.toLowerCase())} />
+                                        onClick={() => handleSelectCategory(img.title.toLowerCase())}
+                                    />
                                     <h2 className="mt-3 text-lg font-semibold text-[#3B3024]">{img.title}</h2>
                                 </div>
                             ))}
@@ -380,7 +517,7 @@ const HomePage = () => {
                     </div>
                 </motion.section>
 
-                {/*Contact us section*/}
+                {/* Contact us section */}
                 <motion.section
                     id="contact"
                     initial={{ opacity: 0 }}
@@ -390,13 +527,9 @@ const HomePage = () => {
                     className="container flex justify-center px-6 py-20 mx-auto"
                     dir="rtl"
                 >
-                    <div className="w-full max-w-xl px-10 py-16 bg-[#CBB279] rounded-[80px] shadow-md flex flex-col items-center">
-                        <h2 className="mb-4 text-2xl font-semibold text-center text-[#3B3024]">
-                            צרו קשר
-                        </h2>
-                        <p className="mb-6 text-center text-[#5A4B36] text-sm">
-                            יש לכם שאלות? מלאו את הטופס ונחזור אליכם בהקדם.
-                        </p>
+                    <div className="w-full max-w-xl px-10 py-16 bg-[#F1F3C2] rounded-[80px] shadow-md flex flex-col items-center">
+                        <h2 className="mb-4 text-2xl font-semibold text-center text-[#3B3024]">צרו קשר</h2>
+                        <p className="mb-6 text-center text-[#5A4B36] text-sm">יש לכם שאלות? מלאו את הטופס ונחזור אליכם בהקדם.</p>
 
                         <form onSubmit={handleSubmit} className="flex flex-col items-center w-full gap-4">
                             <div className="w-1/2">
@@ -407,7 +540,8 @@ const HomePage = () => {
                                     value={formData.name}
                                     onChange={handleChange}
                                     placeholder="השם שלך"
-                                    className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#97BE5A]" />
+                                    className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#97BE5A]"
+                                />
                             </div>
 
                             <div className="w-1/2">
@@ -418,7 +552,8 @@ const HomePage = () => {
                                     value={formData.email}
                                     onChange={handleChange}
                                     placeholder="האימייל שלך"
-                                    className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#97BE5A]" />
+                                    className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#97BE5A]"
+                                />
                             </div>
 
                             <div className="w-1/2">
@@ -443,24 +578,23 @@ const HomePage = () => {
                     </div>
                 </motion.section>
 
-
-
-
                 <SideCart
                     isOpen={isCartOpen}
                     onClose={() => setIsCartOpen(false)}
                     cart={cart}
                     updateQuantity={updateQuantity}
                     removeFromCart={removeFromCart}
-                    handleCheckout={handleCheckout} />
+                    handleCheckout={handleCheckout}
+                />
                 <button
                     onClick={() => setIsCartOpen(true)}
-                    className="fixed bottom-6 right-6 z-50 bg-[#97BE5A] hover:bg-[#7ea649] text-white p-4 rounded-full shadow-lg transition transform hover:scale-110"
+                    className="fixed bottom-6 right-6 z-50 bg-[#9FC87E] hover:bg-[#7ea649] text-white p-4 rounded-full shadow-lg transition transform hover:scale-110"
                     title="Open Cart"
                 >
                     <FaShoppingCart className="text-xl" />
                 </button>
-            </div></>
+            </div>
+        </>
     );
 };
 

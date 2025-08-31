@@ -1,213 +1,189 @@
-// src/pages/LegalPage.tsx
-import { useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
+import React from "react";
 
-const business = {
-    name: "Omer Aviv Tattoo",
-    domain: "https://example.com",
-    email: "contact@example.com",
-    phone: "050-0000000",
-    address: "רח' הדוגמה 1, תל-אביב",
-    lastUpdated: "08.2025",
+const BUSINESS = {
+    name: import.meta.env.VITE_BUSINESS_NAME || "Y.M.A – אתרים מותאמים אישית",
+    website: import.meta.env.VITE_SITE_URL || "https://example.com",
+    email: import.meta.env.VITE_CONTACT_EMAIL || "contact@example.com",
+    phone: import.meta.env.VITE_CONTACT_PHONE || "+972-50-0000000",
+    address: import.meta.env.VITE_CONTACT_ADDRESS || "ישראל",
 };
 
-const cardCls =
-    "relative p-4 sm:p-5 bg-white/80 rounded-xl border border-[#e4d3a1] shadow-sm text-[#3B3024]";
-
-const SectionCard: React.FC<React.PropsWithChildren<{ id: string; title: string }>> = ({
-    id,
-    title,
-    children,
-}) => (
-    <motion.section
-        id={id}
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-10% 0px -10% 0px" }}
-        transition={{ duration: 0.5 }}
-        className={cardCls}
-    >
-        <h2 className="text-xl sm:text-2xl font-bold mb-3 text-[#3B3024]">{title}</h2>
-        <div className="prose max-w-none prose-p:leading-relaxed prose-li:leading-relaxed prose-ul:list-disc prose-ol:list-decimal prose-ul:pr-5 prose-ol:pr-5">
+const SectionCard: React.FC<React.PropsWithChildren<{ title: string; id: string; tone?: "warm" | "light" }>> = ({ title, id, tone = "light", children }) => (
+    <section id={id} className={`rounded-xl shadow-lg p-6 md:p-8 ${tone === "warm" ? "bg-[#CBB279] text-[#3B3024]" : "bg-[#F1F3C2] text-[#3B3024]"}`}>
+        <h2 className="text-2xl md:text-3xl font-bold mb-4 tracking-wide">{title}</h2>
+        <div className="prose prose-sm md:prose-base lg:prose-lg max-w-none rtl prose-li:marker:text-[#3B3024]" dir="rtl">
             {children}
         </div>
-    </motion.section>
+    </section>
 );
 
-export default function LegalPage() {
-    
+const Anchor: React.FC<{ href: string; children: React.ReactNode }> = ({ href, children }) => (
+    <a href={href} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/70 hover:bg-white transition shadow border border-[#e2d9c3]">
+        <span className="i-lucide-link-2" aria-hidden />
+        {children}
+    </a>
+);
 
-    useEffect(() => {
-        document.documentElement.dir = "rtl";
-    }, []);
-
-    const navItems = useMemo(
-        () => [
-            { id: "privacy", label: "הצהרת פרטיות" },
-            { id: "accessibility", label: "מדיניות נגישות" },
-            { id: "terms", label: "תנאי שימוש" },
-        ],
-        []
-    );
+const LegalPage: React.FC = () => {
+    const today = new Date().toLocaleDateString("he-IL", { year: "numeric", month: "2-digit", day: "2-digit" });
 
     return (
         <div
-            className="min-h-screen pb-12 pt-28"
+            className="min-h-screen pt-24 pb-20 px-4 sm:px-6 md:px-8 bg-[#FFFFFF] text-[#3B3024] font-serif"
             style={{
                 backgroundImage: "url('/backgrounds/BG4.png')",
                 backgroundRepeat: "no-repeat",
                 backgroundSize: "contain",
                 backgroundPosition: "right top",
                 backgroundAttachment: "fixed",
-                backgroundColor: "#CBB279",
             }}
         >
-            <div className="max-w-5xl px-4 mx-auto hebrew-content">
-               
-                {/* Subtitle */}
-                <p className="text-[#3B3024] text-base sm:text-lg text-center mb-3">
-                    {business.name} · {business.domain}
-                </p>
-                <p className="text-[#3B3024]/80 text-xs text-center mb-6">
-                    עודכן לאחרונה: {business.lastUpdated}
-                </p>
+            <div className="max-w-5xl mx-auto">
+                {/* כותרת + תאריך עדכון */}
+                <header className="text-center mb-10">
+                    <h1 className="text-3xl md:text-4xl font-extrabold tracking-wide">מסמכי מדיניות האתר</h1>
+                    <p className="mt-2 opacity-80">עודכן לאחרונה: {today}</p>
+                </header>
 
-                {/* Pills nav */}
-                <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
-                    {navItems.map((it) => (
-                        <a
-                            key={it.id}
-                            href={`#${it.id}`}
-                            className="px-3 py-1.5 text-sm rounded-full bg-white/80 text-[#3B3024] border border-[#e4d3a1] hover:bg-white transition"
-                        >
-                            {it.label}
-                        </a>
-                    ))}
-                </div>
+                {/* ניווט פנימי מהיר */}
+                <nav className="sticky top-20 z-10 mb-10">
+                    <div className="flex flex-wrap gap-3 justify-center">
+                        <Anchor href="#privacy">הצהרת פרטיות</Anchor>
+                        <Anchor href="#terms">תנאי שימוש</Anchor>
+                        <Anchor href="#accessibility">הצהרת נגישות</Anchor>
+                        <Anchor href="#cookies">מדיניות קוקיז</Anchor>
+                    </div>
+                </nav>
 
-                {/* Divider */}
-                <hr className="w-24 h-1 mx-auto mb-8 bg-[#F1F3C2] rounded-full border-0" />
-
-                <div className="grid gap-5">
-                    {/* Privacy */}
-                    <SectionCard id="privacy" title="הצהרת פרטיות">
+                <div className="grid gap-8">
+                    {/* Privacy Policy */}
+                    <SectionCard id="privacy" title="הצהרת פרטיות" tone="warm">
                         <p>
-                            אנו ב־{business.name} מכבדים את פרטיות המשתמשים באתר {business.domain}. הצהרה זו מסבירה אילו נתונים
-                            נאספים, כיצד אנו משתמשים בהם ומהן זכויותיך. המסמך הינו כללי ואינו ייעוץ משפטי.
+                            פרטיות המשתמשים חשובה לנו. מסמך זה מסביר אילו נתונים אנו אוספים, כיצד אנו משתמשים בהם, עם מי אנו משתפים אותם וכיצד ניתן לממש זכויות על פי הדין החל.
                         </p>
-
-                        <h3 className="mt-4 mb-1 text-lg font-semibold">אילו נתונים אנו אוספים</h3>
+                        <h3>איזה מידע נאסף?</h3>
                         <ul>
-                            <li>נתונים שסיפקת מרצון (פרטי קשר בטפסים, קבצים שצורפו, הודעות).</li>
-                            <li>נתונים טכניים (IP, סוג דפדפן, רזולוציה, דפים נצפים, הפניות).</li>
-                            <li>עוגיות (Cookies) ומזהים דומים לתפקוד האתר, אנליטיקה ושיווק (בכפוף להסכמה).</li>
+                            <li>
+                                <strong>מידע שנמסר מרצון:</strong> שם, כתובת דוא"ל, טלפון, תוכן פניות, קבצים שצורפו, פרטי הזמנה/רכישה (ככל שיש חנות באתר).
+                            </li>
+                            <li>
+                                <strong>מידע טכני ושימושי:</strong> כתובת IP, סוג דפדפן ומכשיר, עמודים שנצפו, זמנים, הפניות, מזהי קוקיז/פיקסלים ונתוני ביצועים לצורכי אבטחה, אנליטיקה ושיפור חוויית המשתמש.
+                            </li>
                         </ul>
-
-                        <h3 className="mt-4 mb-1 text-lg font-semibold">כיצד אנו משתמשים בנתונים</h3>
+                        <h3>למה אנו משתמשים במידע?</h3>
                         <ul>
-                            <li>מתן שירותים, טיפול בפניות ותמיכה.</li>
-                            <li>שיפור חוויית המשתמש ותפקודיות.</li>
-                            <li>סטטיסטיקות אנונימיות (רק אם אושרה אנליטיקה).</li>
-                            <li>שיווק ומדידה (רק אם אושרו עוגיות שיווק).</li>
+                            <li>לתפעול האתר והענקת השירותים (מענה לפניות, ניהול חשבונות משתמש, הזמנות ותשלומים אם קיימים).</li>
+                            <li>לשיפור חוויית השימוש, מדידות סטטיסטיות וניתוחי ביצועים.</li>
+                            <li>לשמירת אבטחת מידע, מניעת הונאה ועמידה בדרישות הדין.</li>
+                            <li>שיווק והתאמה אישית – בכפוף לקבלת הסכמה היכן שנדרש וכיבוד זכות להתנגד/להסיר.</li>
                         </ul>
-
-                        <h3 className="mt-4 mb-1 text-lg font-semibold">שיתוף עם צדדים שלישיים</h3>
-                        <p>ייתכן שימוש בספקי משנה (אחסון, אנליטיקה, תשלומים) במידה הנדרשת בלבד.</p>
-
-                        <h3 className="mt-4 mb-1 text-lg font-semibold">אבטחה ושמירת מידע</h3>
+                        <h3>שיתוף מידע</h3>
                         <p>
-                            אנו מיישמים אמצעי הגנה סבירים. נתונים נשמרים לפרק הזמן הדרוש למטרות איסופם ובהתאם לדין. אין בטחון
-                            מוחלט ברשת האינטרנט.
+                            אנו עשויים לשתף מידע עם ספקים חיצוניים המסייעים לנו בתפעול (אחסון, דוא"ל, אנליטיקה, סליקה, משלוחים), בכפוף להתחייבויות סודיות ואבטחת מידע. מידע יימסר לרשויות כאשר הדבר נדרש על פי דין.
                         </p>
-
-                        <h3 className="mt-4 mb-1 text-lg font-semibold">זכויות משתמש</h3>
+                        <h3>אבטחת מידע ושמירתו</h3>
                         <p>
-                            ניתן לפנות אלינו לבקשת עיון/תיקון/מחיקה בכפוף לדין:{" "}
-                            <a className="underline" href={`mailto:${business.email}`}>
-                                {business.email}
-                            </a>
-                            .
+                            אנו מיישמים אמצעי אבטחה סבירים להגנה על המידע. משך השמירה ייקבע בהתאם למטרות העיבוד ולחובות החוקיות.
                         </p>
-
-                        <h3 className="mt-4 mb-1 text-lg font-semibold">יצירת קשר</h3>
+                        <h3>זכויות משתמשים</h3>
+                        <ul>
+                            <li>זכות עיון, תיקון ומחיקה של מידע אישי, בכפוף לדין.</li>
+                            <li>זכות להתנגד לעיבוד מסוים ו/או לבטל הסכמה שניתנה.</li>
+                            <li>זכות לניידות מידע במקרים מסוימים.</li>
+                        </ul>
+                        <h3>יצירת קשר בנושא פרטיות</h3>
                         <p>
-                            דוא"ל:{" "}
-                            <a className="underline" href={`mailto:${business.email}`}>
-                                {business.email}
-                            </a>{" "}
-                            · טלפון: {business.phone} · כתובת: {business.address}
+                            לשאלות/בקשות בנושא פרטיות ניתן לפנות ל-{BUSINESS.name} בכתובת: {BUSINESS.email} | {BUSINESS.phone} | {BUSINESS.address}
                         </p>
                     </SectionCard>
 
-                    {/* Accessibility */}
-                    <SectionCard id="accessibility" title="מדיניות נגישות">
-                        <p>
-                            {business.name} מחויב/ת להנגשת האתר לכלל הציבור, לרבות אנשים עם מוגבלויות, ופועל/ת לשיפור מתמיד של
-                            החוויה בהתאם לעקרונות מקובלים.
-                        </p>
-
-                        <h3 className="mt-4 mb-1 text-lg font-semibold">מאפייני נגישות באתר</h3>
-                        <ul>
-                            <li>ניווט מלא במקלדת לרכיבים עיקריים.</li>
-                            <li>טקסט חלופי לתמונות משמעותיות.</li>
-                            <li>יחסי ניגודיות תקינים ברכיבים מרכזיים.</li>
-                            <li>תוויות ושיוכים לטפסים.</li>
-                            <li>כפתור נגישות עם: טקסט גדול, ניגודיות גבוהה, קו תחתון לקישורים, ביטול אנימציות ועוד.</li>
-                        </ul>
-
-                        <h3 className="mt-4 mb-1 text-lg font-semibold">תקלות ושיפור מתמשך</h3>
-                        <p>
-                            אם נתקלתם בבעיה — אנא פנו אלינו עם פרטי המכשיר/דפדפן, תיאור קצר וקישור לעמוד, כדי שנוכל לתקן במהירות.
-                        </p>
-
-                        <h3 className="mt-4 mb-1 text-lg font-semibold">פרטי קשר לרכז/ת נגישות</h3>
-                        <p>
-                            {business.name} ·{" "}
-                            <a className="underline" href={`mailto:${business.email}`}>
-                                {business.email}
-                            </a>{" "}
-                            · {business.phone}
-                        </p>
-                    </SectionCard>
-
-                    {/* Terms */}
+                    {/* Terms of Use */}
                     <SectionCard id="terms" title="תנאי שימוש">
                         <p>
-                            השימוש באתר {business.domain} כפוף לתנאים אלה; השימוש מעיד על הסכמה. אם אינך מסכים/ה — הימנע/י משימוש
-                            באתר.
+                            השימוש באתר {BUSINESS.website} ובשירותי {BUSINESS.name} כפוף לתנאים שלהלן. גלישה באתר מהווה הסכמה לתנאים.
                         </p>
-
-                        <h3 className="mt-4 mb-1 text-lg font-semibold">שימוש מותר</h3>
+                        <h3>שימוש מותר והגבלות</h3>
                         <ul>
-                            <li>שימוש חוקי ובהתאם לדין.</li>
-                            <li>אין לבצע איסוף אוטומטי, חדירה למערכות או פגיעה בזכויות.</li>
+                            <li>האתר מסופק לשימוש אישי וחוקי בלבד. אין להעתיק, להפיץ, לשנות או לבצע הנדסה לאחור ללא רשות.</li>
+                            <li>אין להעלות תכנים בלתי חוקיים, פוגעניים, מפרי זכויות יוצרים או פרטיות.</li>
+                            <li>אנו רשאים לחסום גישה/להסיר תכנים לפי שיקול דעתנו כדי לשמור על תקינות האתר והדין.</li>
                         </ul>
-
-                        <h3 className="mt-4 mb-1 text-lg font-semibold">קניין רוחני</h3>
+                        <h3>קניין רוחני</h3>
                         <p>
-                            אלא אם נאמר אחרת, הזכויות בתכנים ובסימני המסחר שמורות ל־{business.name} או לבעלי הזכויות. אין להעתיק
-                            או להפיץ בלי הרשאה.
+                            אלא אם צוין אחרת, כל זכויות הקניין הרוחני באתר ובתכניו שייכות ל-{BUSINESS.name} ו/או לבעלי הזכויות הרלוונטיים. סימני מסחר, לוגואים ותמונות מוגנים בדין.
                         </p>
-
-                        <h3 className="mt-4 mb-1 text-lg font-semibold">אחריות</h3>
+                        <h3>רכישות ותשלומים (אם קיימים)</h3>
+                        <ul>
+                            <li>מחירים כוללים/אינם כוללים מע"מ – יש לעדכן בהתאם.</li>
+                            <li>החזרות/ביטולים כפופים למדיניות החזרות המתפרסמת באתר ולדין החל.</li>
+                            <li>התממשקות לספקי סליקה/משלוחים תעשה בכפוף לתנאיהם.</li>
+                        </ul>
+                        <h3>הגבלת אחריות</h3>
                         <p>
-                            האתר והתכנים מוצעים "כפי שהם". ייתכנו שגיאות/אי-דיוקים/אי-זמינות. לא נישא באחריות לנזקים עקיפים או
-                            תוצאתיים.
+                            האתר והשירותים מוצעים "כפי שהם" (AS-IS). אנו שואפים לדיוק וזמינות אך איננו מתחייבים להיעדר תקלות/שגיאות. לא נהיה אחראים לכל נזק עקיף/תוצאתי הנובע מהשימוש באתר, ככל שהדין מאפשר.
                         </p>
-
-                        <h3 className="mt-4 mb-1 text-lg font-semibold">קישורים חיצוניים</h3>
-                        <p>קישורים לאתרים חיצוניים ניתנים לנוחות בלבד — אנו לא אחראים לתכניהם או לנגישותם.</p>
-
-                        <h3 className="mt-4 mb-1 text-lg font-semibold">שינויים ודין</h3>
+                        <h3>שינויים</h3>
                         <p>
-                            אנו רשאים לעדכן את התנאים מעת לעת. הדין החל: דיני מדינת ישראל; סמכות השיפוט — בתי המשפט במחוז
-                            תל-אביב–יפו.
+                            אנו רשאים לעדכן את התנאים/המדיניות מעת לעת. המשך שימוש לאחר שינוי מהווה הסכמה לנוסח המעודכן.
                         </p>
-
-                        <p className="mt-4 text-xs opacity-70">*מסמך תבניתי להמחשה בלבד ואינו מהווה ייעוץ משפטי.</p>
+                        <h3>שיפוט ודין</h3>
+                        <p>
+                            יחולו דיני מדינת ישראל וסמכות השיפוט הבלעדית תהיה בבתי המשפט המוסמכים בישראל.
+                        </p>
                     </SectionCard>
+
+                    {/* Accessibility Statement */}
+                    <SectionCard id="accessibility" title="הצהרת נגישות" tone="warm">
+                        <p>
+                            אנו מחויבים להנגשת האתר לכלל המשתמשים, כולל אנשים עם מוגבלויות. שאיפתנו לעמוד בהנחיות תקן הנגישות הבין-לאומי WCAG 2.1 ברמה AA, ובהתאם לחוק שוויון זכויות לאנשים עם מוגבלות והתקנות בישראל.
+                        </p>
+                        <h3>מה יישמנו?</h3>
+                        <ul>
+                            <li>תמיכה בניווט מקלדת, היררכיית כותרות ואריה (ARIA) במידת הצורך.</li>
+                            <li>ניגודיות צבעים מספקת וטקסטים קריאים.</li>
+                            <li>טקסט חלופי לתמונות ותוויות לטפסים.</li>
+                            <li>תאימות למכשירים ניידים ויחידות יחסיות.</li>
+                        </ul>
+                        <h3>החרגות/מגבלות ידועות</h3>
+                        <p>
+                            חלקים מסוימים באתר עשויים להיות עדיין בתהליך הנגשה מתמשך. נשמח לקבל משוב לשיפור.
+                        </p>
+                        <h3>דרכי יצירת קשר בנושא נגישות</h3>
+                        <p>
+                            נתקלתם בבעיה? ספרו לנו ונפעל לתיקון: {BUSINESS.email} | {BUSINESS.phone}. אנא ציינו תיאור הבעיה, הדפדפן ומערכת ההפעלה.
+                        </p>
+                    </SectionCard>
+
+                    {/* Cookies Policy */}
+                    <SectionCard id="cookies" title="מדיניות קוקיז">
+                        <p>
+                            אנו משתמשים בעוגיות (Cookies) ובטכנולוגיות דומות לצורך תפעול האתר, אבטחה, אנליטיקה, שיפור ביצועים והתאמה אישית. חלק מהקוקיז הכרחיים וחלקם ניתנים לבחירה.
+                        </p>
+                        <h3>סוגי קוקיז</h3>
+                        <ul>
+                            <li><strong>הכרחיים:</strong> מאפשרים תפקוד בסיסי של האתר (אימות, אבטחה, שמירת העדפות בסיסיות).</li>
+                            <li><strong>ביצועים ואנליטיקה:</strong> מדידת שימוש וסטטיסטיקות (לדוגמה Google Analytics).</li>
+                            <li><strong>שיווק:</strong> פרסונליזציה ורימרקטינג בכפוף להסכמה, אם נדרש.</li>
+                        </ul>
+                        <h3>ניהול העדפות</h3>
+                        <p>
+                            תוכלו לנהל העדפות דרך דפדפן/מכשיר או דרך מרכז ההעדפות באתר (אם קיים). ניתן להסיר הסכמה לקוקיז לא הכרחיים בכל עת.
+                        </p>
+                        <p className="mt-2">
+                            לשאלות בנושא קוקיז/פרטיות: {BUSINESS.email}
+                        </p>
+                    </SectionCard>
+
+                    {/* כפתור חזרה למעלה */}
+                    <div className="flex justify-center mt-6">
+                        <a href="#top" className="px-5 py-2 rounded-xl bg-[#97BE5A] text-white hover:bg-[#7ea649] transition shadow">
+                            חזרה לראש העמוד
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     );
-}
+};
+
+export default LegalPage;

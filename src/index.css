@@ -6,3 +6,13 @@
 * {
   font-family: "Heebo", sans-serif;
 }
+.hebrew-content { direction: rtl; }
+html.accessibility-big-text { font-size: 115%; }
+html.accessibility-high-contrast body { background: #000 !important; color: #fff !important; }
+html.accessibility-underline-links a { text-decoration: underline !important; }
+html.accessibility-grayscale body { filter: grayscale(100%); }
+html.accessibility-reduce-motion * {
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
+}

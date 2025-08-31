@@ -9,6 +9,7 @@ import AdminPage from "./Pages/AdminPage/AdminPage"
 import ApplySketchPage from "./Pages/SimulatorPage/SimulatorPage"
 import useAuthInit from "./components/useAuthInit";
 import AllProductsPage from "./Pages/AllProductsPage/AllProductsPage";
+import LegalPage from "./Pages/LegalPage/LegalPage";
 
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
         <Route path="/AdminPage" element={<AdminPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/products" element={<AllProductsPage />} />
+        <Route path="/legal" element={<LegalPage />} />
       </Routes>
       <Footer />
     </div>

@@ -10,6 +10,7 @@ import ApplySketchPage from "./Pages/SimulatorPage/SimulatorPage"
 import useAuthInit from "./components/useAuthInit";
 import AllProductsPage from "./Pages/AllProductsPage/AllProductsPage";
 import LegalPage from "./Pages/LegalPage/LegalPage";
+import CookieBanner from "./components/cookies/CookieBanner";
 
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
         <Route path="/products" element={<AllProductsPage />} />
         <Route path="/legal" element={<LegalPage />} />
       </Routes>
+      <CookieBanner />
       <Footer />
     </div>
   );

@@ -1,6 +1,5 @@
 // src/pages/LegalPage.tsx
 import { useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const business = {
@@ -36,7 +35,7 @@ const SectionCard: React.FC<React.PropsWithChildren<{ id: string; title: string 
 );
 
 export default function LegalPage() {
-    const navigate = useNavigate();
+    
 
     useEffect(() => {
         document.documentElement.dir = "rtl";
@@ -64,27 +63,7 @@ export default function LegalPage() {
             }}
         >
             <div className="max-w-5xl px-4 mx-auto hebrew-content">
-                {/* Header */}
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[#F1F3C2] drop-shadow">
-                        מסמך משפטי אחוד
-                    </h1>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => navigate(-1)}
-                            className="px-3 py-2 text-sm rounded-lg bg-white/80 text-[#3B3024] border border-[#e4d3a1] hover:bg-white transition"
-                        >
-                            חזרה
-                        </button>
-                        <button
-                            onClick={() => navigate("/")}
-                            className="px-3 py-2 text-sm rounded-lg bg-[#F1F3C2] text-[#3B3024] border border-transparent hover:opacity-90 transition"
-                        >
-                            דף הבית
-                        </button>
-                    </div>
-                </div>
-
+               
                 {/* Subtitle */}
                 <p className="text-[#3B3024] text-base sm:text-lg text-center mb-3">
                     {business.name} · {business.domain}

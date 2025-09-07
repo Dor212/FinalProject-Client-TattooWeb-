@@ -132,35 +132,70 @@ const HomePage = () => {
         Swal.fire({
             title: "Shipping Details",
             html: `
-        <input id="fullname" class="swal2-input" placeholder="Full Name">
-        <input id="phone" class="swal2-input" placeholder="Phone Number">
-        <input id="city" class="swal2-input" placeholder="City">
-        <input id="street" class="swal2-input" placeholder="Street">
-        <input id="houseNumber" class="swal2-input" placeholder="House Number">
-        <input id="zip" class="swal2-input" placeholder="Postal Code">
-      `,
+      <input id="fullname" class="swal2-input" placeholder="Full Name">
+      <input id="phone" class="swal2-input" placeholder="Phone Number">
+      <input id="city" class="swal2-input" placeholder="City">
+      <input id="street" class="swal2-input" placeholder="Street">
+      <input id="houseNumber" class="swal2-input" placeholder="House Number">
+      <input id="zip" class="swal2-input" placeholder="Postal Code">
+      <input id="email" class="swal2-input" placeholder="Customer Email (optional)">
+    `,
             confirmButtonText: "Place Order",
-            preConfirm: () => ({
-                fullname: (document.getElementById("fullname") as HTMLInputElement).value,
-                phone: (document.getElementById("phone") as HTMLInputElement).value,
-                city: (document.getElementById("city") as HTMLInputElement).value,
-                street: (document.getElementById("street") as HTMLInputElement).value,
-                houseNumber: (document.getElementById("houseNumber") as HTMLInputElement).value,
-                zip: (document.getElementById("zip") as HTMLInputElement).value,
-            }),
-        }).then(async ({ isConfirmed, value }) => {
-            if (isConfirmed) {
-                try {
-                    await axios.post(`${VITE_API_URL}/users/orders`, { customerDetails: value, cart });
-                    Swal.fire("Success", "Your order has been placed!", "success");
-                    setCart([]);
-                    setIsCartOpen(false);
-                } catch {
-                    Swal.fire("Error", "There was an issue placing the order", "error");
+            focusConfirm: false,
+            showCancelButton: true,
+            customClass: {
+                confirmButton:
+                    "bg-gradient-to-r from-[#c1aa5f] to-[#97BE5A] hover:from-[#d4c06a] hover:to-[#a6d266] text-white font-bold py-2 px-6 rounded",
+                cancelButton:
+                    "bg-gray-300 text-gray-700 hover:bg-gray-400 font-bold py-2 px-6 rounded ml-2",
+            },
+            preConfirm: () => {
+                const val = (id: string) =>
+                    (document.getElementById(id) as HTMLInputElement)?.value?.trim();
+
+                const data = {
+                    fullname: val("fullname"),
+                    phone: val("phone"),
+                    city: val("city"),
+                    street: val("street"),
+                    houseNumber: val("houseNumber"),
+                    zip: val("zip"),
+                    email: val("email") || null,
+                };
+
+                if (
+                    !data.fullname ||
+                    !data.phone ||
+                    !data.city ||
+                    !data.street ||
+                    !data.houseNumber ||
+                    !data.zip
+                ) {
+                    Swal.showValidationMessage(
+                        "Please fill full name, phone, city, street, house number and postal code"
+                    );
+                    return;
                 }
+
+                return data;
+            },
+        }).then(async ({ isConfirmed, value }) => {
+            if (!isConfirmed || !value) return;
+
+            try {
+                await axios.post(`${VITE_API_URL}/users/orders`, {
+                    customerDetails: value,
+                    cart,
+                });
+                Swal.fire("Success", "Your order has been placed!", "success");
+                setCart([]);
+                setIsCartOpen(false);
+            } catch (e) {
+                Swal.fire("Error", "There was an issue placing the order", "error");
             }
         });
     };
+
 
     const [logoSrc, setLogoSrc] = useState("/backgrounds/omerlogo.png");
     useEffect(() => {

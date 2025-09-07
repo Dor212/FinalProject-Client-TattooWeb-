@@ -138,21 +138,11 @@ const HomePage = () => {
       <input id="street" class="swal2-input" placeholder="Street">
       <input id="houseNumber" class="swal2-input" placeholder="House Number">
       <input id="zip" class="swal2-input" placeholder="Postal Code">
-      <input id="email" class="swal2-input" placeholder="Customer Email (optional)">
     `,
             confirmButtonText: "Place Order",
             focusConfirm: false,
-            showCancelButton: true,
-            customClass: {
-                confirmButton:
-                    "bg-gradient-to-r from-[#c1aa5f] to-[#97BE5A] hover:from-[#d4c06a] hover:to-[#a6d266] text-white font-bold py-2 px-6 rounded",
-                cancelButton:
-                    "bg-gray-300 text-gray-700 hover:bg-gray-400 font-bold py-2 px-6 rounded ml-2",
-            },
             preConfirm: () => {
-                const val = (id: string) =>
-                    (document.getElementById(id) as HTMLInputElement)?.value?.trim();
-
+                const val = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value?.trim();
                 const data = {
                     fullname: val("fullname"),
                     phone: val("phone"),
@@ -162,23 +152,13 @@ const HomePage = () => {
                     zip: val("zip"),
                     email: val("email") || null,
                 };
-
-                if (
-                    !data.fullname ||
-                    !data.phone ||
-                    !data.city ||
-                    !data.street ||
-                    !data.houseNumber ||
-                    !data.zip
-                ) {
-                    Swal.showValidationMessage(
-                        "Please fill full name, phone, city, street, house number and postal code"
-                    );
+                if (!data.fullname || !data.phone || !data.city || !data.street || !data.houseNumber || !data.zip) {
+                    Swal.showValidationMessage("Please fill full name, phone, city, street, house number and postal code");
                     return;
                 }
-
                 return data;
             },
+            showCancelButton: true,
         }).then(async ({ isConfirmed, value }) => {
             if (!isConfirmed || !value) return;
 
@@ -195,7 +175,6 @@ const HomePage = () => {
             }
         });
     };
-
 
     const [logoSrc, setLogoSrc] = useState("/backgrounds/omerlogo.png");
     useEffect(() => {
@@ -459,7 +438,6 @@ const HomePage = () => {
                                                             animate={{ rotate: [0, 15, -10, 10, 0] }}
                                                             transition={{ repeat: Infinity, duration: 2 }}
                                                         >
-                                                            🛒
                                                         </motion.span>
                                                     </button>
                                                 </>

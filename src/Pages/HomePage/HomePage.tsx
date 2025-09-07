@@ -140,7 +140,15 @@ const HomePage = () => {
       <input id="zip" class="swal2-input" placeholder="Postal Code">
     `,
             confirmButtonText: "Place Order",
+            showCancelButton: true,
             focusConfirm: false,
+            customClass: {
+                confirmButton:
+                    "bg-gradient-to-r from-[#c1aa5f] to-[#97BE5A] text-white font-bold py-2 px-6 rounded-lg shadow-lg hover:scale-105 transition-all duration-300",
+                cancelButton:
+                    "bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg ml-2 hover:bg-gray-400 transition-all duration-200",
+            },
+            buttonsStyling: false,
             preConfirm: () => {
                 const val = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value?.trim();
                 const data = {
@@ -158,7 +166,6 @@ const HomePage = () => {
                 }
                 return data;
             },
-            showCancelButton: true,
         }).then(async ({ isConfirmed, value }) => {
             if (!isConfirmed || !value) return;
 

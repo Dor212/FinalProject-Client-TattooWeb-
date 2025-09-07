@@ -408,12 +408,11 @@ const HomePage = () => {
                                                             animate={{ rotate: [0, 15, -10, 10, 0] }}
                                                             transition={{ repeat: Infinity, duration: 2 }}
                                                         >
-                                                            🛒
+                                                        
                                                         </motion.span>
                                                     </button>
                                                 </>
                                             ) : (
-                                                // מוצר ללא מידות
                                                 <>
                                                     <input
                                                         type="number"

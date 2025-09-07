@@ -47,7 +47,6 @@ const AllProductsPage = () => {
                 backgroundSize: "contain",
                 backgroundPosition: "right top",
                 backgroundAttachment: "fixed",
-                backgroundColor: "#CBB279",
             }}
         >
             <div className="max-w-6xl px-4 mx-auto">

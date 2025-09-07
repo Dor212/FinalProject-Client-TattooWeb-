@@ -1,4 +1,5 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin
 
-Sitemap: https://omertattoo.com/sitemap.xml
+Sitemap: https://omeravivtattoo.com/sitemap.xml

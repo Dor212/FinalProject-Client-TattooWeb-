@@ -233,17 +233,36 @@ const HomePage = () => {
     return (
         <>
             <Helmet>
+                {/* Title & Description */}
                 <title>Omer Aviv Tattoo - סטודיו לקעקועים</title>
                 <meta
                     name="description"
                     content="סטודיו לקעקועים בעיצוב אישי, באווירה מקצועית וייחודית. הזמנת סשן, הדמיית קעקוע, קורסים ועוד."
                 />
-                <meta property="og:title" content="Omer Tattoo Studio" />
+
+                {/* Canonical */}
+                <link rel="canonical" href="https://omeravivtattoo.com/" />
+
+                {/* Open Graph (Facebook/WhatsApp) */}
+                <meta property="og:type" content="website" />
+                <meta property="og:locale" content="he_IL" />
+                <meta property="og:title" content="Omer Aviv Tattoo - סטודיו לקעקועים" />
                 <meta
                     property="og:description"
                     content="קעקועים ייחודיים, מוצרים, קורסים והדמיות – הכל במקום אחד."
                 />
-                <meta property="og:image" content="https://yourdomain.com/preview.jpg" />
+                <meta property="og:url" content="https://omeravivtattoo.com/" />
+                <meta property="og:image" content="https://omeravivtattoo.com/preview.jpg" />
+                <meta property="og:image:alt" content="Omer Aviv Tattoo Studio" />
+
+                {/* Twitter (X) */}
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content="Omer Aviv Tattoo - סטודיו לקעקועים" />
+                <meta
+                    name="twitter:description"
+                    content="קעקועים ייחודיים, מוצרים, קורסים והדמיות – הכל במקום אחד."
+                />
+                <meta name="twitter:image" content="https://omeravivtattoo.com/preview.jpg" />
             </Helmet>
 
             <div

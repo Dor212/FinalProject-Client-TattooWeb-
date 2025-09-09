@@ -158,8 +158,8 @@ export default function CanvasesPage() {
             </Helmet>
 
             {/* לוגו */}
-            <header className="flex justify-center w-full py-4">
-                <img src="/backgrounds/omerlogo.png" alt="Omer" className="w-auto h-24 md:h-32" />
+            <header className="flex justify-center w-full py-6">
+                <img src="/public/backgrounds/ome-artL.png" alt="Omer" className="w-auto h-24 md:h-32" />
             </header>
 
             {/* קופסת מחירים */}

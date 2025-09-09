@@ -94,7 +94,7 @@ const Header = () => {
       <div className="flex items-center w-full mx-auto max-w-7xl">
         <Navbar.Brand as={Link as typeof Link} to="/" className="flex items-center gap-3">
           <img
-            src="/backgrounds/LogoOmerTattoo_transparent.png"
+            src="/backgrounds/omerlogo.png"
             alt="Omer Logo"
             className="w-auto h-10 transition-transform duration-300 hover:scale-105"
           />

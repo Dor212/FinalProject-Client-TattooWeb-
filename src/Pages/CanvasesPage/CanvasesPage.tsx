@@ -159,7 +159,7 @@ export default function CanvasesPage() {
 
             {/* לוגו */}
             <header className="flex justify-center w-full py-4">
-                <img src="/omerlogo.png" alt="Omer" className="w-auto h-24 md:h-32" />
+                <img src="/backgrounds/omerlogo.png" alt="Omer" className="w-auto h-24 md:h-32" />
             </header>
 
             {/* קופסת מחירים */}

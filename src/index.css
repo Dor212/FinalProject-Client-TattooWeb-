@@ -16,3 +16,8 @@ html.accessibility-reduce-motion * {
   animation: none !important;
   scroll-behavior: auto !important;
 }
+.snap-x { scroll-snap-type: x mandatory; }
+.snap-start { scroll-snap-align: start; }
+
+
+button { touch-action: manipulation; }

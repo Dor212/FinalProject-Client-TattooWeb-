@@ -11,6 +11,8 @@ import useAuthInit from "./components/useAuthInit";
 import AllProductsPage from "./Pages/AllProductsPage/AllProductsPage";
 import LegalPage from "./Pages/LegalPage/LegalPage";
 import CookieBanner from "./components/cookies/CookieBanner";
+import CanvasesPage from "./Pages/CanvasesPage/CanvasesPage";
+import CheckoutPage from "./Pages/CheckoutPage/CheckoutPage";
 
 
 function App() {
@@ -29,6 +31,8 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/products" element={<AllProductsPage />} />
         <Route path="/legal" element={<LegalPage />} />
+        <Route path="/canvases" element={<CanvasesPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
       </Routes>
       <CookieBanner />
       <Footer />

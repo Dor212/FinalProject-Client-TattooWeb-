@@ -1,3 +1,4 @@
+// Header.tsx
 import { Navbar } from "flowbite-react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -7,109 +8,142 @@ import axios from "axios";
 import { decode } from "../../../Services/tokenServices.ts";
 import { userActions } from "../../../Store/UserSlice.ts";
 
-
 const Header = () => {
   const { VITE_API_URL } = import.meta.env;
   const [isOpen, setIsOpen] = useState(false);
   const user = useSelector((state: TRootState) => state.UserSlice.user);
-  const location = useLocation().pathname;
+  const pathname = useLocation().pathname; // <-- שם ברור
   const dispatch = useDispatch();
   const nav = useNavigate();
 
+  // --------- הגדרה: באילו נתיבים להחיל את מצב "קאנבס" ---------
+  // ערוך/הסר/הוסף לפי הנתיב האמיתי שלך
+  const CANVAS_ROUTES = ["/canvas", "/canvases", "/simulator", "/ApplySketch"];
+  const isCanvasPage = CANVAS_ROUTES.some((p) => pathname.startsWith(p));
+
+  // בחר מצב:
+  const SHOW_MINIMAL_LOGO_ONLY = true;  // true = רק לוגו; false = להסתיר לגמרי
+
   const logout = () => {
-    
     dispatch(userActions.logout());
     nav("/");
   };
 
-  const toggleNavbar = () => {
-    setIsOpen(prev => !prev);
-  };
-
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const decoded = decode(token);
-        axios.defaults.headers.common["x-auth-token"] = token;
+    if (!token) return;
 
-        axios.get(VITE_API_URL +`/users/${decoded._id}`)
-          .then(res => {
-            if (res.data && res.data._id) {
-              dispatch(userActions.login(res.data));
-            } else {
-              localStorage.removeItem("token");
-            }
-          })
-          .catch(() => localStorage.removeItem("token"));
-      } catch {
-        localStorage.removeItem("token");
-      }
+    try {
+      const decoded = decode(token);
+      axios.defaults.headers.common["x-auth-token"] = token;
+
+      axios
+        .get(`${VITE_API_URL}/users/${decoded._id}`)
+        .then((res) => {
+          if (res.data && res.data._id) {
+            dispatch(userActions.login(res.data));
+          } else {
+            localStorage.removeItem("token");
+          }
+        })
+        .catch(() => localStorage.removeItem("token"));
+    } catch {
+      localStorage.removeItem("token");
     }
   }, [VITE_API_URL, dispatch]);
 
-  console.log("user", user);
+  const baseLink =
+    "px-3 py-2 rounded-lg transition hover:underline hover:text-[#97BE5A]";
+  const active = "font-bold";
+
+  // --------- מצב "קאנבס": הסתרה מוחלטת ---------
+  if (isCanvasPage && !SHOW_MINIMAL_LOGO_ONLY) {
+    return null;
+  }
+
+  // --------- מצב "קאנבס": רק לוגו לא־לחיץ ---------
+  if (isCanvasPage && SHOW_MINIMAL_LOGO_ONLY) {
+    return (
+      <header
+        dir="ltr"
+        className="fixed top-0 left-0 z-50 w-full bg-[#F1F3C5]/90 backdrop-blur-md shadow-md"
+      >
+        <div className="flex items-center justify-center w-full py-2 mx-auto max-w-7xl">
+          {/* לוגו בלבד, ללא Link */}
+          <div className="flex items-center gap-3 select-none">
+            <img
+              src="/backgrounds/LogoOmerTattoo_transparent.png"
+              alt="Omer Logo"
+              className="w-auto h-10"
+              draggable={false}
+            />
+          </div>
+        </div>
+      </header>
+    );
+  }
+
+  // --------- מצב רגיל: ההאדר המלא ---------
   return (
     <Navbar
       fluid
       rounded
+      dir="ltr"
       className="fixed top-0 left-0 z-50 w-full bg-[#F1F3C5]/90 backdrop-blur-md shadow-md text-[#3B3024]"
     >
-      <Navbar.Brand as={Link} to="/" className="flex items-center gap-3">
-        <img
-          src="/backgrounds/LogoOmerTattoo_transparent.png"
-          alt="Omer Logo"
-          className="w-auto h-10 transition-transform duration-300 hover:scale-105"
-        />
-      </Navbar.Brand>
+      <div className="flex items-center w-full mx-auto max-w-7xl">
+        <Navbar.Brand as={Link as typeof Link} to="/" className="flex items-center gap-3">
+          <img
+            src="/backgrounds/LogoOmerTattoo_transparent.png"
+            alt="Omer Logo"
+            className="w-auto h-10 transition-transform duration-300 hover:scale-105"
+          />
+        </Navbar.Brand>
 
-      <Navbar.Toggle onClick={toggleNavbar} />
+        <div className="flex items-center gap-2 ms-auto">
+          <Navbar.Toggle onClick={() => setIsOpen((p) => !p)} />
+        </div>
+      </div>
 
       <Navbar.Collapse
-        className={`${isOpen ? "block" : "hidden"
-          } md:flex md:items-center md:space-x-6 text-lg`}
+        className={`${isOpen ? "block" : "hidden"} md:flex md:items-center md:gap-3 md:ms-auto text-lg`}
       >
         {!user && (
-          <>
+          <div className="flex items-center gap-3">
             <Navbar.Link
-              as={Link}
+              as={Link as typeof Link}
               to="/register"
-              className={`hover:underline hover:text-[#97BE5A] ${location === "/register" ? "font-bold" : ""
-                }`}
+              className={`${baseLink} ${pathname === "/register" ? active : ""}`}
             >
               הרשמה
             </Navbar.Link>
             <Navbar.Link
-              as={Link}
+              as={Link as typeof Link}
               to="/login"
-              className={`hover:underline hover:text-[#97BE5A] ${location === "/login" ? "font-bold" : ""
-                }`}
+              className={`${baseLink} ${pathname === "/login" ? active : ""}`}
             >
               התחבר
             </Navbar.Link>
-          </>
+          </div>
         )}
 
         {user?.isAdmin && (
           <Navbar.Link
-            as={Link}
+            as={Link as typeof Link}
             to="/AdminPage"
-            className={`hover:underline hover:text-[#97BE5A] ${location === "/AdminPage" ? "font-bold" : ""
-              }`}
+            className={`${baseLink} ${pathname === "/AdminPage" ? active : ""}`}
           >
             Admin
           </Navbar.Link>
         )}
 
         {user && (
-          <Navbar.Link
-            as={Link}
-            to="#"
+          <button
             onClick={logout}
-            className="hover:underline hover:text-red-500"
+            className="px-3 py-2 transition rounded-lg hover:underline hover:text-red-500"
           >
             התנתק
-          </Navbar.Link>
+          </button>
         )}
       </Navbar.Collapse>
     </Navbar>

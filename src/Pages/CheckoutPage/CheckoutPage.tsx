@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+// src/Pages/CheckoutPage.tsx
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "../../components/context/CartContext.tsx";
 
 type Customer = {
@@ -7,19 +9,24 @@ type Customer = {
     city: string;
     street: string;
     houseNumber: string;
+    email?: string;
     notes?: string;
 };
 
-const API = import.meta.env.VITE_API_URL; // למשל: https://api.omeravivart.com
+const API = import.meta.env.VITE_API_URL;
 
 export default function CheckoutPage() {
-    const { state, totals } = useCart();
+    const cart = useCart();
+    const { state, totals, clear } = cart!;
+    const navigate = useNavigate();
+
     const [form, setForm] = useState<Customer>({
         fullname: "",
         phone: "",
         city: "",
         street: "",
         houseNumber: "",
+        email: "",
         notes: "",
     });
     const [loading, setLoading] = useState(false);
@@ -33,6 +40,18 @@ export default function CheckoutPage() {
         form.street.trim().length >= 2 &&
         form.houseNumber.trim().length >= 1;
 
+    const cartPayload = state.items.map(i => ({
+        _id: i.id,
+        title: i.name,
+        size: i.size,
+        quantity: i.qty,
+        imageUrl: i.image,
+        category: i.category,
+        price: i.category === "pair" ? 390
+            : i.category === "triple" ? 550
+                : undefined,
+    }));
+
     async function onSubmit(e: React.FormEvent) {
         e.preventDefault();
         setErr(null);
@@ -40,46 +59,52 @@ export default function CheckoutPage() {
         setLoading(true);
 
         try {
-            // 1) יצירת הזמנה pending
-            const createRes = await fetch(`${API}/api/canvas-orders/create`, {
+            const res = await fetch(`${API}/api/orders`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    items: state.items,
-                    totals,
-                    customer: form,
+                    source: "canvas",
+                    section: "/canvases",
+                    customerDetails: form,
+                    cart: cartPayload,
                 }),
             });
-            if (!createRes.ok) {
-                const t = await createRes.text();
-                throw new Error(t || "Create order failed");
-            }
-            const { orderId } = await createRes.json();
-            if (!orderId) throw new Error("Missing orderId");
 
-            // 2) בקשת קישור תשלום
-            const checkoutRes = await fetch(`${API}/api/canvas-payments/checkout`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ orderId }),
-            });
-            if (!checkoutRes.ok) {
-                const t = await checkoutRes.text();
-                throw new Error(t || "Checkout session failed");
+            if (!res.ok) {
+                const t = await res.text();
+                throw new Error(t || "Order failed");
             }
-            const { checkoutUrl } = await checkoutRes.json();
-            if (!checkoutUrl) throw new Error("Missing checkoutUrl");
 
-            // 3) מעבר לעמוד התשלום
-            window.location.href = checkoutUrl;
+            // נקרא את totals מהשרת (אם חישב והחזיר)
+            let finalTotal: number | undefined;
+            try {
+                const data = await res.json();
+                finalTotal = data?.totals?.total;
+            } catch {
+                /* ignore json parse errors */
+            }
+
+            clear(); // מנקה עגלה
+            setLoading(false);
+
+            alert(
+                `תודה! ההזמנה נקלטה ונשלחה למייל של עומר${typeof finalTotal === "number"
+                    ? ` (סכום: ₪${Math.round(finalTotal).toLocaleString("he-IL")})`
+                    : ""
+                }.`
+            );
+
+            // חזרה לעמוד הקאנבסים
+            navigate("/canvases", { replace: true });
         } catch (e: unknown) {
             console.error(e);
-            const message = typeof e === "object" && e !== null && "message" in e
+            const errorMessage = typeof e === "object" && e !== null && "message" in e
                 ? (e as { message?: string }).message
                 : undefined;
-            setErr(message || "שגיאה בתהליך התשלום");
+            setErr(errorMessage || "שגיאה בשליחת ההזמנה");
             setLoading(false);
         }
+
     }
 
     if (state.items.length === 0) {
@@ -93,7 +118,7 @@ export default function CheckoutPage() {
 
     return (
         <div dir="rtl" className="max-w-2xl p-4 mx-auto">
-            <h1 className="text-2xl font-bold text-[#3B3024]">פרטי משלוח ותשלום</h1>
+            <h1 className="text-2xl font-bold text-[#3B3024]">פרטי משלוח והזמנה</h1>
 
             {/* סיכום פריטים */}
             <div className="p-3 mt-4 bg-white border rounded">
@@ -103,8 +128,11 @@ export default function CheckoutPage() {
                     </div>
                 ))}
                 <div className="flex justify-between mt-2 font-semibold">
-                    <span>סכום לתשלום</span>
-                    <span>₪{totals.total.toLocaleString()}</span>
+                    <span>סכום משוער (לפי חישוב עגלה)</span>
+                    <span>₪{totals.total.toLocaleString("he-IL")}</span>
+                </div>
+                <div className="mt-1 text-xs text-gray-500">
+                    הסכום הסופי מחושב בשרת ונשלח במייל.
                 </div>
             </div>
 
@@ -122,6 +150,8 @@ export default function CheckoutPage() {
                 </div>
                 <input className="p-2 border rounded" placeholder="מס' בית"
                     value={form.houseNumber} onChange={e => setForm({ ...form, houseNumber: e.target.value })} required />
+                <input className="p-2 border rounded" placeholder="אימייל (אופציונלי)"
+                    value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
                 <textarea className="p-2 border rounded" placeholder="הערות למשלוח (אופציונלי)"
                     value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
 
@@ -132,11 +162,9 @@ export default function CheckoutPage() {
                     disabled={!canSubmit || loading}
                     className="mt-2 rounded-lg bg-[#8C734A] text-white py-2 disabled:opacity-50"
                 >
-                    {loading ? "מעביר לעמוד תשלום…" : "לתשלום"}
+                    {loading ? "שולח הזמנה…" : "שלח הזמנה"}
                 </button>
             </form>
-
-            {/* טיפ: אם תרצה לנקות עגלה אחרי הצלחה (ב־/thank-you), תעשה clear() שם */}
         </div>
     );
 }

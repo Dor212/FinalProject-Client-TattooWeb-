@@ -128,8 +128,7 @@ const SideCart = ({
                                     <p className="mb-1 text-lg font-bold">
                                         Total: {formatILS(derivedTotal)}
                                     </p>
-                                    {/* אופציונלי: להזכיר שהסטנדרטי מדורג */}
-                                    {/* <p className="text-xs text-gray-500">* פריטי 80×25 מחושבים לפי מדרגות בקופה</p> */}
+                            
                                     <button
                                         onClick={handleCheckout}
                                         disabled={cart.length === 0}

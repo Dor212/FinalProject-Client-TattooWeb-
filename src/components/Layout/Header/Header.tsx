@@ -98,7 +98,7 @@ const Header = () => {
           className="flex items-center p-0 m-0"
         >
           <img
-            src="/backgrounds/omerlogo2.png"
+            src="/backgrounds/omerlogo3.png"
             alt="Omer Logo"
             className="w-auto h-12" // גובה קצת יותר גדול
           />

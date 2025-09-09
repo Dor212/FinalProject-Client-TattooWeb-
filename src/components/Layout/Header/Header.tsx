@@ -1,4 +1,4 @@
-// Header.tsx
+// src/components/Layout/Header/Header.tsx
 import { Navbar } from "flowbite-react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -12,17 +12,16 @@ const Header = () => {
   const { VITE_API_URL } = import.meta.env;
   const [isOpen, setIsOpen] = useState(false);
   const user = useSelector((state: TRootState) => state.UserSlice.user);
-  const pathname = useLocation().pathname; // <-- שם ברור
+  const pathname = useLocation().pathname;
   const dispatch = useDispatch();
   const nav = useNavigate();
 
-  // --------- הגדרה: באילו נתיבים להחיל את מצב "קאנבס" ---------
-  // ערוך/הסר/הוסף לפי הנתיב האמיתי שלך
+  // נתיבים שבהם נרצה מצב "קאנבס"
   const CANVAS_ROUTES = ["/canvas", "/canvases", "/simulator", "/ApplySketch"];
   const isCanvasPage = CANVAS_ROUTES.some((p) => pathname.startsWith(p));
 
-  // בחר מצב:
-  const SHOW_MINIMAL_LOGO_ONLY = true;  // true = רק לוגו; false = להסתיר לגמרי
+  // true = לוגו בלבד; false = הסתרה מלאה של ההאדר בעמודי קאנבס
+  const SHOW_MINIMAL_LOGO_ONLY = true;
 
   const logout = () => {
     dispatch(userActions.logout());
@@ -56,12 +55,10 @@ const Header = () => {
     "px-3 py-2 rounded-lg transition hover:underline hover:text-[#97BE5A]";
   const active = "font-bold";
 
-  // --------- מצב "קאנבס": הסתרה מוחלטת ---------
-  if (isCanvasPage && !SHOW_MINIMAL_LOGO_ONLY) {
-    return null;
-  }
+  // --- מצב קאנבס: הסתרה מלאה ---
+  if (isCanvasPage && !SHOW_MINIMAL_LOGO_ONLY) return null;
 
-  // --------- מצב "קאנבס": רק לוגו לא־לחיץ ---------
+  // --- מצב קאנבס: לוגו בלבד לא-לחיץ ---
   if (isCanvasPage && SHOW_MINIMAL_LOGO_ONLY) {
     return (
       <header
@@ -69,12 +66,11 @@ const Header = () => {
         className="fixed top-0 left-0 z-50 w-full bg-[#F1F3C5]/90 backdrop-blur-md shadow-md"
       >
         <div className="flex items-center justify-center w-full py-2 mx-auto max-w-7xl">
-          {/* לוגו בלבד, ללא Link */}
-          <div className="flex items-center gap-3 select-none">
+          <div className="select-none">
             <img
               src="/backgrounds/LogoOmerTattoo_transparent.png"
               alt="Omer Logo"
-              className="w-auto h-10"
+              className="block w-auto h-12"
               draggable={false}
             />
           </div>
@@ -83,7 +79,7 @@ const Header = () => {
     );
   }
 
-  // --------- מצב רגיל: ההאדר המלא ---------
+  // --- מצב רגיל: ההאדר המלא ---
   return (
     <Navbar
       fluid
@@ -91,19 +87,19 @@ const Header = () => {
       dir="ltr"
       className="fixed top-0 left-0 z-50 w-full bg-[#F1F3C5]/90 backdrop-blur-md shadow-md text-[#3B3024]"
     >
+      {/* מעטפת פנימית כדי לשלוט בפריסה */}
       <div className="flex items-center w-full mx-auto max-w-7xl">
-        <Navbar.Brand
-          as={Link as typeof Link}
-          to="/"
-          className="flex items-center p-0 m-0"
-        >
+        {/* לוגו “נטו” ללא מרווחים של Brand */}
+        <Navbar.Brand as={Link as typeof Link} to="/" className="flex items-center !p-0 !m-0">
           <img
             src="/backgrounds/omerlogo3.png"
             alt="Omer Logo"
-            className="w-auto h-12" // גובה קצת יותר גדול
+            className="block w-auto h-12"
+            draggable={false}
           />
         </Navbar.Brand>
 
+        {/* דוחף את התוכן הימני לצד ימין */}
         <div className="flex items-center gap-2 ms-auto">
           <Navbar.Toggle onClick={() => setIsOpen((p) => !p)} />
         </div>

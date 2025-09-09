@@ -95,12 +95,12 @@ const Header = () => {
         <Navbar.Brand
           as={Link as typeof Link}
           to="/"
-          className="flex items-center p-0 m-0"
+          className="!p-0 !m-0 flex items-center"
         >
           <img
             src="/backgrounds/omerlogo.png"
             alt="Omer Logo"
-            className="w-auto h-12" // גובה קצת יותר גדול
+            className="w-auto h-30"
           />
         </Navbar.Brand>
 

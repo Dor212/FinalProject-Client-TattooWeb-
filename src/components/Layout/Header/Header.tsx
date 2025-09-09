@@ -92,7 +92,7 @@ const Header = () => {
         {/* לוגו “נטו” ללא מרווחים של Brand */}
         <Navbar.Brand as={Link as typeof Link} to="/" className="flex items-center !p-0 !m-0">
           <img
-            src="/backgrounds/omerlogo3.png"
+            src="/backgrounds/omerlogo.png"
             alt="Omer Logo"
             className="block w-auto h-12"
             draggable={false}

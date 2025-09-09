@@ -1,4 +1,4 @@
-import React from "react";
+
 import { useCart } from "../context/CartContext.tsx";
 
 export default function CartButton({ onClick }: { onClick: () => void }) {

@@ -1,12 +1,11 @@
+// SideCart.tsx
 import { motion, AnimatePresence } from "framer-motion";
 import { FaTimes } from "react-icons/fa";
-
-/* const { VITE_API_URL } = import.meta.env;  */
 
 interface CartItem {
     _id: string;
     title: string;
-    price: number;
+    price?: number;        // <-- אפשרי להצגה בלבד
     quantity: number;
     size: string;
     imageUrl: string;
@@ -19,6 +18,7 @@ interface SideCartProps {
     updateQuantity: (productId: string, quantity: number) => void;
     removeFromCart: (productId: string, size: string) => void;
     handleCheckout: () => void;
+    totalsILS?: number;     // <-- סכום סופי מהחישוב שלנו (אופציונלי)
 }
 
 const SideCart = ({
@@ -28,12 +28,14 @@ const SideCart = ({
     updateQuantity,
     removeFromCart,
     handleCheckout,
+    totalsILS,              // <-- נקלט פה
 }: SideCartProps) => {
-    const totalPrice = cart.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0
-    );
-    
+
+    // אם totalsILS הועבר – נשתמש בו; אחרת fallback סכום מהמחירים הפר־פריט (אם יש)
+    const derivedTotal = typeof totalsILS === "number"
+        ? totalsILS
+        : cart.reduce((sum, item) => sum + (item.price ?? 0) * item.quantity, 0);
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -67,7 +69,7 @@ const SideCart = ({
                                     {cart.map((item, index) => (
                                         <div key={index} className="flex items-center gap-3 pb-3 border-b">
                                             <img
-                                                src={item.imageUrl} // בלי VITE_API_URL
+                                                src={item.imageUrl}
                                                 alt={item.title}
                                                 className="object-cover w-16 h-16 rounded"
                                             />
@@ -77,14 +79,17 @@ const SideCart = ({
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <input
                                                         type="number"
-                                                        min="1"
+                                                        min={1}
                                                         value={item.quantity}
                                                         onChange={(e) =>
                                                             updateQuantity(item._id, Number(e.target.value))
                                                         }
                                                         className="w-16 p-1 border rounded"
                                                     />
-                                                    <p className="text-sm text-gray-600">₪{item.price}</p>
+                                                    {/* מציגים מחיר רק אם הועבר */}
+                                                    {typeof item.price === "number" && (
+                                                        <p className="text-sm text-gray-600">₪{item.price}</p>
+                                                    )}
                                                 </div>
                                             </div>
                                             <button
@@ -99,11 +104,11 @@ const SideCart = ({
 
                                 <div className="mt-6">
                                     <p className="mb-4 text-lg font-bold">
-                                            Total: {totalPrice.toFixed(2)}₪
+                                        Total: ₪{derivedTotal.toFixed(2)}
                                     </p>
                                     <button
                                         onClick={handleCheckout}
-                                            className="w-full mt-4 py-2 text-white font-semibold bg-gradient-to-r from-[#c1aa5f] to-[#97BE5A] rounded-full shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
+                                        className="w-full mt-4 py-2 text-white font-semibold bg-gradient-to-r from-[#c1aa5f] to-[#97BE5A] rounded-full shadow-lg hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
                                     >
                                         Checkout
                                     </button>

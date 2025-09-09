@@ -1,18 +1,16 @@
-// src/Pages/CanvasesPage.tsx
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCart } from "../../components/context/CartContext.tsx";
-import CartButton from "../../components/cart/CartButton.tsx";
-import CartDrawer from "../../components/cart/CartDrawer.tsx";
+import SideCart from "../../components/SideCart"; 
 import { Helmet } from "react-helmet";
 
-/* ---------------- טיפוס ---------------- */
+
 type Canvas = {
     name: string;
     size: "80×25" | "80×60" | "50×40";
     image: string;
 };
 
-/* ---------------- נתונים ---------------- */
 const standard: Canvas[] = [
     { name: "מכתב מיפן", size: "80×25", image: "/canvases/JapaneseLetter.jpeg" },
     { name: "סאקורה בזריחה", size: "80×25", image: "/canvases/SakuraSunrise.jpeg" },
@@ -60,32 +58,49 @@ const standardRows: Canvas[][] = [
     pickRow(["בצל הבמבוק"]),
 ];
 
-/* ---------------- קומפוננטות קטנות ---------------- */
-function WallCanvasTall({ src, width = 160, height = 570, borderPadding = 8 }: { src: string; width?: number; height?: number; borderPadding?: number; }) {
+function WallCanvasTall({
+    src, width = 160, height = 570, borderPadding = 8,
+}: { src: string; width?: number; height?: number; borderPadding?: number; }) {
     const innerH = height - borderPadding * 2;
     const innerW = width - borderPadding * 2;
     return (
-        <div className="relative shadow-lg rounded-2xl ring-1 ring-black/5" style={{ width, height, background: "linear-gradient(180deg,#faf9f5,#f1efe7)", padding: borderPadding }}>
-            <div className="rounded-xl overflow-hidden bg-white shadow-[0_8px_22px_rgba(0,0,0,0.15)]" style={{ width: innerW, height: innerH }}>
+        <div
+            className="relative shadow-lg rounded-2xl ring-1 ring-black/5"
+            style={{ width, height, background: "linear-gradient(180deg,#faf9f5,#f1efe7)", padding: borderPadding }}
+        >
+            <div
+                className="rounded-xl overflow-hidden bg-white shadow-[0_8px_22px_rgba(0,0,0,0.15)]"
+                style={{ width: innerW, height: innerH }}
+            >
                 <img src={src} alt="" className="block object-contain w-full h-full" loading="lazy" />
             </div>
         </div>
     );
 }
 
-function WallCanvasRect({ src, width = 260, height = 360, borderPadding = 10 }: { src: string; width?: number; height?: number; borderPadding?: number; }) {
+function WallCanvasRect({
+    src, width = 260, height = 360, borderPadding = 10,
+}: { src: string; width?: number; height?: number; borderPadding?: number; }) {
     const innerH = height - borderPadding * 2;
     const innerW = width - borderPadding * 2;
     return (
-        <div className="relative shadow-lg rounded-2xl ring-1 ring-black/5" style={{ width, height, background: "linear-gradient(180deg,#faf9f5,#f1efe7)", padding: borderPadding }}>
-            <div className="rounded-xl overflow-hidden bg-white shadow-[0_8px_22px_rgba(0,0,0,0.15)]" style={{ width: innerW, height: innerH }}>
+        <div
+            className="relative shadow-lg rounded-2xl ring-1 ring-black/5"
+            style={{ width, height, background: "linear-gradient(180deg,#faf9f5,#f1efe7)", padding: borderPadding }}
+        >
+            <div
+                className="rounded-xl overflow-hidden bg-white shadow-[0_8px_22px_rgba(0,0,0,0.15)]"
+                style={{ width: innerW, height: innerH }}
+            >
                 <img src={src} alt="" className="block object-contain w-full h-full" loading="lazy" />
             </div>
         </div>
     );
 }
 
-function CanvasCardShell({ title, subtitle, children, onAdd }: { title: string; subtitle: string; children: React.ReactNode; onAdd?: () => void; }) {
+function CanvasCardShell({
+    title, subtitle, children, onAdd,
+}: { title: string; subtitle: string; children: React.ReactNode; onAdd?: () => void; }) {
     return (
         <div className="flex flex-col items-center">
             {children}
@@ -93,7 +108,10 @@ function CanvasCardShell({ title, subtitle, children, onAdd }: { title: string; 
                 <div className="font-semibold text-[#3B3024] truncate">{title}</div>
                 <div className="text-xs text-[#3B3024]/70">{subtitle}</div>
                 {onAdd && (
-                    <button onClick={onAdd} className="mt-2 w-full rounded-lg bg-[#8C734A] text-white py-1.5 hover:opacity-95">
+                    <button
+                        onClick={onAdd}
+                        className="mt-2 w-full rounded-lg bg-[#8C734A] text-white py-1.5 hover:opacity-95"
+                    >
                         הוסף לעגלה
                     </button>
                 )}
@@ -102,15 +120,44 @@ function CanvasCardShell({ title, subtitle, children, onAdd }: { title: string; 
     );
 }
 
-
+/* ---------------- עמוד ---------------- */
 export default function CanvasesPage() {
     const cart = useCart();
-    const add = cart?.add ?? (() => {});
-    const [drawerOpen, setDrawerOpen] = useState(false);
+    const add = cart?.add ?? (() => { });
+    const { state, setQty, remove, totals } = cart!; // יש לנו Provider, לכן ! בטוח כאן
+    const [open, setOpen] = useState(false);
+    const navigate = useNavigate();
 
     const addItem = (c: Canvas, category: "standard" | "triple" | "pair") => {
         add({ id: `${c.name}|${c.size}`, name: c.name, size: c.size, image: c.image, category }, 1);
-        setDrawerOpen(true);
+        setOpen(true);
+    };
+
+   
+    const cartForSideCart = state.items.map(i => ({
+        _id: i.id,             
+        title: i.name,
+ 
+        price: i.category === "pair" ? 390
+            : i.category === "triple" ? 550
+                : undefined,
+        quantity: i.qty,
+        size: i.size,
+        imageUrl: i.image,
+    }));
+
+    const updateQuantity = (productId: string, quantity: number) => {
+        setQty(productId, Math.max(1, Number(quantity) || 1));
+    };
+
+    const removeFromCart = (productId: string ) => {
+
+        remove(productId);
+    };
+
+    const handleCheckout = () => {
+        setOpen(false);
+        navigate("/checkout");
     };
 
     return (
@@ -191,7 +238,7 @@ export default function CanvasesPage() {
             </section>
 
             {/* זוגות */}
-            <section className="max-w-6xl px-4 pt-8 pb-16 mx-auto">
+            <section className="max-w-6ל px-4 pt-8 pb-16 mx-auto">
                 <h2 className="mb-4 text-2xl font-bold text-[#8C734A]">זוגות 50×40</h2>
                 <div className="flex flex-row flex-wrap gap-3">
                     {pairs.map((c) => (
@@ -202,9 +249,23 @@ export default function CanvasesPage() {
                 </div>
             </section>
 
-            {/* כפתור עגלה + Drawer */}
-            <CartButton onClick={() => setDrawerOpen(true)} />
-            <CartDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onCheckout={() => { setDrawerOpen(false); location.href = "/checkout"; }} />
+            {/* כפתור לפתיחת SideCart + SideCart עצמו */}
+            <button
+                onClick={() => setOpen(true)}
+                className="fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-full bg-[#8C734A] text-white px-4 py-2 shadow-lg hover:opacity-90"
+            >
+                עגלה
+            </button>
+
+            <SideCart
+                isOpen={open}
+                onClose={() => setOpen(false)}
+                cart={cartForSideCart}
+                updateQuantity={updateQuantity}
+                removeFromCart={removeFromCart}
+                handleCheckout={handleCheckout}
+                totalsILS={totals.total}  // ← אם עדכנת את SideCart לקבל totalsILS
+            />
         </div>
     );
 }

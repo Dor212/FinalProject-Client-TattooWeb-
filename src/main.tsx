@@ -11,7 +11,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <Provider store={bigPie}>
       <BrowserRouter>
-        <CartProvider>   {/* 👈 עטיפה של כל האפליקציה בעגלת קניות */}
+        <CartProvider>  
           <App />
         </CartProvider>
       </BrowserRouter>

@@ -68,7 +68,7 @@ const Header = () => {
         <div className="flex items-center justify-center w-full py-2 mx-auto max-w-7xl">
           <div className="select-none">
             <img
-              src="/backgrounds/LogoOmerTattoo_transparent.png"
+              src="/backgrounds/omerlogo.png"
               alt="Omer Logo"
               className="block w-auto h-12"
               draggable={false}

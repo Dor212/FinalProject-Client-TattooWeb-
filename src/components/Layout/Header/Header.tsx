@@ -92,11 +92,15 @@ const Header = () => {
       className="fixed top-0 left-0 z-50 w-full bg-[#F1F3C5]/90 backdrop-blur-md shadow-md text-[#3B3024]"
     >
       <div className="flex items-center w-full mx-auto max-w-7xl">
-        <Navbar.Brand as={Link as typeof Link} to="/" className="flex items-center gap-3">
+        <Navbar.Brand
+          as={Link as typeof Link}
+          to="/"
+          className="flex items-center p-0 m-0"
+        >
           <img
             src="/backgrounds/omerlogo.png"
             alt="Omer Logo"
-            className="w-auto h-10 transition-transform duration-300 hover:scale-105"
+            className="w-auto h-12" // גובה קצת יותר גדול
           />
         </Navbar.Brand>
 

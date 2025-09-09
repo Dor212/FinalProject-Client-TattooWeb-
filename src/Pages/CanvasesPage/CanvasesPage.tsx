@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCart } from "../../components/context/CartContext.tsx";
-import SideCart from "../../components/SideCart"; 
 import { Helmet } from "react-helmet";
-
+import { FaShoppingCart } from "react-icons/fa";
+import { useCart } from "../../components/context/CartContext.tsx";
+import SideCart from "../../components/SideCart";
 
 type Canvas = {
     name: string;
@@ -11,6 +11,7 @@ type Canvas = {
     image: string;
 };
 
+/* ---------- נתונים ---------- */
 const standard: Canvas[] = [
     { name: "מכתב מיפן", size: "80×25", image: "/canvases/JapaneseLetter.jpeg" },
     { name: "סאקורה בזריחה", size: "80×25", image: "/canvases/SakuraSunrise.jpeg" },
@@ -58,40 +59,33 @@ const standardRows: Canvas[][] = [
     pickRow(["בצל הבמבוק"]),
 ];
 
-function WallCanvasTall({
-    src, width = 160, height = 570, borderPadding = 8,
-}: { src: string; width?: number; height?: number; borderPadding?: number; }) {
+/* ---------- קומפוננטות קטנות ---------- */
+function WallCanvasTall({ src, width = 160, height = 570, borderPadding = 8 }: {
+    src: string; width?: number; height?: number; borderPadding?: number;
+}) {
     const innerH = height - borderPadding * 2;
     const innerW = width - borderPadding * 2;
     return (
-        <div
-            className="relative shadow-lg rounded-2xl ring-1 ring-black/5"
-            style={{ width, height, background: "linear-gradient(180deg,#faf9f5,#f1efe7)", padding: borderPadding }}
-        >
-            <div
-                className="rounded-xl overflow-hidden bg-white shadow-[0_8px_22px_rgba(0,0,0,0.15)]"
-                style={{ width: innerW, height: innerH }}
-            >
+        <div className="relative shadow-lg rounded-2xl ring-1 ring-black/5"
+            style={{ width, height, background: "linear-gradient(180deg,#faf9f5,#f1efe7)", padding: borderPadding }}>
+            <div className="rounded-xl overflow-hidden bg-white shadow-[0_8px_22px_rgba(0,0,0,0.15)]"
+                style={{ width: innerW, height: innerH }}>
                 <img src={src} alt="" className="block object-contain w-full h-full" loading="lazy" />
             </div>
         </div>
     );
 }
 
-function WallCanvasRect({
-    src, width = 260, height = 360, borderPadding = 10,
-}: { src: string; width?: number; height?: number; borderPadding?: number; }) {
+function WallCanvasRect({ src, width = 260, height = 360, borderPadding = 10 }: {
+    src: string; width?: number; height?: number; borderPadding?: number;
+}) {
     const innerH = height - borderPadding * 2;
     const innerW = width - borderPadding * 2;
     return (
-        <div
-            className="relative shadow-lg rounded-2xl ring-1 ring-black/5"
-            style={{ width, height, background: "linear-gradient(180deg,#faf9f5,#f1efe7)", padding: borderPadding }}
-        >
-            <div
-                className="rounded-xl overflow-hidden bg-white shadow-[0_8px_22px_rgba(0,0,0,0.15)]"
-                style={{ width: innerW, height: innerH }}
-            >
+        <div className="relative shadow-lg rounded-2xl ring-1 ring-black/5"
+            style={{ width, height, background: "linear-gradient(180deg,#faf9f5,#f1efe7)", padding: borderPadding }}>
+            <div className="rounded-xl overflow-hidden bg-white shadow-[0_8px_22px_rgba(0,0,0,0.15)]"
+                style={{ width: innerW, height: innerH }}>
                 <img src={src} alt="" className="block object-contain w-full h-full" loading="lazy" />
             </div>
         </div>
@@ -108,10 +102,7 @@ function CanvasCardShell({
                 <div className="font-semibold text-[#3B3024] truncate">{title}</div>
                 <div className="text-xs text-[#3B3024]/70">{subtitle}</div>
                 {onAdd && (
-                    <button
-                        onClick={onAdd}
-                        className="mt-2 w-full rounded-lg bg-[#8C734A] text-white py-1.5 hover:opacity-95"
-                    >
+                    <button onClick={onAdd} className="mt-2 w-full rounded-lg bg-[#8C734A] text-white py-1.5 hover:opacity-95">
                         הוסף לעגלה
                     </button>
                 )}
@@ -120,11 +111,11 @@ function CanvasCardShell({
     );
 }
 
-/* ---------------- עמוד ---------------- */
+/* ---------- עמוד ---------- */
 export default function CanvasesPage() {
     const cart = useCart();
     const add = cart?.add ?? (() => { });
-    const { state, setQty, remove, totals } = cart!; // יש לנו Provider, לכן ! בטוח כאן
+    const { state, setQty, remove, totals } = cart!;
     const [open, setOpen] = useState(false);
     const navigate = useNavigate();
 
@@ -133,14 +124,13 @@ export default function CanvasesPage() {
         setOpen(true);
     };
 
-   
+    // מיפוי לפרמט של SideCart
     const cartForSideCart = state.items.map(i => ({
-        _id: i.id,             
+        _id: i.id,
         title: i.name,
- 
         price: i.category === "pair" ? 390
             : i.category === "triple" ? 550
-                : undefined,
+                : undefined, // סטנדרטי 80×25 – תמחור מדורג, לא פר-פריט
         quantity: i.qty,
         size: i.size,
         imageUrl: i.image,
@@ -150,8 +140,7 @@ export default function CanvasesPage() {
         setQty(productId, Math.max(1, Number(quantity) || 1));
     };
 
-    const removeFromCart = (productId: string ) => {
-
+    const removeFromCart = (productId: string /*, size: string */) => {
         remove(productId);
     };
 
@@ -168,12 +157,12 @@ export default function CanvasesPage() {
                 <link rel="canonical" href="https://omeravivart.com/canvases" />
             </Helmet>
 
-            {/* לוגו קטן בראש */}
+            {/* לוגו */}
             <header className="flex justify-center w-full py-4">
                 <img src="/omerlogo.png" alt="Omer" className="w-auto h-24 md:h-32" />
             </header>
 
-            {/* מידע על מידות */}
+            {/* קופסת מחירים */}
             <section id="sizes" className="max-w-6xl px-4 py-6 mx-auto">
                 <div className="p-6 rounded-2xl bg-white/90 ring-1 ring-black/5">
                     <h2 className="text-2xl md:text-3xl font-bold text-[#3B3024] text-center">קאנבסים ומידות</h2>
@@ -238,7 +227,7 @@ export default function CanvasesPage() {
             </section>
 
             {/* זוגות */}
-            <section className="max-w-6ל px-4 pt-8 pb-16 mx-auto">
+            <section className="max-w-6xl px-4 pt-8 pb-16 mx-auto">
                 <h2 className="mb-4 text-2xl font-bold text-[#8C734A]">זוגות 50×40</h2>
                 <div className="flex flex-row flex-wrap gap-3">
                     {pairs.map((c) => (
@@ -249,14 +238,7 @@ export default function CanvasesPage() {
                 </div>
             </section>
 
-            {/* כפתור לפתיחת SideCart + SideCart עצמו */}
-            <button
-                onClick={() => setOpen(true)}
-                className="fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-full bg-[#8C734A] text-white px-4 py-2 shadow-lg hover:opacity-90"
-            >
-                עגלה
-            </button>
-
+            {/* SideCart */}
             <SideCart
                 isOpen={open}
                 onClose={() => setOpen(false)}
@@ -264,8 +246,17 @@ export default function CanvasesPage() {
                 updateQuantity={updateQuantity}
                 removeFromCart={removeFromCart}
                 handleCheckout={handleCheckout}
-                totalsILS={totals.total}  // ← אם עדכנת את SideCart לקבל totalsILS
+                totalsILS={totals.total} // אם SideCart תומך בפרופ הזה
             />
+
+            {/* כפתור ירקרק לפתיחת עגלה (כמו בעמוד הבית) */}
+            <button
+                onClick={() => setOpen(true)}
+                className="fixed bottom-6 right-6 z-50 bg-[#9FC87E] hover:bg-[#7ea649] text-white p-4 rounded-full shadow-lg transition transform hover:scale-110"
+                title="Open Cart"
+            >
+                <FaShoppingCart className="text-xl" />
+            </button>
         </div>
     );
 }

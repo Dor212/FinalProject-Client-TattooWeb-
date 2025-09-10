@@ -251,12 +251,11 @@ export default function CanvasesPage() {
                             subtitle="80×60 ס״מ"
                             onAdd={() => addItem(c, "triple")}
                         >
-                            {/* במובייל יותר רחב, הגובה נשאר קבוע */}
                             <WallCanvasRect
                                 src={c.image}
-                                width={300}   // יותר רחב מהזוגות
-                                height={360}  // אותו גובה כמו זוגות
-                                className="md:w-[260px]" // במסכים גדולים חוזר לרגיל
+                                width={300}   // fallback לדסקטופ
+                                height={360}
+                                className="w-[90vw] max-w-[340px] md:w-[260px]"
                             />
                         </CanvasCardShell>
                     ))}

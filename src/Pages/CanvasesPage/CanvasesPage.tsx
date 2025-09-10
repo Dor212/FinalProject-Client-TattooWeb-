@@ -245,9 +245,19 @@ export default function CanvasesPage() {
                 <h2 className="mb-4 text-2xl font-bold text-[#8C734A]">שלישיות 80×60</h2>
                 <div className="flex flex-row flex-wrap gap-3">
                     {triples.map((c) => (
-                        <CanvasCardShell key={c.name} title={c.name} subtitle="80×60 ס״מ" onAdd={() => addItem(c, "triple")}>
-                            {/* טיפה יותר גדול במובייל, רגיל מ־md ומעלה */}
-                            <WallCanvasRect src={c.image} width={260} height={360} className="scale-[1.06] md:scale-100 origin-top" />
+                        <CanvasCardShell
+                            key={c.name}
+                            title={c.name}
+                            subtitle="80×60 ס״מ"
+                            onAdd={() => addItem(c, "triple")}
+                        >
+                            {/* במובייל יותר רחב, הגובה נשאר קבוע */}
+                            <WallCanvasRect
+                                src={c.image}
+                                width={300}   // יותר רחב מהזוגות
+                                height={360}  // אותו גובה כמו זוגות
+                                className="md:w-[260px]" // במסכים גדולים חוזר לרגיל
+                            />
                         </CanvasCardShell>
                     ))}
                 </div>

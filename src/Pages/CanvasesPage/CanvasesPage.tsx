@@ -31,11 +31,6 @@ const standard: Canvas[] = [
     { name: "בצל הבמבוק", size: "80×25", image: "/canvases/ShadowBamboo.jpeg" },
 ];
 
-const triples: Canvas[] = [
-    { name: "רוחות ופריחה", size: "80×60", image: "/canvases/WindsBlossoms.jpeg" },
-    { name: "מעמקים", size: "80×60", image: "/canvases/Depths.jpeg" },
-    { name: "שורשי שמיים", size: "80×60", image: "/canvases/SkyRoots.jpeg" },
-];
 
 const pairs: Canvas[] = [
     { name: "אדמה", size: "50×40", image: "/canvases/Soil.jpeg" },
@@ -45,6 +40,11 @@ const pairs: Canvas[] = [
     { name: "מסע ורוד", size: "50×40", image: "/canvases/PinkJourney.jpeg" },
 ];
 
+const triples: Canvas[] = [
+    { name: "רוחות ופריחה", size: "80×60", image: "/canvases/WindsBlossoms.jpeg" },
+    { name: "מעמקים", size: "80×60", image: "/canvases/Depths.jpeg" },
+    { name: "שורשי שמיים", size: "80×60", image: "/canvases/SkyRoots.jpeg" },
+];
 const pickRow = (names: string[]) =>
     names.map(n => standard.find(i => i.name === n)).filter(Boolean) as Canvas[];
 
@@ -76,16 +76,22 @@ function WallCanvasTall({ src, width = 160, height = 570, borderPadding = 8 }: {
     );
 }
 
-function WallCanvasRect({ src, width = 260, height = 360, borderPadding = 10 }: {
-    src: string; width?: number; height?: number; borderPadding?: number;
+function WallCanvasRect({
+    src, width = 260, height = 360, borderPadding = 10, className = "",
+}: {
+    src: string; width?: number; height?: number; borderPadding?: number; className?: string;
 }) {
     const innerH = height - borderPadding * 2;
     const innerW = width - borderPadding * 2;
     return (
-        <div className="relative shadow-lg rounded-2xl ring-1 ring-black/5"
-            style={{ width, height, background: "linear-gradient(180deg,#faf9f5,#f1efe7)", padding: borderPadding }}>
-            <div className="rounded-xl overflow-hidden bg-white shadow-[0_8px_22px_rgba(0,0,0,0.15)]"
-                style={{ width: innerW, height: innerH }}>
+        <div
+            className={`relative shadow-lg rounded-2xl ring-1 ring-black/5 ${className}`}
+            style={{ width, height, background: "linear-gradient(180deg,#faf9f5,#f1efe7)", padding: borderPadding }}
+        >
+            <div
+                className="rounded-xl overflow-hidden bg-white shadow-[0_8px_22px_rgba(0,0,0,0.15)]"
+                style={{ width: innerW, height: innerH }}
+            >
                 <img src={src} alt="" className="block object-contain w-full h-full" loading="lazy" />
             </div>
         </div>
@@ -160,16 +166,12 @@ export default function CanvasesPage() {
             {/* לוגו */}
             <section
                 id="logo"
-                className="
-      flex items-center justify-center
-      pt-20 md:pt-24
-      min-h-[calc(100vh-80px)] md:min-h-[calc(100vh-96px)]
-    "
+                className="flex items-center justify-center pt-10 pb-6 md:pt-14 md:pb-8"
             >
                 <img
                     src="/backgrounds/ome-artL.png"
                     alt="Omer"
-                    className="block w-auto h-36 md:h-48"
+                    className="block w-auto h-48 m-0 select-none md:h-60 lg:h-72"
                     draggable={false}
                 />
             </section>
@@ -225,19 +227,7 @@ export default function CanvasesPage() {
                     ))}
                 </div>
             </section>
-
-            {/* שלישיות */}
-            <section className="max-w-6xl px-4 py-8 mx-auto">
-                <h2 className="mb-4 text-2xl font-bold text-[#8C734A]">שלישיות 80×60</h2>
-                <div className="flex flex-row flex-wrap gap-3">
-                    {triples.map((c) => (
-                        <CanvasCardShell key={c.name} title={c.name} subtitle="80×60 ס״מ" onAdd={() => addItem(c, "triple")}>
-                            <WallCanvasRect src={c.image} width={260} height={360} />
-                        </CanvasCardShell>
-                    ))}
-                </div>
-            </section>
-
+            
             {/* זוגות */}
             <section className="max-w-6xl px-4 pt-8 pb-16 mx-auto">
                 <h2 className="mb-4 text-2xl font-bold text-[#8C734A]">זוגות 50×40</h2>
@@ -249,6 +239,20 @@ export default function CanvasesPage() {
                     ))}
                 </div>
             </section>
+
+            {/* שלישיות */}
+            <section className="max-w-6xl px-4 py-8 mx-auto">
+                <h2 className="mb-4 text-2xl font-bold text-[#8C734A]">שלישיות 80×60</h2>
+                <div className="flex flex-row flex-wrap gap-3">
+                    {triples.map((c) => (
+                        <CanvasCardShell key={c.name} title={c.name} subtitle="80×60 ס״מ" onAdd={() => addItem(c, "triple")}>
+                            {/* טיפה יותר גדול במובייל, רגיל מ־md ומעלה */}
+                            <WallCanvasRect src={c.image} width={260} height={360} className="scale-[1.06] md:scale-100 origin-top" />
+                        </CanvasCardShell>
+                    ))}
+                </div>
+            </section>
+
 
             {/* SideCart */}
             <SideCart

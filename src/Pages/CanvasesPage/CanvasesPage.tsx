@@ -19,9 +19,12 @@ const standard: Canvas[] = [
     { name: "מעגלי תנועה", size: "80×25", image: "/canvases/TrafficCircles.jpeg" },
     { name: "סוד של מניפה", size: "80×25", image: "/canvases/FansSecret.jpeg" },
     { name: "אדמונית", size: "80×25", image: "/canvases/Peony.jpeg" },
+
+    // שלישיית הצבעים שנאחד לכרטיס "שרביה":
     { name: "ירוקה", size: "80×25", image: "/canvases/Green.jpeg" },
     { name: "שחורה", size: "80×25", image: "/canvases/Black.jpeg" },
     { name: "כחולה", size: "80×25", image: "/canvases/Blue.jpeg" },
+
     { name: "הדים מהמזרח", size: "80×25", image: "/canvases/EchoesEast.jpeg" },
     { name: "פריחה שקטה", size: "80×25", image: "/canvases/SilentFlowering.jpeg" },
     { name: "מעבר לעננים 1", size: "80×25", image: "/canvases/BeyondClouds.jpeg" },
@@ -30,7 +33,6 @@ const standard: Canvas[] = [
     { name: "פריחת שבתאי", size: "80×25", image: "/canvases/SaturnBloom.jpeg" },
     { name: "בצל הבמבוק", size: "80×25", image: "/canvases/ShadowBamboo.jpeg" },
 ];
-
 
 const pairs: Canvas[] = [
     { name: "אדמה", size: "50×40", image: "/canvases/Soil.jpeg" },
@@ -45,14 +47,18 @@ const triples: Canvas[] = [
     { name: "מעמקים", size: "80×60", image: "/canvases/Depths.jpeg" },
     { name: "שורשי שמיים", size: "80×60", image: "/canvases/SkyRoots.jpeg" },
 ];
+
 const pickRow = (names: string[]) =>
-    names.map(n => standard.find(i => i.name === n)).filter(Boolean) as Canvas[];
+    names.map((n) => standard.find((i) => i.name === n)).filter(Boolean) as Canvas[];
 
 const standardRows: Canvas[][] = [
     pickRow(["מכתב מיפן", "סאקורה בזריחה"]),
     pickRow(["קווי חיים", "מעגלי תנועה"]),
     pickRow(["סוד של מניפה", "אדמונית"]),
+
+    // זו השורה שנחליף ל"שרביה"
     pickRow(["ירוקה", "שחורה", "כחולה"]),
+
     pickRow(["הדים מהמזרח", "פריחה שקטה"]),
     pickRow(["מעבר לעננים 1", "מעבר לעננים 2"]),
     pickRow(["נשימת מצרים", "פריחת שבתאי"]),
@@ -60,16 +66,33 @@ const standardRows: Canvas[][] = [
 ];
 
 /* ---------- קומפוננטות קטנות ---------- */
-function WallCanvasTall({ src, width = 160, height = 570, borderPadding = 8 }: {
-    src: string; width?: number; height?: number; borderPadding?: number;
+function WallCanvasTall({
+    src,
+    width = 160,
+    height = 570,
+    borderPadding = 8,
+}: {
+    src: string;
+    width?: number;
+    height?: number;
+    borderPadding?: number;
 }) {
     const innerH = height - borderPadding * 2;
     const innerW = width - borderPadding * 2;
     return (
-        <div className="relative shadow-lg rounded-2xl ring-1 ring-black/5"
-            style={{ width, height, background: "linear-gradient(180deg,#faf9f5,#f1efe7)", padding: borderPadding }}>
-            <div className="rounded-xl overflow-hidden bg-white shadow-[0_8px_22px_rgba(0,0,0,0.15)]"
-                style={{ width: innerW, height: innerH }}>
+        <div
+            className="relative shadow-lg rounded-2xl ring-1 ring-black/5"
+            style={{
+                width,
+                height,
+                background: "linear-gradient(180deg,#faf9f5,#f1efe7)",
+                padding: borderPadding,
+            }}
+        >
+            <div
+                className="rounded-xl overflow-hidden bg-white shadow-[0_8px_22px_rgba(0,0,0,0.15)]"
+                style={{ width: innerW, height: innerH }}
+            >
                 <img src={src} alt="" className="block object-contain w-full h-full" loading="lazy" />
             </div>
         </div>
@@ -77,16 +100,29 @@ function WallCanvasTall({ src, width = 160, height = 570, borderPadding = 8 }: {
 }
 
 function WallCanvasRect({
-    src, width = 260, height = 360, borderPadding = 10, className = "",
+    src,
+    width = 260,
+    height = 360,
+    borderPadding = 10,
+    className = "",
 }: {
-    src: string; width?: number; height?: number; borderPadding?: number; className?: string;
+    src: string;
+    width?: number;
+    height?: number;
+    borderPadding?: number;
+    className?: string;
 }) {
     const innerH = height - borderPadding * 2;
     const innerW = width - borderPadding * 2;
     return (
         <div
             className={`relative shadow-lg rounded-2xl ring-1 ring-black/5 ${className}`}
-            style={{ width, height, background: "linear-gradient(180deg,#faf9f5,#f1efe7)", padding: borderPadding }}
+            style={{
+                width,
+                height,
+                background: "linear-gradient(180deg,#faf9f5,#f1efe7)",
+                padding: borderPadding,
+            }}
         >
             <div
                 className="rounded-xl overflow-hidden bg-white shadow-[0_8px_22px_rgba(0,0,0,0.15)]"
@@ -99,8 +135,16 @@ function WallCanvasRect({
 }
 
 function CanvasCardShell({
-    title, subtitle, children, onAdd,
-}: { title: string; subtitle: string; children: React.ReactNode; onAdd?: () => void; }) {
+    title,
+    subtitle,
+    children,
+    onAdd,
+}: {
+    title: string;
+    subtitle: string;
+    children: React.ReactNode;
+    onAdd?: () => void;
+}) {
     return (
         <div className="flex flex-col items-center">
             {children}
@@ -108,10 +152,91 @@ function CanvasCardShell({
                 <div className="font-semibold text-[#3B3024] truncate">{title}</div>
                 <div className="text-xs text-[#3B3024]/70">{subtitle}</div>
                 {onAdd && (
-                    <button onClick={onAdd} className="mt-2 w-full rounded-lg bg-[#8C734A] text-white py-1.5 hover:opacity-95">
+                    <button
+                        onClick={onAdd}
+                        className="mt-2 w-full rounded-lg bg-[#8C734A] text-white py-1.5 hover:opacity-95"
+                    >
                         הוסף לעגלה
                     </button>
                 )}
+            </div>
+        </div>
+    );
+}
+
+/* ---------- וריאנטים: שרביה (צבעים) ---------- */
+function ColorSwatch({
+    color,
+    selected,
+    label,
+    onClick,
+}: {
+    color: string;
+    selected: boolean;
+    label: string;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            aria-label={label}
+            title={label}
+            onClick={onClick}
+            className={`w-6 h-6 rounded-[6px] border-2 transition ${selected ? "ring-2 ring-offset-2 ring-[#8C734A]" : ""
+                }`}
+            style={{ background: color, borderColor: "rgba(0,0,0,0.15)" }}
+        />
+    );
+}
+
+type Variant = {
+    label: "ירוקה" | "שחורה" | "כחולה";
+    image: string;
+    swatch: string; // צבע הריבוע
+};
+
+function VariantCanvasCard({
+    title,
+    subtitle,
+    variants,
+    onAdd,
+}: {
+    title: string;
+    subtitle: string;
+    variants: Variant[];
+    onAdd: (variant: Variant) => void;
+}) {
+    const [index, setIndex] = useState(0);
+    const current = variants[index];
+
+    return (
+        <div className="flex flex-col items-center">
+            <WallCanvasTall src={current.image} width={160} height={570} />
+            <div className="w-full mt-2 text-center">
+                <div className="font-semibold text-[#3B3024] truncate">{title}</div>
+                <div className="text-xs text-[#3B3024]/70">
+                    {subtitle} • צבע: {current.label}
+                </div>
+
+                {/* סווצ'ים לבחירת צבע */}
+                <div className="flex items-center justify-center gap-2 mt-3">
+                    {variants.map((v, i) => (
+                        <ColorSwatch
+                            key={v.label}
+                            color={v.swatch}
+                            label={`בחר צבע ${v.label}`}
+                            selected={i === index}
+                            onClick={() => setIndex(i)}
+                        />
+                    ))}
+                </div>
+
+                <button
+                    onClick={() => onAdd(current)}
+                    className="mt-3 w-full rounded-lg bg-[#8C734A] text-white py-1.5 hover:opacity-95"
+                >
+                    הוסף לעגלה
+                </button>
             </div>
         </div>
     );
@@ -126,17 +251,17 @@ export default function CanvasesPage() {
     const navigate = useNavigate();
 
     const addItem = (c: Canvas, category: "standard" | "triple" | "pair") => {
+        // id ייחודי לפי שם + גודל (שם כולל הצבע ב"שרביה – <צבע>")
         add({ id: `${c.name}|${c.size}`, name: c.name, size: c.size, image: c.image, category }, 1);
         setOpen(true);
     };
 
     // מיפוי לפרמט של SideCart
-    const cartForSideCart = state.items.map(i => ({
+    const cartForSideCart = state.items.map((i) => ({
         _id: i.id,
         title: i.name,
-        price: i.category === "pair" ? 390
-            : i.category === "triple" ? 550
-                : undefined, // סטנדרטי 80×25 – תמחור מדורג, לא פר-פריט
+        price:
+            i.category === "pair" ? 390 : i.category === "triple" ? 550 : undefined, // סטנדרטי – תמחור מדורג, לא פר-פריט
         quantity: i.qty,
         size: i.size,
         imageUrl: i.image,
@@ -164,10 +289,7 @@ export default function CanvasesPage() {
             </Helmet>
 
             {/* לוגו */}
-            <section
-                id="logo"
-                className="flex items-center justify-center pt-10 pb-6 md:pt-14 md:pb-8"
-            >
+            <section id="logo" className="flex items-center justify-center pt-10 pb-6 md:pt-14 md:pb-8">
                 <img
                     src="/backgrounds/ome-artL.png"
                     alt="Omer"
@@ -214,26 +336,63 @@ export default function CanvasesPage() {
             <section className="max-w-6xl px-4 py-8 mx-auto">
                 <h2 className="mb-4 text-2xl font-bold text-[#8C734A]">סטנדרטי 80×25</h2>
                 <div className="space-y-3">
-                    {standardRows.map((row, idx) => (
-                        <div key={idx} className="flex flex-row gap-2 overflow-x-auto md:overflow-visible snap-x">
-                            {row.map((c) => (
-                                <div key={c.name} className="snap-start">
-                                    <CanvasCardShell title={c.name} subtitle="80×25 ס״מ" onAdd={() => addItem(c, "standard")}>
-                                        <WallCanvasTall src={c.image} width={160} height={570} />
-                                    </CanvasCardShell>
-                                </div>
-                            ))}
-                        </div>
-                    ))}
+                    {standardRows.map((row, idx) => {
+                        // לזהות אם זו השורה של ירוקה/שחורה/כחולה → להציג “שרביה” עם וריאנטים
+                        const isSharviaRow =
+                            row.length >= 2 &&
+                            row.every((c) => ["ירוקה", "שחורה", "כחולה"].includes(c.name));
+
+                        return (
+                            <div
+                                key={idx}
+                                className="flex flex-row gap-2 overflow-x-auto md:overflow-visible snap-x"
+                            >
+                                {isSharviaRow ? (
+                                    <VariantCanvasCard
+                                        title="שרביה"
+                                        subtitle="80×25 ס״מ"
+                                        variants={[
+                                            { label: "ירוקה", image: "/canvases/Green.jpeg", swatch: "#2e7d32" },
+                                            { label: "שחורה", image: "/canvases/Black.jpeg", swatch: "#000000" },
+                                            { label: "כחולה", image: "/canvases/Blue.jpeg", swatch: "#1e88e5" },
+                                        ]}
+                                        onAdd={(v) =>
+                                            addItem(
+                                                { name: `שרביה – ${v.label}`, size: "80×25", image: v.image },
+                                                "standard"
+                                            )
+                                        }
+                                    />
+                                ) : (
+                                    row.map((c) => (
+                                        <div key={c.name} className="snap-start">
+                                            <CanvasCardShell
+                                                title={c.name}
+                                                subtitle="80×25 ס״מ"
+                                                onAdd={() => addItem(c, "standard")}
+                                            >
+                                                <WallCanvasTall src={c.image} width={160} height={570} />
+                                            </CanvasCardShell>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        );
+                    })}
                 </div>
             </section>
-            
+
             {/* זוגות */}
             <section className="max-w-6xl px-4 pt-8 pb-16 mx-auto">
                 <h2 className="mb-4 text-2xl font-bold text-[#8C734A]">זוגות 50×40</h2>
                 <div className="flex flex-row flex-wrap gap-3">
                     {pairs.map((c) => (
-                        <CanvasCardShell key={c.name} title={c.name} subtitle="50×40 ס״מ" onAdd={() => addItem(c, "pair")}>
+                        <CanvasCardShell
+                            key={c.name}
+                            title={c.name}
+                            subtitle="50×40 ס״מ"
+                            onAdd={() => addItem(c, "pair")}
+                        >
                             <WallCanvasRect src={c.image} width={260} height={360} />
                         </CanvasCardShell>
                     ))}
@@ -253,7 +412,7 @@ export default function CanvasesPage() {
                         >
                             <WallCanvasRect
                                 src={c.image}
-                                width={300}   // fallback לדסקטופ
+                                width={300} // fallback לדסקטופ
                                 height={360}
                                 className="w-[90vw] max-w-[340px] md:w-[260px]"
                             />
@@ -261,7 +420,6 @@ export default function CanvasesPage() {
                     ))}
                 </div>
             </section>
-
 
             {/* SideCart */}
             <SideCart
@@ -274,7 +432,7 @@ export default function CanvasesPage() {
                 totalsILS={totals.total} // אם SideCart תומך בפרופ הזה
             />
 
-            {/* כפתור ירקרק לפתיחת עגלה (כמו בעמוד הבית) */}
+            {/* כפתור ירקרק לפתיחת עגלה */}
             <button
                 onClick={() => setOpen(true)}
                 className="fixed bottom-6 right-6 z-50 bg-[#9FC87E] hover:bg-[#7ea649] text-white p-4 rounded-full shadow-lg transition transform hover:scale-110"

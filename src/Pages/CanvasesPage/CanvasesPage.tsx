@@ -20,7 +20,7 @@ const standard: Canvas[] = [
     { name: "סוד של מניפה", size: "80×25", image: "/canvases/FansSecret.jpeg" },
     { name: "אדמונית", size: "80×25", image: "/canvases/Peony.jpeg" },
 
-    // שלישיית הצבעים שנאחד לכרטיס "שרביה":
+    // שלישיית הצבעים שאוחדה לכרטיס "שרביה":
     { name: "ירוקה", size: "80×25", image: "/canvases/Green.jpeg" },
     { name: "שחורה", size: "80×25", image: "/canvases/Black.jpeg" },
     { name: "כחולה", size: "80×25", image: "/canvases/Blue.jpeg" },
@@ -56,13 +56,13 @@ const standardRows: Canvas[][] = [
     pickRow(["קווי חיים", "מעגלי תנועה"]),
     pickRow(["סוד של מניפה", "אדמונית"]),
 
-    // זו השורה שנחליף ל"שרביה"
+    // זו השורה שנאחד ל"שרביה"
     pickRow(["ירוקה", "שחורה", "כחולה"]),
 
     pickRow(["הדים מהמזרח", "פריחה שקטה"]),
     pickRow(["מעבר לעננים 1", "מעבר לעננים 2"]),
     pickRow(["נשימת מצרים", "פריחת שבתאי"]),
-    pickRow(["בצל הבמבוק"]),
+    pickRow(["בצל הבמבוק"]), // שורה בודדת שנוכל להצמיד לשרביה כדי לשמור סימטריה
 ];
 
 /* ---------- קומפוננטות קטנות ---------- */
@@ -251,7 +251,7 @@ export default function CanvasesPage() {
     const navigate = useNavigate();
 
     const addItem = (c: Canvas, category: "standard" | "triple" | "pair") => {
-        // id ייחודי לפי שם + גודל (שם כולל הצבע ב"שרביה – <צבע>")
+        // id ייחודי לפי שם + גודל (בשרביה השם כולל את הצבע)
         add({ id: `${c.name}|${c.size}`, name: c.name, size: c.size, image: c.image, category }, 1);
         setOpen(true);
     };
@@ -335,51 +335,83 @@ export default function CanvasesPage() {
             {/* סטנדרטי */}
             <section className="max-w-6xl px-4 py-8 mx-auto">
                 <h2 className="mb-4 text-2xl font-bold text-[#8C734A]">סטנדרטי 80×25</h2>
-                <div className="space-y-3">
-                    {standardRows.map((row, idx) => {
-                        // לזהות אם זו השורה של ירוקה/שחורה/כחולה → להציג “שרביה” עם וריאנטים
-                        const isSharviaRow =
-                            row.length >= 2 &&
-                            row.every((c) => ["ירוקה", "שחורה", "כחולה"].includes(c.name));
 
-                        return (
-                            <div
-                                key={idx}
-                                className="flex flex-row gap-2 overflow-x-auto md:overflow-visible snap-x"
-                            >
-                                {isSharviaRow ? (
-                                    <VariantCanvasCard
-                                        title="שרביה"
-                                        subtitle="80×25 ס״מ"
-                                        variants={[
-                                            { label: "ירוקה", image: "/canvases/Green.jpeg", swatch: "#2e7d32" },
-                                            { label: "שחורה", image: "/canvases/Black.jpeg", swatch: "#000000" },
-                                            { label: "כחולה", image: "/canvases/Blue.jpeg", swatch: "#1e88e5" },
-                                        ]}
-                                        onAdd={(v) =>
-                                            addItem(
-                                                { name: `שרביה – ${v.label}`, size: "80×25", image: v.image },
-                                                "standard"
-                                            )
-                                        }
-                                    />
-                                ) : (
-                                    row.map((c) => (
-                                        <div key={c.name} className="snap-start">
-                                            <CanvasCardShell
-                                                title={c.name}
-                                                subtitle="80×25 ס״מ"
-                                                onAdd={() => addItem(c, "standard")}
-                                            >
-                                                <WallCanvasTall src={c.image} width={160} height={570} />
-                                            </CanvasCardShell>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
+                {(() => {
+                    // מזהה את שורת "שרביה" (ירוקה/שחורה/כחולה)
+                    const isSharviaRow = (row: Canvas[]) =>
+                        row.length >= 2 && row.every((c) => ["ירוקה", "שחורה", "כחולה"].includes(c.name));
+
+                    const sharviaIdx = standardRows.findIndex(isSharviaRow);
+
+                    // מוצאים שורה בודדת כלשהי (לא חייב "בצל הבמבוק") לשם סימטריה
+                    const singleIdx = standardRows.findIndex((r, i) => r.length === 1 && i !== sharviaIdx);
+
+                    return (
+                        <div className="space-y-3">
+                            {standardRows.map((row, idx) => {
+                                // אם זו השורה הבודדת שבחרנו לצימוד – דלג עליה (כדי לא להציג פעמיים)
+                                if (idx === singleIdx) return null;
+
+                                return (
+                                    <div
+                                        key={idx}
+                                        className="flex flex-row gap-2 overflow-x-auto md:overflow-visible snap-x"
+                                    >
+                                        {idx === sharviaIdx ? (
+                                            <>
+                                                {/* כרטיס וריאנטים: שרביה */}
+                                                <VariantCanvasCard
+                                                    title="שרביה"
+                                                    subtitle="80×25 ס״מ"
+                                                    variants={[
+                                                        { label: "ירוקה", image: "/canvases/Green.jpeg", swatch: "#2e7d32" },
+                                                        { label: "שחורה", image: "/canvases/Black.jpeg", swatch: "#000000" },
+                                                        { label: "כחולה", image: "/canvases/Blue.jpeg", swatch: "#1e88e5" },
+                                                    ]}
+                                                    onAdd={(v) =>
+                                                        addItem(
+                                                            { name: `שרביה – ${v.label}`, size: "80×25", image: v.image },
+                                                            "standard"
+                                                        )
+                                                    }
+                                                />
+
+                                                {/* צירוף פריט בודד (אם קיים) לשורה של שרביה כדי לשמור סימטריה */}
+                                                {singleIdx !== -1 && standardRows[singleIdx][0] && (
+                                                    <div className="snap-start">
+                                                        <CanvasCardShell
+                                                            title={standardRows[singleIdx][0].name}
+                                                            subtitle="80×25 ס״מ"
+                                                            onAdd={() => addItem(standardRows[singleIdx][0], "standard")}
+                                                        >
+                                                            <WallCanvasTall
+                                                                src={standardRows[singleIdx][0].image}
+                                                                width={160}
+                                                                height={570}
+                                                            />
+                                                        </CanvasCardShell>
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            row.map((c) => (
+                                                <div key={c.name} className="snap-start">
+                                                    <CanvasCardShell
+                                                        title={c.name}
+                                                        subtitle="80×25 ס״מ"
+                                                        onAdd={() => addItem(c, "standard")}
+                                                    >
+                                                        <WallCanvasTall src={c.image} width={160} height={570} />
+                                                    </CanvasCardShell>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    );
+                })()}
             </section>
 
             {/* זוגות */}
@@ -412,7 +444,7 @@ export default function CanvasesPage() {
                         >
                             <WallCanvasRect
                                 src={c.image}
-                                width={300} // fallback לדסקטופ
+                                width={300}   // fallback לדסקטופ
                                 height={360}
                                 className="w-[90vw] max-w-[340px] md:w-[260px]"
                             />

@@ -27,8 +27,8 @@ type Props = {
     open: boolean;
     onClose: () => void;
     product: Product;
-    apiBase: string; // VITE_API_URL
-    onUpdated: (updated: Product) => void; // עדכון רשימה בעמוד אב
+    apiBase: string; 
+    onUpdated: (updated: Product) => void; 
 };
 
 const isPositiveInt = (v: string) => /^\d+$/.test(v);
@@ -36,7 +36,7 @@ const isPositiveInt = (v: string) => /^\d+$/.test(v);
 export default function StockEditorModal({ open, onClose, product, apiBase, onUpdated }: Props) {
     const [action, setAction] = useState<Action>("set");
 
-    // ערכי טופס פר־מידה
+   
     const [useL, setUseL] = useState<boolean>(!!product.stock?.l);
     const [useXL, setUseXL] = useState<boolean>(!!product.stock?.xl);
     const [useXXL, setUseXXL] = useState<boolean>(!!product.stock?.xxl);
@@ -54,7 +54,7 @@ export default function StockEditorModal({ open, onClose, product, apiBase, onUp
 
     useEffect(() => {
         if (!open) return;
-        // בכל פתיחה – סנכרון מחדש עם מוצר נוכחי
+      
         setAction("set");
         setUseL(!!product.stock?.l);
         setUseXL(!!product.stock?.xl);
@@ -73,12 +73,12 @@ export default function StockEditorModal({ open, onClose, product, apiBase, onUp
     }, [open, product]);
 
     const disabled = useMemo(() => {
-        // מנגנון ולידציה פשוט לפי פעולה
+        
         if (action === "remove") {
             return !(useL || useXL || useXXL);
         }
         if (action === "reset") {
-            // reset – לא חובה למלא initial; אבל חייב לבחור לפחות מידה אחת
+           
             return !(useL || useXL || useXXL);
         }
         if (action === "add" || action === "subtract") {
@@ -87,14 +87,14 @@ export default function StockEditorModal({ open, onClose, product, apiBase, onUp
             const okXXL = !useXXL || (useXXL && isPositiveInt(xxlDelta) && +xxlDelta > 0);
             return !(useL || useXL || useXXL) || !(okL && okXL && okXXL);
         }
-        // set – לפחות אחד עם ערך מספרי חוקי כלשהו
+        
         const validL = useL && ((lInitial === "" || isPositiveInt(lInitial)) && (lCurrent === "" || isPositiveInt(lCurrent)));
         const validXL = useXL && ((xlInitial === "" || isPositiveInt(xlInitial)) && (xlCurrent === "" || isPositiveInt(xlCurrent)));
         const validXXL = useXXL && ((xxlInitial === "" || isPositiveInt(xxlInitial)) && (xxlCurrent === "" || isPositiveInt(xxlCurrent)));
         return !(useL || useXL || useXXL) || !(validL || validXL || validXXL);
     }, [action, useL, useXL, useXXL, lDelta, xlDelta, xxlDelta, lInitial, lCurrent, xlInitial, xlCurrent, xxlInitial, xxlCurrent]);
 
-    // עזר ל"הכנס אם צריך" עם טיפוס נכון
+    
     const maybePut = <T extends object>(
         flag: boolean,
         key: SizeKey,

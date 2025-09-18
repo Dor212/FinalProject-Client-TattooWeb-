@@ -1,4 +1,3 @@
-// src/pages/home/HomePage.tsx
 import { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -223,8 +222,6 @@ const HomePage = () => {
             Swal.fire("Oops!", "Failed to send message", "error");
         }
     };
-
-    // מלאי ועזרי חישוב
     const getCur = (p: Product, k: SizeKey) => p.stock?.[k]?.current ?? 0;
     const hasAnySizeInStock = (p: Product) =>
         !!p.stock && (getCur(p, "l") + getCur(p, "xl") + getCur(p, "xxl")) > 0;
@@ -364,13 +361,10 @@ const HomePage = () => {
                                         <p className="text-lg font-semibold text-[#8b7c4a]">
                                             {Number(product.price).toFixed(2)} ₪
                                         </p>
-                                        {/* תיאור מוצר (אם קיים) */}
                                         {product.description && (
                                             <p className="mt-1 text-sm text-[#5b4c33] line-clamp-2">{product.description}</p>
                                         )}
                                     </div>
-
-                                    {/* בחירת מידה רק אם יש מידות בכלל */}
                                     {!outOfStock && (
                                         <div className="mt-3">
                                             {withSizes ? (
@@ -477,7 +471,7 @@ const HomePage = () => {
                     {/* See more */}
                     <div className="flex justify-center mt-8">
                         <button
-                            onClick={() => navigate("/products")} // עדכן לנתיב עמוד כל המוצרים שלך אם שונה
+                            onClick={() => navigate("/products")}
                             className="px-5 py-2 rounded-full border border-[#cbb279] text-[#3a3220] bg-white/80 hover:bg-[#f6f0d4] transition"
                         >
                             See more

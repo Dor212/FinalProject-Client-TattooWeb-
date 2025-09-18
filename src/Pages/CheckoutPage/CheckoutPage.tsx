@@ -1,4 +1,3 @@
-// src/Pages/CheckoutPage.tsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../components/context/CartContext.tsx";
@@ -74,8 +73,6 @@ export default function CheckoutPage() {
                 const t = await res.text();
                 throw new Error(t || "Order failed");
             }
-
-            // נקרא את totals מהשרת (אם חישב והחזיר)
             let finalTotal: number | undefined;
             try {
                 const data = await res.json();
@@ -84,7 +81,7 @@ export default function CheckoutPage() {
                 /* ignore json parse errors */
             }
 
-            clear(); // מנקה עגלה
+            clear(); 
             setLoading(false);
 
             alert(
@@ -93,8 +90,6 @@ export default function CheckoutPage() {
                     : ""
                 }.`
             );
-
-            // חזרה לעמוד הקאנבסים
             navigate("/canvases", { replace: true });
         } catch (e: unknown) {
             console.error(e);

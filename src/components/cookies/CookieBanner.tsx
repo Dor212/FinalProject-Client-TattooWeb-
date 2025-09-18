@@ -4,7 +4,7 @@ const CookieBanner = () => {
     const [showBanner, setShowBanner] = useState(false);
 
     useEffect(() => {
-        // אם המשתמש כבר אישר/סירב – לא מציגים שוב
+        
         const consent = localStorage.getItem("cookieConsent");
         if (!consent) {
             setShowBanner(true);
@@ -26,15 +26,15 @@ const CookieBanner = () => {
     return (
         <div
             dir="rtl"
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hebrew-content"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 hebrew-content"
         >
             <div className="bg-white text-[#3B3024] rounded-xl shadow-lg max-w-md w-full p-6 text-center mx-4">
-                <h2 className="text-xl font-bold mb-3">מדיניות קוקיז</h2>
-                <p className="text-sm leading-relaxed mb-5">
+                <h2 className="mb-3 text-xl font-bold">מדיניות קוקיז</h2>
+                <p className="mb-5 text-sm leading-relaxed">
                     האתר משתמש בקוקיז (Cookies) כדי לשפר את חוויית הגלישה, למדוד ביצועים
                     ולהציע תוכן מותאם. באפשרותך לבחור אם לאשר או לדחות את השימוש בקוקיז.
                 </p>
-                <div className="flex gap-4 justify-center">
+                <div className="flex justify-center gap-4">
                     <button
                         onClick={handleAccept}
                         className="px-5 py-2 rounded-lg bg-[#97BE5A] text-white hover:bg-[#7ea649] transition"

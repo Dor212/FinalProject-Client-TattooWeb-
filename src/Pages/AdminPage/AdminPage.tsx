@@ -135,7 +135,7 @@ const AdminPage = () => {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
-            // אפס שדות
+        
             setProductTitle("");
             setProductPrice("");
             setProductDescription(""); 
@@ -197,12 +197,12 @@ const AdminPage = () => {
         }
     };
 
-    // עזרי תצוגה למלאי
+    
     const getCur = (p: Product, key: "l" | "xl" | "xxl") => p.stock?.[key]?.current ?? 0;
     const getInit = (p: Product, key: "l" | "xl" | "xxl") => p.stock?.[key]?.initial ?? 0;
 
     const outOfStockCount = allProducts.filter((p) => {
-        if (!p.stock) return false; // מוצרים ללא מידות לא נחשבים Out of Stock
+        if (!p.stock) return false; 
         const total = getCur(p, "l") + getCur(p, "xl") + getCur(p, "xxl");
         return total === 0;
     }).length;
@@ -329,12 +329,12 @@ const AdminPage = () => {
                                 <h3 className="mb-1 text-xl font-semibold">{product.title}</h3>
                                 <p className="text-lg">{Number(product.price).toFixed(2)} ₪</p>
 
-                                {/* תיאור (אם קיים) */}
+                                
                                 {product.description && (
                                     <p className="mt-1 text-sm text-gray-600 line-clamp-2">{product.description}</p>
                                 )}
 
-                                {/* מציגים מלאי רק אם יש stock */}
+                                
                                 {product.stock ? (
                                     <p className="mt-1 text-sm">
                                         Stock:&nbsp;

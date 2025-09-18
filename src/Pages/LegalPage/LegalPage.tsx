@@ -1,11 +1,5 @@
 import React from "react";
 
-// =========================
-// LegalPage – עמוד מדיניות מרוכז (פרטיות, תנאי שימוש, נגישות, קוקיז)
-// תואם להגדרות ה-CSS שסיפקת: Heebo גלובלי, RTL דרך .hebrew-content,
-// ומחזיק את העיצוב בפלטת BG4 / #CBB279 / #F1F3C2 / #97BE5A / #3B3024
-// =========================
-
 const BUSINESS = {
     name: import.meta.env.VITE_BUSINESS_NAME || "Y.M.A – אתרים מותאמים אישית",
     website: import.meta.env.VITE_SITE_URL || "https://example.com",
@@ -14,7 +8,6 @@ const BUSINESS = {
     address: import.meta.env.VITE_CONTACT_ADDRESS || "ישראל",
 };
 
-// כרטיסית מקטע – בלי שימוש ב"prose" כדי שלא נדרוש tailwind-typography
 const SectionCard: React.FC<React.PropsWithChildren<{ title: string; id: string; tone?: "warm" | "light" }>> = ({ title, id, tone = "light", children }) => (
     <section id={id} aria-labelledby={`${id}-title`} className={`rounded-xl shadow-lg p-6 md:p-8 ${tone === "warm" ? "bg-[#CBB279] text-[#3B3024]" : "bg-[#F1F3C2] text-[#3B3024]"}`}>
         <h2 id={`${id}-title`} className="mb-4 text-2xl font-bold tracking-wide md:text-3xl">{title}</h2>

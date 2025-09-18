@@ -162,7 +162,7 @@ const ApplySketchPage = () => {
             const { width, height } = workAreaRef.current.getBoundingClientRect();
             const base = Math.min(width, height);
             const targetPx = base * 0.25;
-            const initialScale = targetPx / 150; // 150px = גודל בסיס של האלמנט
+            const initialScale = targetPx / 150; 
             api.start({ scale: initialScale, x: 200, y: 200, rotateZ: 0 });
         }
     };

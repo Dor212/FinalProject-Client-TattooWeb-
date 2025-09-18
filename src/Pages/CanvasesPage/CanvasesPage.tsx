@@ -20,7 +20,6 @@ const standard: Canvas[] = [
     { name: "סוד של מניפה", size: "80×25", image: "/canvases/FansSecret.jpeg" },
     { name: "אדמונית", size: "80×25", image: "/canvases/Peony.jpeg" },
 
-    // שלישיית הצבעים שאוחדה לכרטיס "שרביה":
     { name: "ירוקה", size: "80×25", image: "/canvases/Green.jpeg" },
     { name: "שחורה", size: "80×25", image: "/canvases/Black.jpeg" },
     { name: "כחולה", size: "80×25", image: "/canvases/Blue.jpeg" },
@@ -56,13 +55,13 @@ const standardRows: Canvas[][] = [
     pickRow(["קווי חיים", "מעגלי תנועה"]),
     pickRow(["סוד של מניפה", "אדמונית"]),
 
-    // זו השורה שנאחד ל"שרביה"
+   
     pickRow(["ירוקה", "שחורה", "כחולה"]),
 
     pickRow(["הדים מהמזרח", "פריחה שקטה"]),
     pickRow(["מעבר לעננים 1", "מעבר לעננים 2"]),
     pickRow(["נשימת מצרים", "פריחת שבתאי"]),
-    pickRow(["בצל הבמבוק"]), // שורה בודדת שנוכל להצמיד לשרביה כדי לשמור סימטריה
+    pickRow(["בצל הבמבוק"]), 
 ];
 
 /* ---------- קומפוננטות קטנות ---------- */
@@ -192,7 +191,7 @@ function ColorSwatch({
 type Variant = {
     label: "ירוקה" | "שחורה" | "כחולה";
     image: string;
-    swatch: string; // צבע הריבוע
+    swatch: string; 
 };
 
 function VariantCanvasCard({
@@ -218,7 +217,7 @@ function VariantCanvasCard({
                     {subtitle} • צבע: {current.label}
                 </div>
 
-                {/* סווצ'ים לבחירת צבע */}
+                
                 <div className="flex items-center justify-center gap-2 mt-3">
                     {variants.map((v, i) => (
                         <ColorSwatch
@@ -251,17 +250,17 @@ export default function CanvasesPage() {
     const navigate = useNavigate();
 
     const addItem = (c: Canvas, category: "standard" | "triple" | "pair") => {
-        // id ייחודי לפי שם + גודל (בשרביה השם כולל את הצבע)
+       
         add({ id: `${c.name}|${c.size}`, name: c.name, size: c.size, image: c.image, category }, 1);
         setOpen(true);
     };
 
-    // מיפוי לפרמט של SideCart
+    
     const cartForSideCart = state.items.map((i) => ({
         _id: i.id,
         title: i.name,
         price:
-            i.category === "pair" ? 390 : i.category === "triple" ? 550 : undefined, // סטנדרטי – תמחור מדורג, לא פר-פריט
+            i.category === "pair" ? 390 : i.category === "triple" ? 550 : undefined, 
         quantity: i.qty,
         size: i.size,
         imageUrl: i.image,
@@ -337,19 +336,15 @@ export default function CanvasesPage() {
                 <h2 className="mb-4 text-2xl font-bold text-[#8C734A]">סטנדרטי 80×25</h2>
 
                 {(() => {
-                    // מזהה את שורת "שרביה" (ירוקה/שחורה/כחולה)
+                    
                     const isSharviaRow = (row: Canvas[]) =>
                         row.length >= 2 && row.every((c) => ["ירוקה", "שחורה", "כחולה"].includes(c.name));
-
                     const sharviaIdx = standardRows.findIndex(isSharviaRow);
-
-                    // מוצאים שורה בודדת כלשהי (לא חייב "בצל הבמבוק") לשם סימטריה
                     const singleIdx = standardRows.findIndex((r, i) => r.length === 1 && i !== sharviaIdx);
 
                     return (
                         <div className="space-y-3">
                             {standardRows.map((row, idx) => {
-                                // אם זו השורה הבודדת שבחרנו לצימוד – דלג עליה (כדי לא להציג פעמיים)
                                 if (idx === singleIdx) return null;
 
                                 return (
@@ -359,7 +354,6 @@ export default function CanvasesPage() {
                                     >
                                         {idx === sharviaIdx ? (
                                             <>
-                                                {/* כרטיס וריאנטים: שרביה */}
                                                 <VariantCanvasCard
                                                     title="שרביה"
                                                     subtitle="80×25 ס״מ"
@@ -376,7 +370,6 @@ export default function CanvasesPage() {
                                                     }
                                                 />
 
-                                                {/* צירוף פריט בודד (אם קיים) לשורה של שרביה כדי לשמור סימטריה */}
                                                 {singleIdx !== -1 && standardRows[singleIdx][0] && (
                                                     <div className="snap-start">
                                                         <CanvasCardShell
@@ -444,7 +437,7 @@ export default function CanvasesPage() {
                         >
                             <WallCanvasRect
                                 src={c.image}
-                                width={300}   // fallback לדסקטופ
+                                width={300}   
                                 height={360}
                                 className="w-[90vw] max-w-[340px] md:w-[260px]"
                             />
@@ -461,7 +454,7 @@ export default function CanvasesPage() {
                 updateQuantity={updateQuantity}
                 removeFromCart={removeFromCart}
                 handleCheckout={handleCheckout}
-                totalsILS={totals.total} // אם SideCart תומך בפרופ הזה
+                totalsILS={totals.total} 
             />
 
             {/* כפתור ירקרק לפתיחת עגלה */}

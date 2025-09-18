@@ -103,7 +103,7 @@ const AllProductsPage = () => {
                     </div>
                 )}
 
-                {/* Grid (זהה לגלריה) */}
+                
                 {!loading && !error && hasProducts && (
                     <div
                         className="grid gap-5"
@@ -119,7 +119,7 @@ const AllProductsPage = () => {
                             >
                                 <div className="relative w-full overflow-hidden rounded-lg aspect-square">
                                     <img
-                                        src={p.imageUrl} // Cloudinary URL מלא
+                                        src={p.imageUrl}
                                         alt={p.title}
                                         loading="lazy"
                                         className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"

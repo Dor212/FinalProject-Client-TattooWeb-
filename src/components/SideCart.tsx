@@ -5,7 +5,7 @@ import { useEffect } from "react";
 interface CartItem {
     _id: string;
     title: string;
-    price?: number;        // אופציונלי להצגה
+    price?: number;       
     quantity: number;
     size: string;
     imageUrl: string;
@@ -18,7 +18,7 @@ interface SideCartProps {
     updateQuantity: (productId: string, quantity: number) => void;
     removeFromCart: (productId: string, size: string) => void;
     handleCheckout: () => void;
-    totalsILS?: number;    // סכום סופי מדויק (מומלץ להעביר)
+    totalsILS?: number;    
 }
 
 const formatILS = (n: number) =>
@@ -33,7 +33,7 @@ const SideCart = ({
     handleCheckout,
     totalsILS,
 }: SideCartProps) => {
-    // נועל גלילת רקע כשהעגלה פתוחה (נוח במובייל)
+ 
     useEffect(() => {
         if (!isOpen) return;
         const prev = document.body.style.overflow;

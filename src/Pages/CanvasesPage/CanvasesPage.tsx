@@ -427,7 +427,7 @@ export default function CanvasesPage() {
             {/* שלישיות */}
             <section className="max-w-6xl px-4 py-8 mx-auto">
                 <h2 className="mb-4 text-2xl font-bold text-[#8C734A]">שלישיות 80×60</h2>
-                <div className="flex flex-row flex-wrap gap-3">
+                <div className="flex flex-row flex-wrap justify-center w-full gap-3 md:justify-start">
                     {triples.map((c) => (
                         <CanvasCardShell
                             key={c.name}
@@ -437,7 +437,7 @@ export default function CanvasesPage() {
                         >
                             <WallCanvasRect
                                 src={c.image}
-                                width={300}   
+                                width={300}
                                 height={360}
                                 className="w-[90vw] max-w-[340px] md:w-[260px]"
                             />

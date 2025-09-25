@@ -410,7 +410,7 @@ export default function CanvasesPage() {
             {/* זוגות */}
             <section className="max-w-6xl px-4 pt-8 pb-16 mx-auto">
                 <h2 className="mb-4 text-2xl font-bold text-[#8C734A]">זוגות 50×40</h2>
-                <div className="flex flex-row flex-wrap gap-3">
+                <div className="flex flex-row flex-wrap justify-center w-full gap-3 md:justify-start">
                     {pairs.map((c) => (
                         <CanvasCardShell
                             key={c.name}

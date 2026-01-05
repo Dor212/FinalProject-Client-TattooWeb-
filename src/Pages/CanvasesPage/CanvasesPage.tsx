@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import { FaShoppingCart } from "react-icons/fa";
 import { useCart } from "../../components/context/CartContext.tsx";
 import SideCart from "../../components/SideCart";

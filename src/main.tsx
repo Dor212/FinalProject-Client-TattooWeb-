@@ -7,6 +7,7 @@ import { Provider } from "react-redux";
 import bigPie from "./Store/BigPie.ts";
 import { CartProvider } from "./components/context/CartContext.tsx";
 import { HelmetProvider } from "react-helmet-async";
+import ScrollRestoration from "./components/ScrollRestoration.tsx";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -14,6 +15,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <BrowserRouter>
         <CartProvider>
           <HelmetProvider>
+            <ScrollRestoration />
             <App />
           </HelmetProvider>
         </CartProvider>

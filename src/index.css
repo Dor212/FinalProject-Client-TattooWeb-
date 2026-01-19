@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@600&family=Milonga&family=Playpen+Sans+Hebrew:wght@100..800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -19,5 +19,37 @@ html.accessibility-reduce-motion * {
 .snap-x { scroll-snap-type: x mandatory; }
 .snap-start { scroll-snap-align: start; }
 
-
 button { touch-action: manipulation; }
+
+@keyframes opinionFloatA {
+  0% { transform: translate3d(0, 0, 0); }
+  25% { transform: translate3d(3px, -6px, 0); }
+  50% { transform: translate3d(0, 0, 0); }
+  75% { transform: translate3d(-3px, 5px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes opinionFloatB {
+  0% { transform: translate3d(0, 0, 0); }
+  25% { transform: translate3d(-4px, -5px, 0); }
+  50% { transform: translate3d(0, 0, 0); }
+  75% { transform: translate3d(4px, 6px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+.opinion-float {
+  animation: opinionFloatA 14s ease-in-out infinite;
+  will-change: transform;
+}
+
+.opinion-float-b {
+  animation: opinionFloatB 16s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .opinion-float,
+  .opinion-float-b {
+    animation: none !important;
+  }
+}

@@ -1,75 +1,122 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-import { motion } from "framer-motion";
 import Swal from "sweetalert2";
-import { FaBoxOpen, FaExclamationTriangle, FaPaintBrush } from "react-icons/fa";
-import { Product } from "../../Types/TProduct";
+import { AnimatePresence, motion } from "framer-motion";
+import type { Product } from "../../Types/TProduct";
 import StockEditorModal from "../../components/admin/StockEditorModal";
-
-const categories = ["small", "medium", "large"];
+import AdminHeader from "./Sections/AdminHeader";
+import AdminKpis from "./Sections/AdminKpis";
+import AdminTabs from "./Sections/AdminTabs";
+import ProductsSection from "./Sections/ProductsSection";
+import SketchesSection from "./Sections/SketchesSection";
+import CanvasesSection from "./Sections/CanvasesSection";
+import type { AdminTab, CanvasItem, CanvasSize, SketchCategory } from "../AdminPage/Sections/types";
+import { SKETCH_CATEGORIES } from "./Sections/types";
 
 const AdminPage = () => {
     const VITE_API_URL = import.meta.env.VITE_API_URL as string;
 
-    // Sketches
+    const [tab, setTab] = useState<AdminTab>("products");
+    const [loading, setLoading] = useState(true);
+
     const [imagesByCategory, setImagesByCategory] = useState<Record<string, string[]>>({});
-    const [selectedCategory, setSelectedCategory] = useState("small");
+    const [selectedCategory, setSelectedCategory] = useState<SketchCategory>("small");
     const [imageFile, setImageFile] = useState<File | null>(null);
 
-    // Products
     const [productTitle, setProductTitle] = useState("");
     const [productPrice, setProductPrice] = useState("");
-    const [productDescription, setProductDescription] = useState(""); 
+    const [productDescription, setProductDescription] = useState("");
     const [productImage, setProductImage] = useState<File | null>(null);
-
-    // סטוק למידות החדשות (אופציונלי)
     const [stockL, setStockL] = useState("");
     const [stockXL, setStockXL] = useState("");
     const [stockXXL, setStockXXL] = useState("");
-
     const [allProducts, setAllProducts] = useState<Product[]>([]);
 
-    // Modal
+    const [canvasName, setCanvasName] = useState("");
+    const [canvasSize, setCanvasSize] = useState<CanvasSize>("80×25");
+    const [canvasImage, setCanvasImage] = useState<File | null>(null);
+    const [canvases, setCanvases] = useState<CanvasItem[]>([]);
+
     const [stockModalOpen, setStockModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+    const getCur = (p: Product, key: "l" | "xl" | "xxl") => p.stock?.[key]?.current ?? 0;
+    const getInit = (p: Product, key: "l" | "xl" | "xxl") => p.stock?.[key]?.initial ?? 0;
+
+    const outOfStockCount = useMemo(() => {
+        return allProducts.filter((p) => {
+            if (!p.stock) return false;
+            const total = getCur(p, "l") + getCur(p, "xl") + getCur(p, "xxl");
+            return total === 0;
+        }).length;
+    }, [allProducts]);
+
+    const totalSketches = useMemo(() => {
+        return Object.values(imagesByCategory).reduce((sum, arr) => sum + arr.length, 0);
+    }, [imagesByCategory]);
+
+    const refreshAll = async () => {
+        try {
+            setLoading(true);
+
+            const [productsRes, ...sketchRes] = await Promise.all([
+                axios.get<Product[]>(`${VITE_API_URL}/products`),
+                ...SKETCH_CATEGORIES.map((cat) => axios.get(`${VITE_API_URL}/gallery/${cat}`)),
+            ]);
+
+            const results: Record<string, string[]> = {};
+            SKETCH_CATEGORIES.forEach((cat, idx) => {
+                const data = sketchRes[idx].data;
+                results[cat] = Array.isArray(data) ? data : [];
+            });
+
+            setAllProducts(Array.isArray(productsRes.data) ? productsRes.data : []);
+            setImagesByCategory(results);
+
+            try {
+                const canvasesRes = await axios.get<CanvasItem[]>(`${VITE_API_URL}/canvases`);
+                setCanvases(Array.isArray(canvasesRes.data) ? canvasesRes.data : []);
+            } catch {
+                setCanvases([]);
+            }
+        } catch {
+            Swal.fire({
+                icon: "error",
+                title: "שגיאה",
+                text: "נכשל לטעון נתונים",
+                timer: 1600,
+                showConfirmButton: false,
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        refreshAll();
+    }, [VITE_API_URL]);
 
     const openStockEditor = (p: Product) => {
         setSelectedProduct(p);
         setStockModalOpen(true);
     };
+
     const handleProductPatched = (updated: Product) => {
         setAllProducts((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
     };
 
-    useEffect(() => {
-        const fetchAllImages = async () => {
-            try {
-                const results: Record<string, string[]> = {};
-                for (const category of categories) {
-                    const res = await axios.get(`${VITE_API_URL}/gallery/${category}`);
-                    results[category] = Array.isArray(res.data) ? res.data : [];
-                }
-                setImagesByCategory(results);
-            } catch {
-                Swal.fire("Error", "Failed to load sketches", "error");
-            }
-        };
-
-        const fetchProducts = async () => {
-            try {
-                const res = await axios.get<Product[]>(`${VITE_API_URL}/products`);
-                setAllProducts(res.data);
-            } catch {
-                Swal.fire("Error", "Failed to load products", "error");
-            }
-        };
-
-        fetchAllImages();
-        fetchProducts();
-    }, [VITE_API_URL]);
-
     const handleUploadSketch = async () => {
-        if (!imageFile) return;
+        if (!imageFile) {
+            Swal.fire({
+                icon: "info",
+                title: "חסר קובץ",
+                text: "בחר תמונה להעלאה",
+                timer: 1400,
+                showConfirmButton: false,
+            });
+            return;
+        }
+
         const formData = new FormData();
         formData.append("image", imageFile);
 
@@ -77,23 +124,41 @@ const AdminPage = () => {
             await axios.post(`${VITE_API_URL}/gallery/upload/${selectedCategory}`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
-            Swal.fire("Success", "Sketch uploaded and processed", "success").then(() =>
-                window.location.reload()
-            );
+
+            setImageFile(null);
+
+            Swal.fire({
+                icon: "success",
+                title: "עלה!",
+                text: "הסקיצה הועלתה בהצלחה",
+                timer: 1400,
+                showConfirmButton: false,
+            });
+
+            await refreshAll();
         } catch {
-            Swal.fire("Error", "Failed to upload sketch", "error");
+            Swal.fire({
+                icon: "error",
+                title: "שגיאה",
+                text: "נכשל להעלות סקיצה",
+                timer: 1600,
+                showConfirmButton: false,
+            });
         }
     };
 
     const handleDeleteSketch = async (category: string, fileUrl: string) => {
         const filename = fileUrl.split("/").pop();
+
         const confirmed = await Swal.fire({
-            title: "Are you sure?",
-            text: "This image will be deleted.",
+            title: "למחוק את הסקיצה?",
+            text: "הפעולה בלתי הפיכה.",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#d33",
-            confirmButtonText: "Yes, delete it!",
+            confirmButtonColor: "#c0392b",
+            cancelButtonColor: "#999",
+            confirmButtonText: "כן, למחוק",
+            cancelButtonText: "ביטול",
         });
 
         if (!confirmed.isConfirmed) return;
@@ -102,30 +167,38 @@ const AdminPage = () => {
             await axios.delete(`${VITE_API_URL}/gallery/${category}/${filename}`);
             setImagesByCategory((prev) => ({
                 ...prev,
-                [category]: prev[category].filter((img) => img !== fileUrl),
+                [category]: (prev[category] || []).filter((img) => img !== fileUrl),
             }));
+            Swal.fire({ icon: "success", title: "נמחק", timer: 1100, showConfirmButton: false });
         } catch {
-            Swal.fire("Error", "Failed to delete sketch", "error");
+            Swal.fire({
+                icon: "error",
+                title: "שגיאה",
+                text: "נכשל למחוק סקיצה",
+                timer: 1600,
+                showConfirmButton: false,
+            });
         }
     };
 
     const handleProductUpload = async () => {
-        if (!productTitle || !productPrice || !productImage) {
-            Swal.fire("Validation", "Please fill title, price and choose an image", "info");
+        if (!productTitle.trim() || !productPrice.trim() || !productImage) {
+            Swal.fire({
+                icon: "info",
+                title: "חסר מידע",
+                text: "שם מוצר, מחיר ותמונה הם חובה",
+                timer: 1600,
+                showConfirmButton: false,
+            });
             return;
         }
 
         const formData = new FormData();
-        formData.append("title", productTitle);
-        formData.append("price", productPrice);
+        formData.append("title", productTitle.trim());
+        formData.append("price", productPrice.trim());
         formData.append("image", productImage);
 
-       
-        if (productDescription.trim() !== "") {
-            formData.append("description", productDescription.trim());
-        }
-
-        // מידות אופציונליות — נשלח רק אם מולאו
+        if (productDescription.trim() !== "") formData.append("description", productDescription.trim());
         if (stockL !== "") formData.append("stockL", stockL);
         if (stockXL !== "") formData.append("stockXL", stockXL);
         if (stockXXL !== "") formData.append("stockXXL", stockXXL);
@@ -135,10 +208,9 @@ const AdminPage = () => {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
-        
             setProductTitle("");
             setProductPrice("");
-            setProductDescription(""); 
+            setProductDescription("");
             setStockL("");
             setStockXL("");
             setStockXXL("");
@@ -147,18 +219,18 @@ const AdminPage = () => {
             setAllProducts((prev) => [res.data, ...prev]);
 
             Swal.fire({
-                title: "Success",
-                text: "Product uploaded successfully",
                 icon: "success",
-                timer: 1500,
+                title: "הועלה!",
+                text: "המוצר נוסף בהצלחה",
+                timer: 1400,
                 showConfirmButton: false,
             });
         } catch {
             Swal.fire({
-                title: "Error",
-                text: "Failed to upload product",
                 icon: "error",
-                timer: 1500,
+                title: "שגיאה",
+                text: "נכשל להעלות מוצר",
+                timer: 1600,
                 showConfirmButton: false,
             });
         }
@@ -166,12 +238,14 @@ const AdminPage = () => {
 
     const handleProductDelete = async (id: string) => {
         const confirmed = await Swal.fire({
-            title: "Are you sure?",
-            text: "This product will be deleted.",
+            title: "למחוק את המוצר?",
+            text: "הפעולה בלתי הפיכה.",
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#d33",
-            confirmButtonText: "Yes, delete it!",
+            confirmButtonColor: "#c0392b",
+            cancelButtonColor: "#999",
+            confirmButtonText: "כן, למחוק",
+            cancelButtonText: "ביטול",
         });
 
         if (!confirmed.isConfirmed) return;
@@ -179,39 +253,97 @@ const AdminPage = () => {
         try {
             await axios.delete(`${VITE_API_URL}/products/${id}`);
             setAllProducts((prev) => prev.filter((p) => p._id !== id));
-            Swal.fire({
-                title: "Success",
-                text: "Product deleted successfully",
-                icon: "success",
-                timer: 1500,
-                showConfirmButton: false,
-            });
+            Swal.fire({ icon: "success", title: "נמחק", timer: 1100, showConfirmButton: false });
         } catch {
             Swal.fire({
-                title: "Error",
-                text: "Failed to delete product",
                 icon: "error",
-                timer: 1500,
+                title: "שגיאה",
+                text: "נכשל למחוק מוצר",
+                timer: 1600,
                 showConfirmButton: false,
             });
         }
     };
 
-    
-    const getCur = (p: Product, key: "l" | "xl" | "xxl") => p.stock?.[key]?.current ?? 0;
-    const getInit = (p: Product, key: "l" | "xl" | "xxl") => p.stock?.[key]?.initial ?? 0;
+    const handleCanvasUpload = async () => {
+        if (!canvasName.trim() || !canvasImage) {
+            Swal.fire({
+                icon: "info",
+                title: "חסר מידע",
+                text: "שם קאנבס ותמונה הם חובה",
+                timer: 1600,
+                showConfirmButton: false,
+            });
+            return;
+        }
 
-    const outOfStockCount = allProducts.filter((p) => {
-        if (!p.stock) return false; 
-        const total = getCur(p, "l") + getCur(p, "xl") + getCur(p, "xxl");
-        return total === 0;
-    }).length;
+        const formData = new FormData();
+        formData.append("name", canvasName.trim());
+        formData.append("size", canvasSize);
+        formData.append("image", canvasImage);
 
-    const totalSketches = Object.values(imagesByCategory).reduce((sum, arr) => sum + arr.length, 0);
+        try {
+            const res = await axios.post<CanvasItem>(`${VITE_API_URL}/canvases/upload`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            setCanvasName("");
+            setCanvasSize("80×25");
+            setCanvasImage(null);
+
+            setCanvases((prev) => [res.data, ...prev]);
+
+            Swal.fire({
+                icon: "success",
+                title: "הועלה!",
+                text: "הקאנבס נוסף בהצלחה",
+                timer: 1400,
+                showConfirmButton: false,
+            });
+        } catch {
+            Swal.fire({
+                icon: "error",
+                title: "שגיאה",
+                text: "נכשל להעלות קאנבס",
+                timer: 1600,
+                showConfirmButton: false,
+            });
+        }
+    };
+
+    const handleCanvasDelete = async (id: string) => {
+        const confirmed = await Swal.fire({
+            title: "למחוק את הקאנבס?",
+            text: "הפעולה בלתי הפיכה.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#c0392b",
+            cancelButtonColor: "#999",
+            confirmButtonText: "כן, למחוק",
+            cancelButtonText: "ביטול",
+        });
+
+        if (!confirmed.isConfirmed) return;
+
+        try {
+            await axios.delete(`${VITE_API_URL}/canvases/${id}`);
+            setCanvases((prev) => prev.filter((c) => c._id !== id));
+            Swal.fire({ icon: "success", title: "נמחק", timer: 1100, showConfirmButton: false });
+        } catch {
+            Swal.fire({
+                icon: "error",
+                title: "שגיאה",
+                text: "נכשל למחוק קאנבס",
+                timer: 1600,
+                showConfirmButton: false,
+            });
+        }
+    };
 
     return (
         <div
-            className="min-h-screen pt-20 font-serif text-[#3B3024] bg-[#FFFFFF]"
+            dir="rtl"
+            className="min-h-[100svh] pt-24 pb-16 px-4 font-serif text-[#1E1E1E]"
             style={{
                 backgroundImage: "url('/backgrounds/BG4.png')",
                 backgroundRepeat: "no-repeat",
@@ -220,227 +352,115 @@ const AdminPage = () => {
                 backgroundAttachment: "fixed",
             }}
         >
-            <h1 className="mb-10 text-4xl font-bold text-center">Admin Dashboard</h1>
+            <div className="mx-auto max-w-7xl">
+                <AdminHeader onRefresh={refreshAll} />
 
-            {/* KPIs */}
-            <div className="grid grid-cols-1 gap-6 mx-auto mb-10 sm:grid-cols-3 max-w-7xl">
-                <div className="bg-[#CBB279] text-center rounded-xl p-6 shadow-lg">
-                    <FaBoxOpen className="mx-auto mb-2 text-3xl" />
-                    <p className="text-xl font-semibold">{allProducts.length}</p>
-                    <p className="text-sm">Total Products</p>
+                <div className="grid gap-4 mt-10 sm:grid-cols-3">
+                    <AdminKpis
+                        totalProducts={allProducts.length}
+                        outOfStockCount={outOfStockCount}
+                        totalSketches={totalSketches}
+                    />
                 </div>
-                <div className="bg-[#F1F3C2] text-center rounded-xl p-6 shadow-lg">
-                    <FaExclamationTriangle className="mx-auto mb-2 text-3xl text-red-600" />
-                    <p className="text-xl font-semibold">{outOfStockCount}</p>
-                    <p className="text-sm">Out of Stock (size-based)</p>
+
+                <div className="mt-8">
+                    <AdminTabs value={tab} onChange={setTab} />
                 </div>
-                <div className="bg-[#97BE5A] text-white text-center rounded-xl p-6 shadow-lg">
-                    <FaPaintBrush className="mx-auto mb-2 text-3xl" />
-                    <p className="text-xl font-semibold">{totalSketches}</p>
-                    <p className="text-sm">Total Sketches</p>
-                </div>
+
+                <AnimatePresence mode="wait">
+                    {tab === "products" && (
+                        <motion.div
+                            key="products"
+                            initial={{ opacity: 0, y: 14 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 14 }}
+                            transition={{ duration: 0.35 }}
+                            className="mt-8"
+                        >
+                            <ProductsSection
+                                loading={loading}
+                                products={allProducts}
+                                productTitle={productTitle}
+                                setProductTitle={setProductTitle}
+                                productPrice={productPrice}
+                                setProductPrice={setProductPrice}
+                                productDescription={productDescription}
+                                setProductDescription={setProductDescription}
+                                productImage={productImage}
+                                setProductImage={setProductImage}
+                                stockL={stockL}
+                                setStockL={setStockL}
+                                stockXL={stockXL}
+                                setStockXL={setStockXL}
+                                stockXXL={stockXXL}
+                                setStockXXL={setStockXXL}
+                                onUpload={handleProductUpload}
+                                onDelete={handleProductDelete}
+                                onOpenStock={openStockEditor}
+                                getCur={getCur}
+                                getInit={getInit}
+                            />
+                        </motion.div>
+                    )}
+
+                    {tab === "sketches" && (
+                        <motion.div
+                            key="sketches"
+                            initial={{ opacity: 0, y: 14 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 14 }}
+                            transition={{ duration: 0.35 }}
+                            className="mt-8"
+                        >
+                            <SketchesSection
+                                apiBase={VITE_API_URL}
+                                loading={loading}
+                                imagesByCategory={imagesByCategory}
+                                selectedCategory={selectedCategory}
+                                setSelectedCategory={setSelectedCategory}
+                                imageFile={imageFile}
+                                setImageFile={setImageFile}
+                                onUpload={handleUploadSketch}
+                                onDelete={handleDeleteSketch}
+                            />
+                        </motion.div>
+                    )}
+
+                    {tab === "canvases" && (
+                        <motion.div
+                            key="canvases"
+                            initial={{ opacity: 0, y: 14 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 14 }}
+                            transition={{ duration: 0.35 }}
+                            className="mt-8"
+                        >
+                            <CanvasesSection
+                                loading={loading}
+                                canvases={canvases}
+                                canvasName={canvasName}
+                                setCanvasName={setCanvasName}
+                                canvasSize={canvasSize}
+                                setCanvasSize={setCanvasSize}
+                                canvasImage={canvasImage}
+                                setCanvasImage={setCanvasImage}
+                                onUpload={handleCanvasUpload}
+                                onDelete={handleCanvasDelete}
+                            />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {selectedProduct && (
+                    <StockEditorModal
+                        open={stockModalOpen}
+                        onClose={() => setStockModalOpen(false)}
+                        product={selectedProduct}
+                        apiBase={VITE_API_URL}
+                        onUpdated={handleProductPatched}
+                    />
+                )}
             </div>
-
-            {/* Upload Product */}
-            <section className="bg-[#CBB279] text-[#3B3024] p-6 rounded-xl mb-12 max-w-3xl mx-auto shadow-md">
-                <h2 className="mb-4 text-2xl font-semibold text-center">Add New Product</h2>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <input
-                        type="text"
-                        value={productTitle}
-                        onChange={(e) => setProductTitle(e.target.value)}
-                        placeholder="Product Title"
-                        className="p-3 border rounded"
-                    />
-                    <input
-                        type="number"
-                        value={productPrice}
-                        onChange={(e) => setProductPrice(e.target.value)}
-                        placeholder="Price"
-                        className="p-3 border rounded"
-                        min={0}
-                    />
-
-                    {/* חדש — תיאור המוצר */}
-                    <textarea
-                        value={productDescription}
-                        onChange={(e) => setProductDescription(e.target.value)}
-                        placeholder="Product Description (optional)"
-                        className="p-3 border rounded md:col-span-2 min-h-24"
-                    />
-
-                    {/* מידות אופציונליות */}
-                    <input
-                        type="number"
-                        placeholder="Stock L (optional)"
-                        value={stockL}
-                        onChange={(e) => setStockL(e.target.value)}
-                        className="p-3 border rounded"
-                        min={0}
-                    />
-                    <input
-                        type="number"
-                        placeholder="Stock XL (optional)"
-                        value={stockXL}
-                        onChange={(e) => setStockXL(e.target.value)}
-                        className="p-3 border rounded"
-                        min={0}
-                    />
-                    <input
-                        type="number"
-                        placeholder="Stock XXL (optional)"
-                        value={stockXXL}
-                        onChange={(e) => setStockXXL(e.target.value)}
-                        className="p-3 border rounded"
-                        min={0}
-                    />
-
-                    <input
-                        type="file"
-                        onChange={(e) => setProductImage(e.target.files?.[0] || null)}
-                        className="p-2 border rounded"
-                    />
-                </div>
-                <button
-                    onClick={handleProductUpload}
-                    className="w-full mt-4 bg-[#97BE5A] text-white py-2 px-4 rounded hover:bg-[#7ea649] transition"
-                >
-                    Upload Product
-                </button>
-            </section>
-
-            {/* Product List */}
-            <section className="max-w-6xl mx-auto mb-20">
-                <h2 className="mb-6 text-3xl font-bold text-center">Product List</h2>
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                    {allProducts.map((product) => {
-                        const total = product.stock
-                            ? getCur(product, "l") + getCur(product, "xl") + getCur(product, "xxl")
-                            : -1;
-                        const isOutOfStock = product.stock ? total === 0 : false;
-
-                        return (
-                            <div key={product._id} className="bg-white text-[#3B3024] p-4 rounded-lg shadow relative">
-                                <img
-                                    src={product.imageUrl}
-                                    alt={product.title}
-                                    className={`w-full h-48 object-cover rounded-md mb-4 ${isOutOfStock ? "opacity-40" : ""}`}
-                                />
-                                <h3 className="mb-1 text-xl font-semibold">{product.title}</h3>
-                                <p className="text-lg">{Number(product.price).toFixed(2)} ₪</p>
-
-                                
-                                {product.description && (
-                                    <p className="mt-1 text-sm text-gray-600 line-clamp-2">{product.description}</p>
-                                )}
-
-                                
-                                {product.stock ? (
-                                    <p className="mt-1 text-sm">
-                                        Stock:&nbsp;
-                                        L({getCur(product, "l")}/{getInit(product, "l")}),{" "}
-                                        XL({getCur(product, "xl")}/{getInit(product, "xl")}),{" "}
-                                        XXL({getCur(product, "xxl")}/{getInit(product, "xxl")})
-                                    </p>
-                                ) : (
-                                    <p className="mt-1 text-sm italic opacity-80">No size-based stock</p>
-                                )}
-
-                                {isOutOfStock && <p className="mt-2 font-bold text-red-600">Out of Stock</p>}
-
-                                <div className="absolute flex gap-2 top-2 right-2">
-                                    <button
-                                        onClick={() => openStockEditor(product)}
-                                        className="px-2 py-1 text-white bg-blue-600 rounded hover:bg-blue-700"
-                                        title="Edit stock"
-                                    >
-                                        מלאי
-                                    </button>
-                                    <button
-                                        onClick={() => handleProductDelete(product._id)}
-                                        className="px-2 py-1 text-white bg-red-600 rounded hover:bg-red-800"
-                                        title="Delete"
-                                    >
-                                        ✕
-                                    </button>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </section>
-
-            {/* Upload Sketches */}
-            <section className="bg-[#CBB279] text-[#3B3024] p-6 rounded-xl mb-12 max-w-3xl mx-auto shadow-md">
-                <h2 className="mb-4 text-2xl font-semibold text-center">Upload Sketch</h2>
-                <div className="flex flex-col items-center justify-center gap-4 md:flex-row">
-                    <select
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="bg-white text-[#3B3024] px-4 py-2 rounded border w-full md:w-auto"
-                    >
-                        {categories.map((cat) => (
-                            <option key={cat} value={cat}>
-                                {cat.toUpperCase()}
-                            </option>
-                        ))}
-                    </select>
-                    <input
-                        type="file"
-                        onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                        className="text-[#3B3024] px-4 py-2 rounded border bg-white w-full md:w-auto"
-                    />
-                    <button
-                        onClick={handleUploadSketch}
-                        className="bg-[#97BE5A] text-white px-4 py-2 rounded hover:bg-[#7ea649] transition w-full md:w-auto"
-                    >
-                        Upload Sketch
-                    </button>
-                </div>
-            </section>
-
-            {/* Sketches Display */}
-            {categories.map((category) => (
-                <section key={category} className="px-4 mb-20 sm:px-6">
-                    <h2 className="text-2xl font-semibold text-[#8C734A] mb-6 border-b border-[#8C734A]/50 pb-2 tracking-wide">
-                        {category.toUpperCase()} SKETCHES
-                    </h2>
-                    <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6">
-                        {imagesByCategory[category]?.map((imgUrl) => (
-                            <motion.div
-                                key={imgUrl}
-                                className="relative group bg-white rounded-xl overflow-hidden border border-[#e2d9c3] shadow transition-all hover:shadow-lg"
-                                whileHover={{ scale: 1.03 }}
-                            >
-                                <img
-                                    src={`${VITE_API_URL}/${imgUrl}`}
-                                    alt="sketch"
-                                    className="object-cover w-full h-full aspect-square"
-                                />
-                                <motion.button
-                                    onClick={() => handleDeleteSketch(category, imgUrl)}
-                                    className="absolute p-1 text-white transition rounded-full opacity-0 top-2 right-2 bg-red-600/90 group-hover:opacity-100"
-                                    title="Delete"
-                                    whileHover={{ scale: 1.2 }}
-                                >
-                                    ✕
-                                </motion.button>
-                            </motion.div>
-                        ))}
-                    </div>
-                </section>
-            ))}
-
-            {/* Stock Editor Modal */}
-            {selectedProduct && (
-                <StockEditorModal
-                    open={stockModalOpen}
-                    onClose={() => setStockModalOpen(false)}
-                    product={selectedProduct}
-                    apiBase={VITE_API_URL}
-                    onUpdated={handleProductPatched}
-                />
-            )}
         </div>
     );
 };

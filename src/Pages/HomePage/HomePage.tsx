@@ -5,21 +5,18 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Element, scroller } from "react-scroll";
 import { Helmet } from "react-helmet-async";
 import SideCart from "../../components/SideCart.tsx";
-import mainP from "../../Imges/mainPic.jpg";
-import tattoS from "../../Imges/tattooS.jpg";
-import tattoM from "../../Imges/tattooM.jpg";
-import tattoL from "../../Imges/tattooL.jpg";
+import tattoS from "../../Imges/S.png";
+import tattoM from "../../Imges/M.png";
+import tattoL from "../../Imges/L.png";
 import { Product } from "../../Types/TProduct.ts";
 import { trimTransparentPNG } from "../../utils/trimPng.ts";
 import FloatingCartButton from "../../components/FloatingCartButton.tsx";
-import FloatingWhatsAppButton from "../../components/FloatingWhatsAppButton.tsx";
-import ContactSection from "./Sections/ContactSection.tsx";
-import CoursesSection from "./Sections/CoursesSection.tsx";
+
 import HeroSection from "./Sections/HeroSection.tsx";
 import ShopMerchSection from "./Sections/ShopMerchSection.tsx";
 import SimulationSection from "./Sections/SimulationSection.tsx";
-
-
+import OpinionsSection from "./Sections/OpinionsSection.tsx";
+import FloatingSocialButtons from "../../components/FloatingSocialButtons.tsx";
 
 type CartItem = {
     _id: string;
@@ -38,14 +35,15 @@ const HomePage = () => {
     const location = useLocation();
     const VITE_API_URL = import.meta.env.VITE_API_URL as string;
 
+    const BASE = import.meta.env.BASE_URL as string;
+    const LOGO_PATH = `${BASE}LogoOme.png`;
+
     const [products, setProducts] = useState<Product[]>([]);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [selectedSizes, setSelectedSizes] = useState<Record<string, SizeKey | "ONE">>({});
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const [isCartOpen, setIsCartOpen] = useState(false);
-
-    const [logoSrc, setLogoSrc] = useState("/backgrounds/omerlogo.png");
-    const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+    const [logoSrc, setLogoSrc] = useState(LOGO_PATH);
 
     useEffect(() => {
         if (location.state?.scrollTo) {
@@ -82,14 +80,16 @@ const HomePage = () => {
         let mounted = true;
         (async () => {
             try {
-                const trimmed = await trimTransparentPNG("/backgrounds/omerlogo.png");
+                const trimmed = await trimTransparentPNG(LOGO_PATH);
                 if (mounted) setLogoSrc(trimmed);
-            } catch { /* empty */ }
+            } catch {
+                setLogoSrc(LOGO_PATH);
+            }
         })();
         return () => {
             mounted = false;
         };
-    }, []);
+    }, [LOGO_PATH]);
 
     const getCur = (p: Product, k: SizeKey) => p.stock?.[k]?.current ?? 0;
     const hasAnySizeInStock = (p: Product) =>
@@ -159,11 +159,12 @@ const HomePage = () => {
             html: `
         <input id="fullname" class="swal2-input" placeholder="Full Name">
         <input id="phone" class="swal2-input" placeholder="Phone Number">
+        <input id="email" class="swal2-input" placeholder="Email (optional)">
         <input id="city" class="swal2-input" placeholder="City">
         <input id="street" class="swal2-input" placeholder="Street">
         <input id="houseNumber" class="swal2-input" placeholder="House Number">
         <input id="zip" class="swal2-input" placeholder="Postal Code">
-      `,
+`,
             confirmButtonText: "Place Order",
             showCancelButton: true,
             focusConfirm: false,
@@ -179,16 +180,14 @@ const HomePage = () => {
                 const data = {
                     fullname: val("fullname"),
                     phone: val("phone"),
+                    email: val("email") || null,
                     city: val("city"),
                     street: val("street"),
                     houseNumber: val("houseNumber"),
                     zip: val("zip"),
-                    email: val("email") || null,
                 };
                 if (!data.fullname || !data.phone || !data.city || !data.street || !data.houseNumber || !data.zip) {
-                    Swal.showValidationMessage(
-                        "Please fill full name, phone, city, street, house number and postal code"
-                    );
+                    Swal.showValidationMessage("Please fill full name, phone, city, street, house number and postal code");
                     return;
                 }
                 return data;
@@ -214,21 +213,6 @@ const HomePage = () => {
         navigate(`/gallery/${category}`);
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const handleSubmit = async (e: { preventDefault: () => void }) => {
-        e.preventDefault();
-        try {
-            await axios.post(`${VITE_API_URL}/users/contact`, formData);
-            Swal.fire("Message Sent!", "We’ll get back to you soon.", "success");
-            setFormData({ name: "", email: "", message: "" });
-        } catch {
-            Swal.fire("Oops!", "Failed to send message", "error");
-        }
-    };
-
     const imagesSketches = [
         { src: tattoS, title: "small" },
         { src: tattoM, title: "medium" },
@@ -244,7 +228,6 @@ const HomePage = () => {
                     content="סטודיו לקעקועים בעיצוב אישי, באווירה מקצועית וייחודית. הזמנת סשן, הדמיית קעקוע, קורסים ועוד."
                 />
                 <link rel="canonical" href="https://omeravivtattoo.com/" />
-
                 <meta property="og:type" content="website" />
                 <meta property="og:locale" content="he_IL" />
                 <meta property="og:title" content="Omer Aviv Tattoo - סטודיו לקעקועים" />
@@ -252,58 +235,49 @@ const HomePage = () => {
                 <meta property="og:url" content="https://omeravivtattoo.com/" />
                 <meta property="og:image" content="https://omeravivtattoo.com/preview.jpg" />
                 <meta property="og:image:alt" content="Omer Aviv Tattoo Studio" />
-
                 <meta name="twitter:card" content="summary_large_image" />
                 <meta name="twitter:title" content="Omer Aviv Tattoo - סטודיו לקעקועים" />
                 <meta name="twitter:description" content="קעקועים ייחודיים, מוצרים, קורסים והדמיות – הכל במקום אחד." />
                 <meta name="twitter:image" content="https://omeravivtattoo.com/preview.jpg" />
             </Helmet>
 
-            <div
-                className="w-full min-h-screen pt-20 text-[#3B3024]"
-                style={{
-                    backgroundImage: "url('/backgrounds/BG4.png')",
-                    backgroundRepeat: "no-repeat",
-                    backgroundSize: "contain",
-                    backgroundPosition: "right top",
-                    backgroundAttachment: "fixed",
-                    backgroundColor: "#FFFFFF",
-                }}
-            >
-                <FloatingWhatsAppButton phone="972528787419" />
+            <div className="relative isolate w-full min-h-screen text-[#3B3024]">
+                <FloatingSocialButtons phone={"972528787419"} instagramUrl={"https://www.instagram.com/omeraviv_tattoo/"} tiktokUrl={"https://www.tiktok.com/@omeraviv_tattoo"} />
 
                 <Element name="logo">
-                    <HeroSection logoSrc={logoSrc} phone="972528787419" />
+                    <div id="home-logo">
+                        <HeroSection logoSrc={logoSrc} phone="972528787419" />
+                    </div>
                 </Element>
 
-                <ShopMerchSection
-                    products={products}
-                    sizeKeys={SIZE_KEYS}
-                    selectedSizes={selectedSizes}
-                    setSelectedSizes={setSelectedSizes}
-                    quantities={quantities}
-                    setQuantities={setQuantities}
-                    addToCart={addToCart}
-                    isOutOfStock={isOutOfStock}
-                    onSeeMore={() => navigate("/products")}
-                />
+                <div className="pt-20">
+                    <ShopMerchSection
+                        products={products}
+                        sizeKeys={SIZE_KEYS}
+                        selectedSizes={selectedSizes}
+                        setSelectedSizes={setSelectedSizes}
+                        quantities={quantities}
+                        setQuantities={setQuantities}
+                        addToCart={addToCart}
+                        isOutOfStock={isOutOfStock}
+                        onSeeMore={() => navigate("/products")}
+                    />
 
-                <CoursesSection imageSrc={mainP} phone="972528787419" dates={["10/07/2025", "15/08/2025", "20/09/2025"]} />
+                    <SimulationSection images={imagesSketches} onSelectCategory={handleSelectCategory} />
 
-                <SimulationSection images={imagesSketches} onSelectCategory={handleSelectCategory} />
+                    <OpinionsSection />
 
-                <ContactSection formData={formData} onChange={handleChange} onSubmit={handleSubmit} />
+                    <SideCart
+                        isOpen={isCartOpen}
+                        onClose={() => setIsCartOpen(false)}
+                        cart={cart}
+                        updateQuantity={updateQuantity}
+                        removeFromCart={removeFromCart}
+                        handleCheckout={handleCheckout}
+                    />
 
-                <SideCart
-                    isOpen={isCartOpen}
-                    onClose={() => setIsCartOpen(false)}
-                    cart={cart}
-                    updateQuantity={updateQuantity}
-                    removeFromCart={removeFromCart}
-                    handleCheckout={handleCheckout}
-                />
-
-                <FloatingCartButton onClick={() => setIsCartOpen(true)} />
+                    <FloatingCartButton onClick={() => setIsCartOpen(true)} />
+                </div>
             </div>
         </>
     );

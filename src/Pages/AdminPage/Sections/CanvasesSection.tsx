@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { FaLayerGroup, FaPlus } from "react-icons/fa";
 import type { CanvasItem, CanvasSize } from "./types";
 import { CardShell, DangerIconBtn, Field, FilePick, Input, PrimaryBtn } from "./ui";
@@ -5,26 +6,26 @@ import { CardShell, DangerIconBtn, Field, FilePick, Input, PrimaryBtn } from "./
 const CanvasesSection = ({
     loading,
     canvases,
-    canvasName,
-    setCanvasName,
-    canvasSize,
-    setCanvasSize,
-    canvasImage,
-    setCanvasImage,
     onUpload,
     onDelete,
 }: {
     loading: boolean;
     canvases: CanvasItem[];
-    canvasName: string;
-    setCanvasName: React.Dispatch<React.SetStateAction<string>>;
-    canvasSize: CanvasSize;
-    setCanvasSize: React.Dispatch<React.SetStateAction<CanvasSize>>;
-    canvasImage: File | null;
-    setCanvasImage: React.Dispatch<React.SetStateAction<File | null>>;
-    onUpload: () => void;
-    onDelete: (id: string) => void;
+    onUpload: (payload: { name: string; size: CanvasSize; image: File | null }) => Promise<{ ok: boolean }>;
+    onDelete: (id: string) => void | Promise<boolean>;
 }) => {
+    const [canvasName, setCanvasName] = useState("");
+    const [canvasSize, setCanvasSize] = useState<CanvasSize>("80×25");
+    const [canvasImage, setCanvasImage] = useState<File | null>(null);
+
+    const submit = async () => {
+        const res = await onUpload({ name: canvasName, size: canvasSize, image: canvasImage });
+        if (!res.ok) return;
+        setCanvasName("");
+        setCanvasSize("80×25");
+        setCanvasImage(null);
+    };
+
     return (
         <div className="grid gap-8 lg:grid-cols-[420px,1fr]">
             <CardShell>
@@ -35,12 +36,9 @@ const CanvasesSection = ({
                             <FaLayerGroup />
                         </div>
                     </div>
-                    <div className="mt-2 text-sm text-[#1E1E1E]/65 text-end">
-                        יופיע בעמוד הקאנבסים אחרי שנחבר אותו לשרת.
-                    </div>
                 </div>
 
-                <div className="px-7 py-6 space-y-4">
+                <div className="py-6 space-y-4 px-7">
                     <Field label="שם קאנבס">
                         <Input value={canvasName} onChange={(e) => setCanvasName(e.target.value)} placeholder="לדוגמה: סאקורה בזריחה" />
                     </Field>
@@ -61,13 +59,9 @@ const CanvasesSection = ({
                         <FilePick value={canvasImage?.name} onPick={setCanvasImage} />
                     </Field>
 
-                    <PrimaryBtn onClick={onUpload} icon={<FaPlus />}>
+                    <PrimaryBtn onClick={submit} icon={<FaPlus />}>
                         העלה קאנבס
                     </PrimaryBtn>
-
-                    <div className="text-xs text-[#1E1E1E]/60 text-end">
-                        אם עדיין אין ראוטים בשרת ל־/canvases, ההעלאה תחזיר שגיאה עד שנבנה את צד השרת.
-                    </div>
                 </div>
             </CardShell>
 
@@ -97,10 +91,10 @@ const CanvasesSection = ({
                                 <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_20%_10%,rgba(185,137,91,0.12),transparent_55%),radial-gradient(circle_at_80%_90%,rgba(232,217,194,0.26),transparent_55%)]" />
                                 <div className="relative p-4">
                                     <div className="relative overflow-hidden rounded-2xl border border-[#B9895B]/12 bg-white/40">
-                                        <img src={c.imageUrl} alt={c.name} className="h-44 w-full object-cover" loading="lazy" />
+                                        <img src={c.imageUrl} alt={c.name} className="object-cover w-full h-44" loading="lazy" />
                                     </div>
 
-                                    <div className="mt-3 flex items-start justify-between gap-3">
+                                    <div className="flex items-start justify-between gap-3 mt-3">
                                         <div className="min-w-0">
                                             <div className="truncate text-sm font-extrabold text-[#1E1E1E] text-end">{c.name}</div>
                                             <div className="mt-1 text-xs font-semibold text-[#B9895B] text-end">{c.size}</div>

@@ -1,52 +1,62 @@
+import { useState } from "react";
 import type { Product } from "../../../Types/TProduct";
-import { CardShell, DangerIconBtn, Field, FilePick, Input, PrimaryBtn, TextArea, cls, formatILS } from "./ui";
+import { DangerIconBtn, Field, FilePick, Input, PrimaryBtn, TextArea, cls, formatILS, CardShell } from "./ui";
 import { FaPlus } from "react-icons/fa";
+
+const getCur = (p: Product, key: "l" | "xl" | "xxl") => p.stock?.[key]?.current ?? 0;
+const getInit = (p: Product, key: "l" | "xl" | "xxl") => p.stock?.[key]?.initial ?? 0;
 
 const ProductsSection = ({
     loading,
     products,
-    productTitle,
-    setProductTitle,
-    productPrice,
-    setProductPrice,
-    productDescription,
-    setProductDescription,
-    productImage,
-    setProductImage,
-    stockL,
-    setStockL,
-    stockXL,
-    setStockXL,
-    stockXXL,
-    setStockXXL,
     onUpload,
     onDelete,
     onOpenStock,
-    getCur,
-    getInit,
 }: {
     loading: boolean;
     products: Product[];
-    productTitle: string;
-    setProductTitle: React.Dispatch<React.SetStateAction<string>>;
-    productPrice: string;
-    setProductPrice: React.Dispatch<React.SetStateAction<string>>;
-    productDescription: string;
-    setProductDescription: React.Dispatch<React.SetStateAction<string>>;
-    productImage: File | null;
-    setProductImage: React.Dispatch<React.SetStateAction<File | null>>;
-    stockL: string;
-    setStockL: React.Dispatch<React.SetStateAction<string>>;
-    stockXL: string;
-    setStockXL: React.Dispatch<React.SetStateAction<string>>;
-    stockXXL: string;
-    setStockXXL: React.Dispatch<React.SetStateAction<string>>;
-    onUpload: () => void;
-    onDelete: (id: string) => void;
+    onUpload: (payload: {
+        title: string;
+        price: string;
+        description?: string;
+        image: File | null;
+        stockL?: string;
+        stockXL?: string;
+        stockXXL?: string;
+    }) => Promise<{ ok: boolean }>;
+    onDelete: (id: string) => void | Promise<boolean>;
     onOpenStock: (p: Product) => void;
-    getCur: (p: Product, key: "l" | "xl" | "xxl") => number;
-    getInit: (p: Product, key: "l" | "xl" | "xxl") => number;
 }) => {
+    const [productTitle, setProductTitle] = useState("");
+    const [productPrice, setProductPrice] = useState("");
+    const [productDescription, setProductDescription] = useState("");
+    const [productImage, setProductImage] = useState<File | null>(null);
+    const [stockL, setStockL] = useState("");
+    const [stockXL, setStockXL] = useState("");
+    const [stockXXL, setStockXXL] = useState("");
+
+    const submit = async () => {
+        const res = await onUpload({
+            title: productTitle,
+            price: productPrice,
+            description: productDescription,
+            image: productImage,
+            stockL,
+            stockXL,
+            stockXXL,
+        });
+
+        if (!res.ok) return;
+
+        setProductTitle("");
+        setProductPrice("");
+        setProductDescription("");
+        setStockL("");
+        setStockXL("");
+        setStockXXL("");
+        setProductImage(null);
+    };
+
     return (
         <div className="grid gap-8 lg:grid-cols-[420px,1fr]">
             <CardShell>
@@ -91,7 +101,7 @@ const ProductsSection = ({
                         <FilePick value={productImage?.name} onPick={setProductImage} />
                     </Field>
 
-                    <PrimaryBtn onClick={onUpload} icon={<FaPlus />}>
+                    <PrimaryBtn onClick={submit} icon={<FaPlus />}>
                         העלה מוצר
                     </PrimaryBtn>
                 </div>
@@ -167,15 +177,9 @@ const ProductsSection = ({
                                         <div className="mt-3 rounded-2xl border border-[#B9895B]/14 bg-white/35 p-3 text-xs text-[#1E1E1E]/75">
                                             {p.stock ? (
                                                 <div className="grid gap-1 text-end">
-                                                    <div>
-                                                        L: {getCur(p, "l")}/{getInit(p, "l")}
-                                                    </div>
-                                                    <div>
-                                                        XL: {getCur(p, "xl")}/{getInit(p, "xl")}
-                                                    </div>
-                                                    <div>
-                                                        XXL: {getCur(p, "xxl")}/{getInit(p, "xxl")}
-                                                    </div>
+                                                    <div>L: {getCur(p, "l")}/{getInit(p, "l")}</div>
+                                                    <div>XL: {getCur(p, "xl")}/{getInit(p, "xl")}</div>
+                                                    <div>XXL: {getCur(p, "xxl")}/{getInit(p, "xxl")}</div>
                                                 </div>
                                             ) : (
                                                 <div className="italic text-end">אין מלאי לפי מידות</div>

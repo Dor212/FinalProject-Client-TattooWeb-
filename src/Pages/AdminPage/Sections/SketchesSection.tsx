@@ -1,29 +1,30 @@
-import { FaPaintBrush, FaPlus } from "react-icons/fa";
+import { useState } from "react";
+import { FaPaintBrush, FaPlus, FaTrash } from "react-icons/fa";
 import { SKETCH_CATEGORIES, type SketchCategory } from "./types";
 import { CardShell, Field, FilePick, PrimaryBtn } from "./ui";
-import { FaTrash } from "react-icons/fa";
 
 const SketchesSection = ({
     apiBase,
     loading,
     imagesByCategory,
-    selectedCategory,
-    setSelectedCategory,
-    imageFile,
-    setImageFile,
     onUpload,
     onDelete,
 }: {
     apiBase: string;
     loading: boolean;
     imagesByCategory: Record<string, string[]>;
-    selectedCategory: SketchCategory;
-    setSelectedCategory: React.Dispatch<React.SetStateAction<SketchCategory>>;
-    imageFile: File | null;
-    setImageFile: React.Dispatch<React.SetStateAction<File | null>>;
-    onUpload: () => void;
-    onDelete: (category: string, fileUrl: string) => void;
+    onUpload: (category: SketchCategory, file: File | null) => Promise<boolean>;
+    onDelete: (category: string, fileUrl: string) => void | Promise<boolean>;
 }) => {
+    const [selectedCategory, setSelectedCategory] = useState<SketchCategory>("small");
+    const [imageFile, setImageFile] = useState<File | null>(null);
+
+    const submit = async () => {
+        const ok = await onUpload(selectedCategory, imageFile);
+        if (!ok) return;
+        setImageFile(null);
+    };
+
     return (
         <div className="grid gap-8 lg:grid-cols-[420px,1fr]">
             <CardShell>
@@ -56,7 +57,7 @@ const SketchesSection = ({
                         <FilePick value={imageFile?.name} onPick={setImageFile} />
                     </Field>
 
-                    <PrimaryBtn onClick={onUpload} icon={<FaPlus />}>
+                    <PrimaryBtn onClick={submit} icon={<FaPlus />}>
                         העלה סקיצה
                     </PrimaryBtn>
                 </div>
@@ -67,9 +68,7 @@ const SketchesSection = ({
                     <div key={cat} className="space-y-3">
                         <div className="flex items-center justify-between gap-3">
                             <div className="text-lg font-extrabold text-[#1E1E1E]">{cat.toUpperCase()}</div>
-                            <div className="text-sm text-[#1E1E1E]/60 text-end">
-                                {imagesByCategory[cat]?.length || 0} תמונות
-                            </div>
+                            <div className="text-sm text-[#1E1E1E]/60 text-end">{imagesByCategory[cat]?.length || 0} תמונות</div>
                         </div>
 
                         {loading ? (
@@ -85,12 +84,7 @@ const SketchesSection = ({
                                         key={imgUrl}
                                         className="group relative overflow-hidden rounded-2xl border border-[#B9895B]/14 bg-white/35 backdrop-blur shadow-[0_12px_40px_rgba(30,30,30,0.10)]"
                                     >
-                                        <img
-                                            src={`${apiBase}/${imgUrl}`}
-                                            alt="sketch"
-                                            className="object-cover w-full aspect-square"
-                                            loading="lazy"
-                                        />
+                                        <img src={`${apiBase}/${imgUrl}`} alt="sketch" className="object-cover w-full aspect-square" loading="lazy" />
                                         <button
                                             type="button"
                                             onClick={() => onDelete(cat, imgUrl)}

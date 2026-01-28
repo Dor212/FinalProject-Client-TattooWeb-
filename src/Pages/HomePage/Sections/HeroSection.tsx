@@ -4,25 +4,46 @@ import { FaWhatsapp } from "react-icons/fa";
 
 type Props = { logoSrc: string; phone: string };
 
+const HEADER_H = 72;
+
 const HeroSection = ({ logoSrc, phone }: Props) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
-
-    const HEADER_H = 72;
 
     useEffect(() => {
         const v = videoRef.current;
         if (!v) return;
 
+        // iOS needs these as properties too
+        v.muted = true;
+        v.playsInline = true;
+        v.autoplay = true;
+
+        const safePlay = () => v.play().catch(() => { });
+
+        // try immediately
+        safePlay();
+
+        // try on visibility
+        const onVis = () => {
+            if (document.visibilityState === "visible") safePlay();
+            else v.pause();
+        };
+        document.addEventListener("visibilitychange", onVis);
+
+        // try on intersection (scroll trigger)
         const io = new IntersectionObserver(
             ([e]) => {
-                if (e.isIntersecting) v.play().catch(() => { });
+                if (e.isIntersecting) safePlay();
                 else v.pause();
             },
             { threshold: 0.15 }
         );
-
         io.observe(v);
-        return () => io.disconnect();
+
+        return () => {
+            document.removeEventListener("visibilitychange", onVis);
+            io.disconnect();
+        };
     }, []);
 
     return (
@@ -36,9 +57,10 @@ const HeroSection = ({ logoSrc, phone }: Props) => {
                 className="absolute inset-0 object-cover w-full h-full"
                 src="https://www.omeravivart.com/movieOmer.mp4"
                 playsInline
-                preload="metadata"
+                preload="auto"
                 loop
                 muted
+                autoPlay
             />
 
             <div className="absolute inset-0 pointer-events-none bg-black/25" />

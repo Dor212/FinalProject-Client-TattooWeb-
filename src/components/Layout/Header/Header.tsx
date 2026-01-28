@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { TRootState } from "../../../Store/BigPie";
 import { useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import axios from "../../../Services/axiosInstance";
 import { decode } from "../../../Services/tokenServices.ts";
 import { userActions } from "../../../Store/UserSlice.ts";
 
@@ -103,9 +103,12 @@ const Header = () => {
 
   if (isCanvasPage && !SHOW_MINIMAL_LOGO_ONLY) return null;
 
+  const glassClass =
+    "fixed top-0 left-0 z-50 w-full bg-transparent backdrop-blur-md border-b border-white/10 text-[#1E1E1E] shadow-[0_8px_30px_rgba(0,0,0,0.08)]";
+
   if (isCanvasPage && SHOW_MINIMAL_LOGO_ONLY) {
     return (
-      <header className="fixed top-0 left-0 z-50 w-full bg-[#F6F1E8]/85 backdrop-blur-md shadow-sm border-b border-[#1E1E1E]/10">
+      <header className={glassClass}>
         <div className="flex items-center justify-center w-full py-2 mx-auto max-w-7xl">
           <button
             type="button"
@@ -126,12 +129,7 @@ const Header = () => {
   }
 
   return (
-    <Navbar
-      fluid
-      rounded
-      dir="ltr"
-      className="fixed top-0 left-0 z-50 w-full bg-[#F6F1E8]/85 backdrop-blur-md shadow-sm border-b border-[#1E1E1E]/10 text-[#1E1E1E]"
-    >
+    <Navbar fluid rounded dir="ltr" className={glassClass}>
       <div className="flex items-center w-full mx-auto max-w-7xl">
         <button
           type="button"
@@ -159,7 +157,7 @@ const Header = () => {
         dir="rtl"
         className={`${isOpen ? "block" : "hidden"} md:flex md:items-center md:gap-2 md:ms-auto text-base`}
       >
-        <div className="mt-2 md:mt-0 rounded-2xl md:rounded-none bg-[#E8D9C2]/70 md:bg-transparent p-2 md:p-0 shadow-sm md:shadow-none border border-[#1E1E1E]/10 md:border-0">
+        <div className="p-2 mt-2 border shadow-sm md:mt-0 rounded-2xl md:rounded-none bg-white/40 md:bg-transparent md:p-0 md:shadow-none border-white/20 md:border-0">
           {!user && (
             <div className="flex flex-col gap-1 md:flex-row md:items-center md:gap-3">
               <Navbar.Link

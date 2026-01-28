@@ -1,162 +1,130 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "../../Services/axiosInstance";
 import { useCart } from "../../components/context/CartContext.tsx";
 
 type Customer = {
     fullname: string;
     phone: string;
+    email?: string | null;
     city: string;
     street: string;
     houseNumber: string;
-    email?: string;
+    zip: string;
     notes?: string;
-};
-
-type CartPayloadItem = {
-    _id: string;
-    title: string;
-    size: string;
-    quantity: number;
-    imageUrl: string;
-    category: string;
-    price?: number;
-};
-
-type OrderResponse = {
-    totals?: {
-        total?: number;
-    };
 };
 
 const API = import.meta.env.VITE_API_URL as string;
 
-function safeTrim(v: string): string {
+const formatILS = (n: number) =>
+    new Intl.NumberFormat("he-IL", { style: "currency", currency: "ILS", maximumFractionDigits: 0 }).format(n);
+
+function trim(v: string) {
     return v.trim();
 }
 
-function isMinLen(v: string, n: number): boolean {
-    return safeTrim(v).length >= n;
-}
-
-function calcPrice(category: string): number | undefined {
-    if (category === "pair") return 390;
-    if (category === "triple") return 550;
-    return undefined;
-}
-
-function formatILS(n: number): string {
-    return `₪${Math.round(n).toLocaleString("he-IL")}`;
+function minLen(v: string, n: number) {
+    return trim(v).length >= n;
 }
 
 export default function CheckoutPage() {
     const cart = useCart();
     const navigate = useNavigate();
 
-    if (!cart) {
-        return (
-            <div dir="rtl" className="max-w-2xl p-4 mx-auto">
-                <h1 className="text-2xl font-bold text-[#B9895B]">תשלום</h1>
-                <p className="mt-3 text-[#1E1E1E]/75">שגיאה בטעינת העגלה.</p>
-            </div>
-        );
-    }
+    const [loading, setLoading] = useState(false);
+    const [err, setErr] = useState<string | null>(null);
 
-    const { state, totals, clear } = cart;
+    const productsPayload = useMemo(() => cart.getMerchPayload(), [cart]);
+    const canvasesPayload = useMemo(() => cart.getCanvasPayload(), [cart]);
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const needsZip = productsPayload.length > 0;
+
     const [form, setForm] = useState<Customer>({
         fullname: "",
         phone: "",
+        email: "",
         city: "",
         street: "",
         houseNumber: "",
-        email: "",
+        zip: "",
         notes: "",
     });
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const [loading, setLoading] = useState<boolean>(false);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const [err, setErr] = useState<string | null>(null);
-
     const canSubmit =
-        state.items.length > 0 &&
-        isMinLen(form.fullname, 2) &&
-        isMinLen(form.phone, 6) &&
-        isMinLen(form.city, 2) &&
-        isMinLen(form.street, 2) &&
-        isMinLen(form.houseNumber, 1);
+        cart.items.length > 0 &&
+        minLen(form.fullname, 2) &&
+        minLen(form.phone, 6) &&
+        minLen(form.city, 2) &&
+        minLen(form.street, 2) &&
+        minLen(form.houseNumber, 1) &&
+        (!needsZip || minLen(form.zip, 2));
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const cartPayload: CartPayloadItem[] = useMemo(
-        () =>
-            state.items.map((i) => ({
-                _id: i.id,
-                title: i.name,
-                size: i.size,
-                quantity: i.qty,
-                imageUrl: i.image,
-                category: i.category,
-                price: calcPrice(i.category),
-            })),
-        [state.items]
-    );
-
-    async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-        e.preventDefault();
+    const submit = async () => {
         setErr(null);
         if (!canSubmit || loading) return;
 
         setLoading(true);
 
+        const succeeded: Array<"canvas" | "product"> = [];
+
         try {
-            const res = await fetch(`${API}/api/orders`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    source: "canvas",
-                    section: "/canvases",
-                    customerDetails: form,
-                    cart: cartPayload,
-                }),
-            });
-
-            if (!res.ok) {
-                const t = await res.text();
-                throw new Error(t || "Order failed");
+            if (canvasesPayload.length > 0) {
+                await axios.post(`${API}/api/orders`, {
+                    source: "checkout",
+                    section: "/checkout",
+                    customerDetails: {
+                        fullname: form.fullname,
+                        phone: form.phone,
+                        email: form.email || null,
+                        city: form.city,
+                        street: form.street,
+                        houseNumber: form.houseNumber,
+                        zip: form.zip,
+                        notes: form.notes || "",
+                    },
+                    cart: canvasesPayload,
+                });
+                succeeded.push("canvas");
             }
 
-            let finalTotal: number | undefined;
-            try {
-                const data: OrderResponse = (await res.json()) as OrderResponse;
-                finalTotal = data?.totals?.total;
-            } catch {
-                finalTotal = undefined;
+            if (productsPayload.length > 0) {
+                await axios.post(`${API}/users/orders`, {
+                    customerDetails: {
+                        fullname: form.fullname,
+                        phone: form.phone,
+                        email: form.email || null,
+                        city: form.city,
+                        street: form.street,
+                        houseNumber: form.houseNumber,
+                        zip: form.zip,
+                    },
+                    cart: productsPayload,
+                });
+                succeeded.push("product");
             }
 
-            clear();
+            cart.clear();
             setLoading(false);
+            navigate("/", { replace: true });
+        } catch (e: unknown) {
+            if (succeeded.includes("canvas")) cart.clear("canvas");
+            if (succeeded.includes("product")) cart.clear("product");
 
             const msg =
-                `תודה! ההזמנה נקלטה ונשלחה למייל של עומר` +
-                (typeof finalTotal === "number" ? ` (סכום: ${formatILS(finalTotal)})` : "") +
-                ".";
-
-            alert(msg);
-            navigate("/canvases", { replace: true });
-        } catch (e: unknown) {
-            const errorMessage =
                 typeof e === "object" && e !== null && "message" in e ? String((e as { message?: unknown }).message) : null;
 
-            setErr(errorMessage || "שגיאה בשליחת ההזמנה");
+            const tail =
+                succeeded.length > 0 ? "חלק מהפריטים נשלחו בהצלחה והוסרו מהעגלה כדי למנוע כפילויות." : "";
+
+            setErr([msg || "שגיאה בשליחת ההזמנה", tail].filter(Boolean).join(" "));
             setLoading(false);
         }
-    }
+    };
 
-    if (state.items.length === 0) {
+    if (cart.items.length === 0) {
         return (
-            <div dir="rtl" className="max-w-2xl p-4 mx-auto">
-                <h1 className="text-2xl font-extrabold tracking-wide text-[#B9895B]">תשלום</h1>
+            <div dir="rtl" className="max-w-2xl p-4 mx-auto pt-24">
+                <h1 className="text-2xl font-extrabold text-[#B9895B]">תשלום</h1>
                 <p className="mt-3 text-[#1E1E1E]/75">העגלה ריקה.</p>
             </div>
         );
@@ -166,10 +134,8 @@ export default function CheckoutPage() {
         <div dir="rtl" className="px-4 pt-24 pb-16">
             <div className="max-w-3xl mx-auto">
                 <div className="mb-6 text-center">
-                    <h1 className="text-3xl md:text-4xl font-extrabold tracking-wide text-[#B9895B]">פרטי משלוח והזמנה</h1>
-                    <p className="mt-2 text-sm md:text-base text-[#1E1E1E]/70">
-                        הטופס נשמר נקי, הסכום הסופי נסגר בצד השרת ונשלח במייל.
-                    </p>
+                    <h1 className="text-3xl md:text-4xl font-extrabold tracking-wide text-[#B9895B]">סיום הזמנה</h1>
+                    <p className="mt-2 text-sm md:text-base text-[#1E1E1E]/70">Checkout אחד לכל מה שבחרת באתר.</p>
                 </div>
 
                 <div className="relative overflow-hidden rounded-[26px] border border-[#B9895B]/18 bg-white/30 backdrop-blur-xl shadow-[0_18px_70px_rgba(30,30,30,0.12)]">
@@ -179,164 +145,173 @@ export default function CheckoutPage() {
                         <div className="flex items-center justify-between gap-4">
                             <div>
                                 <h2 className="text-lg md:text-xl font-extrabold text-[#1E1E1E]">סיכום עגלה</h2>
-                                <p className="mt-1 text-xs md:text-sm text-[#1E1E1E]/65">בדיקה מהירה לפני שליחה ✍️</p>
+                                <p className="mt-1 text-xs md:text-sm text-[#1E1E1E]/65">בדיקה מהירה לפני שליחה</p>
                             </div>
 
                             <div className="text-left">
                                 <div className="text-xs text-[#1E1E1E]/60">סה״כ משוער</div>
-                                <div className="text-lg md:text-xl font-extrabold text-[#B9895B]">{formatILS(totals.total)}</div>
+                                <div className="text-lg md:text-xl font-extrabold text-[#B9895B]">
+                                    {formatILS(cart.totals.total)}
+                                </div>
                             </div>
                         </div>
 
                         <div className="mt-4 space-y-2">
-                            {state.items.map((i) => (
+                            {cart.items.map((i) => (
                                 <div
-                                    key={`${i.id}-${i.size}`}
+                                    key={`${i.kind}:${i.id}:${i.size}`}
                                     className="flex items-center justify-between gap-3 rounded-xl border border-[#B9895B]/12 bg-white/35 px-3 py-2"
                                 >
                                     <div className="min-w-0">
                                         <div className="text-sm font-semibold text-[#1E1E1E] truncate">{i.name}</div>
                                         <div className="text-xs text-[#1E1E1E]/65">
-                                            מידה: <span className="font-semibold text-[#1E1E1E]/80">{i.size}</span> · כמות:{" "}
+                                            {i.kind === "canvas" ? "קאנבס" : "מוצר"} · מידה:{" "}
+                                            <span className="font-semibold text-[#1E1E1E]/80">
+                                                {String(i.size).toUpperCase()}
+                                            </span>{" "}
+                                            · כמות:{" "}
                                             <span className="font-semibold text-[#1E1E1E]/80">{i.qty}</span>
                                         </div>
                                     </div>
 
-                                    <div className="text-xs text-[#1E1E1E]/55 whitespace-nowrap">
-                                        {i.category === "pair" ? "PAIR" : i.category === "triple" ? "TRIPLE" : String(i.category).toUpperCase()}
-                                    </div>
+                                    {i.kind === "product" ? (
+                                        <div className="text-xs font-semibold text-[#B9895B] whitespace-nowrap">
+                                            {formatILS(i.price * i.qty)}
+                                        </div>
+                                    ) : (
+                                        <div className="text-xs text-[#1E1E1E]/55 whitespace-nowrap">
+                                            {i.category === "pair"
+                                                ? "PAIR"
+                                                : i.category === "triple"
+                                                    ? "TRIPLE"
+                                                    : "STANDARD"}
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
 
                         <div className="mt-3 text-xs text-[#1E1E1E]/60">
-                            הסכום הסופי מחושב בשרת ונשלח במייל. במידת הצורך נחזור אליך לאישור.
+                            קאנבסים מחושבים סופית בצד השרת לפי כמות. מוצרים לפי המחיר שמופיע בעגלה.
                         </div>
                     </div>
 
-                    <form onSubmit={onSubmit} className="relative p-5 md:p-7">
+                    <div className="relative p-5 md:p-7">
+                        {err && (
+                            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                                {err}
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-1 gap-4">
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <label className="block text-sm font-semibold text-[#1E1E1E]/80">שם מלא</label>
                                     <input
-                                        className="w-full rounded-xl border border-[#B9895B]/20 bg-[#F6F1E8]/55 px-4 py-3 text-[#1E1E1E] placeholder:text-[#1E1E1E]/40 focus:outline-none focus:ring-2 focus:ring-[#B9895B]/35 focus:border-[#B9895B]/35"
-                                        placeholder="ישראל ישראלי"
                                         value={form.fullname}
-                                        onChange={(e) => setForm({ ...form, fullname: e.target.value })}
-                                        required
+                                        onChange={(e) => setForm((p) => ({ ...p, fullname: e.target.value }))}
+                                        className="w-full rounded-xl border border-[#B9895B]/18 bg-white/70 px-4 py-3 outline-none focus:ring-2 focus:ring-[#B9895B]/25"
+                                        placeholder="שם מלא"
                                     />
                                 </div>
 
                                 <div className="space-y-2">
                                     <label className="block text-sm font-semibold text-[#1E1E1E]/80">טלפון</label>
                                     <input
-                                        className="w-full rounded-xl border border-[#B9895B]/20 bg-[#F6F1E8]/55 px-4 py-3 text-[#1E1E1E] placeholder:text-[#1E1E1E]/40 focus:outline-none focus:ring-2 focus:ring-[#B9895B]/35 focus:border-[#B9895B]/35"
-                                        placeholder="050-0000000"
                                         value={form.phone}
-                                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                                        required
-                                        inputMode="tel"
-                                        autoComplete="tel"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                                <div className="space-y-2 md:col-span-1">
-                                    <label className="block text-sm font-semibold text-[#1E1E1E]/80">עיר</label>
-                                    <input
-                                        className="w-full rounded-xl border border-[#B9895B]/20 bg-[#F6F1E8]/55 px-4 py-3 text-[#1E1E1E] placeholder:text-[#1E1E1E]/40 focus:outline-none focus:ring-2 focus:ring-[#B9895B]/35 focus:border-[#B9895B]/35"
-                                        placeholder="תל אביב"
-                                        value={form.city}
-                                        onChange={(e) => setForm({ ...form, city: e.target.value })}
-                                        required
-                                        autoComplete="address-level2"
-                                    />
-                                </div>
-
-                                <div className="space-y-2 md:col-span-1">
-                                    <label className="block text-sm font-semibold text-[#1E1E1E]/80">רחוב</label>
-                                    <input
-                                        className="w-full rounded-xl border border-[#B9895B]/20 bg-[#F6F1E8]/55 px-4 py-3 text-[#1E1E1E] placeholder:text-[#1E1E1E]/40 focus:outline-none focus:ring-2 focus:ring-[#B9895B]/35 focus:border-[#B9895B]/35"
-                                        placeholder="דיזנגוף"
-                                        value={form.street}
-                                        onChange={(e) => setForm({ ...form, street: e.target.value })}
-                                        required
-                                        autoComplete="address-line1"
-                                    />
-                                </div>
-
-                                <div className="space-y-2 md:col-span-1">
-                                    <label className="block text-sm font-semibold text-[#1E1E1E]/80">מס׳ בית</label>
-                                    <input
-                                        className="w-full rounded-xl border border-[#B9895B]/20 bg-[#F6F1E8]/55 px-4 py-3 text-[#1E1E1E] placeholder:text-[#1E1E1E]/40 focus:outline-none focus:ring-2 focus:ring-[#B9895B]/35 focus:border-[#B9895B]/35"
-                                        placeholder="12"
-                                        value={form.houseNumber}
-                                        onChange={(e) => setForm({ ...form, houseNumber: e.target.value })}
-                                        required
-                                        inputMode="numeric"
-                                        autoComplete="address-line2"
+                                        onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                                        className="w-full rounded-xl border border-[#B9895B]/18 bg-white/70 px-4 py-3 outline-none focus:ring-2 focus:ring-[#B9895B]/25"
+                                        placeholder="טלפון"
                                     />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-[#1E1E1E]/80">עיר</label>
+                                    <input
+                                        value={form.city}
+                                        onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))}
+                                        className="w-full rounded-xl border border-[#B9895B]/18 bg-white/70 px-4 py-3 outline-none focus:ring-2 focus:ring-[#B9895B]/25"
+                                        placeholder="עיר"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
                                     <label className="block text-sm font-semibold text-[#1E1E1E]/80">אימייל (אופציונלי)</label>
                                     <input
-                                        className="w-full rounded-xl border border-[#B9895B]/20 bg-[#F6F1E8]/55 px-4 py-3 text-[#1E1E1E] placeholder:text-[#1E1E1E]/40 focus:outline-none focus:ring-2 focus:ring-[#B9895B]/35 focus:border-[#B9895B]/35"
-                                        placeholder="name@email.com"
-                                        value={form.email || ""}
-                                        onChange={(e) => setForm({ ...form, email: e.target.value })}
-                                        inputMode="email"
-                                        autoComplete="email"
+                                        value={form.email ?? ""}
+                                        onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
+                                        className="w-full rounded-xl border border-[#B9895B]/18 bg-white/70 px-4 py-3 outline-none focus:ring-2 focus:ring-[#B9895B]/25"
+                                        placeholder="אימייל"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                                <div className="space-y-2 md:col-span-2">
+                                    <label className="block text-sm font-semibold text-[#1E1E1E]/80">רחוב</label>
+                                    <input
+                                        value={form.street}
+                                        onChange={(e) => setForm((p) => ({ ...p, street: e.target.value }))}
+                                        className="w-full rounded-xl border border-[#B9895B]/18 bg-white/70 px-4 py-3 outline-none focus:ring-2 focus:ring-[#B9895B]/25"
+                                        placeholder="רחוב"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-[#1E1E1E]/80">מספר בית</label>
+                                    <input
+                                        value={form.houseNumber}
+                                        onChange={(e) => setForm((p) => ({ ...p, houseNumber: e.target.value }))}
+                                        className="w-full rounded-xl border border-[#B9895B]/18 bg-white/70 px-4 py-3 outline-none focus:ring-2 focus:ring-[#B9895B]/25"
+                                        placeholder="מספר"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-[#1E1E1E]/80">
+                                        מיקוד{needsZip ? "" : " (אופציונלי)"}
+                                    </label>
+                                    <input
+                                        value={form.zip}
+                                        onChange={(e) => setForm((p) => ({ ...p, zip: e.target.value }))}
+                                        className="w-full rounded-xl border border-[#B9895B]/18 bg-white/70 px-4 py-3 outline-none focus:ring-2 focus:ring-[#B9895B]/25"
+                                        placeholder="מיקוד"
                                     />
                                 </div>
 
                                 <div className="space-y-2">
                                     <label className="block text-sm font-semibold text-[#1E1E1E]/80">הערות (אופציונלי)</label>
-                                    <textarea
-                                        className="w-full min-h-[46px] rounded-xl border border-[#B9895B]/20 bg-[#F6F1E8]/55 px-4 py-3 text-[#1E1E1E] placeholder:text-[#1E1E1E]/40 focus:outline-none focus:ring-2 focus:ring-[#B9895B]/35 focus:border-[#B9895B]/35"
-                                        placeholder="שעות נוחות למשלוח / הערות מיוחדות"
-                                        value={form.notes || ""}
-                                        onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                                    <input
+                                        value={form.notes ?? ""}
+                                        onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+                                        className="w-full rounded-xl border border-[#B9895B]/18 bg-white/70 px-4 py-3 outline-none focus:ring-2 focus:ring-[#B9895B]/25"
+                                        placeholder="הערות"
                                     />
                                 </div>
                             </div>
 
-                            {err && (
-                                <div className="px-4 py-3 text-sm text-red-700 border rounded-xl border-red-500/25 bg-red-500/10">
-                                    {err}
-                                </div>
-                            )}
-
                             <button
-                                type="submit"
                                 disabled={!canSubmit || loading}
-                                className={`mt-1 w-full rounded-xl py-3 font-semibold transition ${!canSubmit || loading
+                                onClick={submit}
+                                className={`mt-2 w-full rounded-xl py-3 font-semibold transition ${!canSubmit || loading
                                         ? "bg-[#B9895B]/35 text-white/85 cursor-not-allowed"
                                         : "bg-[#B9895B] text-white hover:brightness-95 active:brightness-90"
                                     }`}
                             >
-                                {loading ? "שולח הזמנה…" : "שלח הזמנה"}
+                                {loading ? "שולח..." : "שלח הזמנה"}
                             </button>
 
-                            <div className="pt-1 text-center text-xs text-[#1E1E1E]/55">
-                                ממשיכים? אפשר לחזור לעמוד הקנבסים אחרי השליחה.
-                            </div>
+                            {needsZip && (
+                                <div className="text-center text-[11px] text-[#1E1E1E]/55">
+                                    בעגלה יש מוצרים, לכן מיקוד נדרש למשלוח.
+                                </div>
+                            )}
                         </div>
-                    </form>
-                </div>
-
-                <div className="mt-5 text-center">
-                    <button
-                        type="button"
-                        onClick={() => navigate("/canvases")}
-                        className="inline-flex items-center justify-center rounded-xl border border-[#B9895B]/20 bg-white/25 px-4 py-2 text-sm font-semibold text-[#1E1E1E]/80 hover:bg-white/40 transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#B9895B]/35"
-                    >
-                        חזרה לעמוד הקנבסים
-                    </button>
+                    </div>
                 </div>
             </div>
         </div>

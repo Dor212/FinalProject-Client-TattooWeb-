@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { FaPaintBrush, FaPlus, FaTrash } from "react-icons/fa";
 import { SKETCH_CATEGORIES, type SketchCategory } from "./types";
-import { CardShell, Field, FilePick, PrimaryBtn } from "./ui";
+import { CardShell, Field, FilePick, PrimaryBtn, cls } from "./ui";
+
+const joinUrl = (base: string, maybeUrl: string) => {
+    if (!maybeUrl) return "";
+    if (/^https?:\/\//i.test(maybeUrl)) return maybeUrl;
+    const b = base.replace(/\/+$/, "");
+    const p = maybeUrl.replace(/^\/+/, "");
+    return `${b}/${p}`;
+};
 
 const SketchesSection = ({
     apiBase,
@@ -12,9 +20,9 @@ const SketchesSection = ({
 }: {
     apiBase: string;
     loading: boolean;
-    imagesByCategory: Record<string, string[]>;
+    imagesByCategory: Record<SketchCategory, string[]>;
     onUpload: (category: SketchCategory, file: File | null) => Promise<boolean>;
-    onDelete: (category: string, fileUrl: string) => void | Promise<boolean>;
+    onDelete: (category: SketchCategory, fileUrl: string) => void | Promise<boolean>;
 }) => {
     const [selectedCategory, setSelectedCategory] = useState<SketchCategory>("small");
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -84,7 +92,12 @@ const SketchesSection = ({
                                         key={imgUrl}
                                         className="group relative overflow-hidden rounded-2xl border border-[#B9895B]/14 bg-white/35 backdrop-blur shadow-[0_12px_40px_rgba(30,30,30,0.10)]"
                                     >
-                                        <img src={`${apiBase}/${imgUrl}`} alt="sketch" className="object-cover w-full aspect-square" loading="lazy" />
+                                        <img
+                                            src={joinUrl(apiBase, imgUrl)}
+                                            alt="sketch"
+                                            className={cls("object-cover w-full aspect-square")}
+                                            loading="lazy"
+                                        />
                                         <button
                                             type="button"
                                             onClick={() => onDelete(cat, imgUrl)}

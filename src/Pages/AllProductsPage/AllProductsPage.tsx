@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../../Services/axiosInstance";
 import { motion } from "framer-motion";
 import type { Product } from "../../Types/TProduct";
 

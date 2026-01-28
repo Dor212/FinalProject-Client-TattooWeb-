@@ -5,9 +5,18 @@ type Img = {
     title: string;
 };
 
+type Category = "small" | "medium" | "large";
+
 type Props = {
     images: Img[];
-    onSelectCategory: (category: string) => void;
+    onSelectCategory: (category: Category) => void;
+};
+
+const toCategory = (title: string): Category => {
+    const t = title.trim().toLowerCase();
+    if (t === "m" || t === "medium") return "medium";
+    if (t === "l" || t === "large") return "large";
+    return "small";
 };
 
 const SimulationSection = ({ images, onSelectCategory }: Props) => {
@@ -30,7 +39,7 @@ const SimulationSection = ({ images, onSelectCategory }: Props) => {
                                 className="object-cover w-48 h-48 rounded-full shadow-md cursor-pointer"
                                 whileHover={{ scale: 1.15, rotate: 2 }}
                                 transition={{ duration: 0.4 }}
-                                onClick={() => onSelectCategory(img.title.toLowerCase())}
+                                onClick={() => onSelectCategory(toCategory(img.title))}
                             />
                             <h2 className="mt-3 text-lg font-semibold text-[#3B3024]">{img.title}</h2>
                         </div>
@@ -47,7 +56,10 @@ const SimulationSection = ({ images, onSelectCategory }: Props) => {
                     >
                         <div className="pointer-events-none absolute -top-20 -right-16 w-[340px] h-[340px] rounded-full bg-[#B9895B]/18 blur-3xl" />
                         <div className="pointer-events-none absolute -bottom-24 -left-20 w-[380px] h-[380px] rounded-full bg-[#E8D9C2]/55 blur-3xl" />
-                        <div className="pointer-events-none absolute inset-0 opacity-[0.08]" style={{ backgroundImage: "radial-gradient(#1E1E1E 0.7px, transparent 0.7px)", backgroundSize: "18px 18px" }} />
+                        <div
+                            className="pointer-events-none absolute inset-0 opacity-[0.08]"
+                            style={{ backgroundImage: "radial-gradient(#1E1E1E 0.7px, transparent 0.7px)", backgroundSize: "18px 18px" }}
+                        />
 
                         <div className="relative p-7 sm:p-8">
                             <div className="flex items-center justify-center gap-3">
@@ -71,36 +83,28 @@ const SimulationSection = ({ images, onSelectCategory }: Props) => {
                                         <div className="mt-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#1E1E1E]/15 bg-[#F6F1E8]/80 text-sm font-semibold text-[#B9895B]">
                                             1
                                         </div>
-                                        <p>
-                                            בחרו את העיצוב שמדבר אליכם.
-                                        </p>
+                                        <p>בחרו את העיצוב שמדבר אליכם.</p>
                                     </div>
 
                                     <div className="flex gap-3">
                                         <div className="mt-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#1E1E1E]/15 bg-[#F6F1E8]/80 text-sm font-semibold text-[#B9895B]">
                                             2
                                         </div>
-                                        <p>
-                                            העלו תמונה איכותית של האזור שבו תרצו למקם את הקעקוע.
-                                        </p>
+                                        <p>העלו תמונה איכותית של האזור שבו תרצו למקם את הקעקוע.</p>
                                     </div>
 
                                     <div className="flex gap-3">
                                         <div className="mt-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#1E1E1E]/15 bg-[#F6F1E8]/80 text-sm font-semibold text-[#B9895B]">
                                             3
                                         </div>
-                                        <p>
-                                            צילום חד, בגובה העיניים, כשהגוף רפוי, ללא מתיחה או תנוחות לא טבעיות.
-                                        </p>
+                                        <p>צילום חד, בגובה העיניים, כשהגוף רפוי, ללא מתיחה או תנוחות לא טבעיות.</p>
                                     </div>
 
                                     <div className="flex gap-3">
                                         <div className="mt-1.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#1E1E1E]/15 bg-[#F6F1E8]/80 text-sm font-semibold text-[#B9895B]">
                                             4
                                         </div>
-                                        <p>
-                                            מקמו את הקעקוע על התמונה, שחקו עם הגודל והתאימו אותו בדיוק כמו שתרצו.
-                                        </p>
+                                        <p>מקמו את הקעקוע על התמונה, שחקו עם הכיוון והתאימו אותו בדיוק כמו שתרצו.</p>
                                     </div>
                                 </div>
 

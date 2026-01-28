@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import api from "../../Services/axiosInstance";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { Product } from "../../Types/TProduct";
@@ -27,16 +28,14 @@ type Props = {
     open: boolean;
     onClose: () => void;
     product: Product;
-    apiBase: string; 
-    onUpdated: (updated: Product) => void; 
+    onUpdated: (updated: Product) => void;
 };
 
 const isPositiveInt = (v: string) => /^\d+$/.test(v);
 
-export default function StockEditorModal({ open, onClose, product, apiBase, onUpdated }: Props) {
+export default function StockEditorModal({ open, onClose, product, onUpdated }: Props) {
     const [action, setAction] = useState<Action>("set");
 
-   
     const [useL, setUseL] = useState<boolean>(!!product.stock?.l);
     const [useXL, setUseXL] = useState<boolean>(!!product.stock?.xl);
     const [useXXL, setUseXXL] = useState<boolean>(!!product.stock?.xxl);
@@ -54,7 +53,7 @@ export default function StockEditorModal({ open, onClose, product, apiBase, onUp
 
     useEffect(() => {
         if (!open) return;
-      
+
         setAction("set");
         setUseL(!!product.stock?.l);
         setUseXL(!!product.stock?.xl);
@@ -73,28 +72,36 @@ export default function StockEditorModal({ open, onClose, product, apiBase, onUp
     }, [open, product]);
 
     const disabled = useMemo(() => {
-        
-        if (action === "remove") {
-            return !(useL || useXL || useXXL);
-        }
-        if (action === "reset") {
-           
-            return !(useL || useXL || useXXL);
-        }
+        if (action === "remove") return !(useL || useXL || useXXL);
+        if (action === "reset") return !(useL || useXL || useXXL);
+
         if (action === "add" || action === "subtract") {
-            const okL = !useL || (useL && isPositiveInt(lDelta) && +lDelta > 0);
-            const okXL = !useXL || (useXL && isPositiveInt(xlDelta) && +xlDelta > 0);
-            const okXXL = !useXXL || (useXXL && isPositiveInt(xxlDelta) && +xxlDelta > 0);
+            const okL = !useL || (isPositiveInt(lDelta) && +lDelta > 0);
+            const okXL = !useXL || (isPositiveInt(xlDelta) && +xlDelta > 0);
+            const okXXL = !useXXL || (isPositiveInt(xxlDelta) && +xxlDelta > 0);
             return !(useL || useXL || useXXL) || !(okL && okXL && okXXL);
         }
-        
-        const validL = useL && ((lInitial === "" || isPositiveInt(lInitial)) && (lCurrent === "" || isPositiveInt(lCurrent)));
-        const validXL = useXL && ((xlInitial === "" || isPositiveInt(xlInitial)) && (xlCurrent === "" || isPositiveInt(xlCurrent)));
-        const validXXL = useXXL && ((xxlInitial === "" || isPositiveInt(xxlInitial)) && (xxlCurrent === "" || isPositiveInt(xxlCurrent)));
-        return !(useL || useXL || useXXL) || !(validL || validXL || validXXL);
-    }, [action, useL, useXL, useXXL, lDelta, xlDelta, xxlDelta, lInitial, lCurrent, xlInitial, xlCurrent, xxlInitial, xxlCurrent]);
 
-    
+        const validL = !useL || ((lInitial === "" || isPositiveInt(lInitial)) && (lCurrent === "" || isPositiveInt(lCurrent)));
+        const validXL = !useXL || ((xlInitial === "" || isPositiveInt(xlInitial)) && (xlCurrent === "" || isPositiveInt(xlCurrent)));
+        const validXXL = !useXXL || ((xxlInitial === "" || isPositiveInt(xxlInitial)) && (xxlCurrent === "" || isPositiveInt(xxlCurrent)));
+        return !(useL || useXL || useXXL) || !(validL && validXL && validXXL);
+    }, [
+        action,
+        useL,
+        useXL,
+        useXXL,
+        lDelta,
+        xlDelta,
+        xxlDelta,
+        lInitial,
+        lCurrent,
+        xlInitial,
+        xlCurrent,
+        xxlInitial,
+        xxlCurrent,
+    ]);
+
     const maybePut = <T extends object>(
         flag: boolean,
         key: SizeKey,
@@ -107,9 +114,24 @@ export default function StockEditorModal({ open, onClose, product, apiBase, onUp
     const buildPayload = (): PatchPayload => {
         if (action === "set") {
             const sizes: SetSizes = {};
-            maybePut(useL, "l", { ...(lInitial !== "" ? { initial: Number(lInitial) } : {}), ...(lCurrent !== "" ? { current: Number(lCurrent) } : {}) }, sizes);
-            maybePut(useXL, "xl", { ...(xlInitial !== "" ? { initial: Number(xlInitial) } : {}), ...(xlCurrent !== "" ? { current: Number(xlCurrent) } : {}) }, sizes);
-            maybePut(useXXL, "xxl", { ...(xxlInitial !== "" ? { initial: Number(xxlInitial) } : {}), ...(xxlCurrent !== "" ? { current: Number(xxlCurrent) } : {}) }, sizes);
+            maybePut(
+                useL,
+                "l",
+                { ...(lInitial !== "" ? { initial: Number(lInitial) } : {}), ...(lCurrent !== "" ? { current: Number(lCurrent) } : {}) },
+                sizes
+            );
+            maybePut(
+                useXL,
+                "xl",
+                { ...(xlInitial !== "" ? { initial: Number(xlInitial) } : {}), ...(xlCurrent !== "" ? { current: Number(xlCurrent) } : {}) },
+                sizes
+            );
+            maybePut(
+                useXXL,
+                "xxl",
+                { ...(xxlInitial !== "" ? { initial: Number(xxlInitial) } : {}), ...(xxlCurrent !== "" ? { current: Number(xxlCurrent) } : {}) },
+                sizes
+            );
             return { action, sizes, createStockIfMissing: true };
         }
 
@@ -129,7 +151,6 @@ export default function StockEditorModal({ open, onClose, product, apiBase, onUp
             return { action, sizes, createStockIfMissing: true };
         }
 
-        // remove
         const sizes: EmptySizes = {};
         if (useL) sizes.l = {};
         if (useXL) sizes.xl = {};
@@ -140,35 +161,66 @@ export default function StockEditorModal({ open, onClose, product, apiBase, onUp
     const onSubmit = async () => {
         try {
             const payload = buildPayload();
-            const { data } = await axios.patch<{ message: string; product: Product }>(
-                `${apiBase}/products/${product._id}/stock`,
+
+            const { data } = await api.patch<{ message: string; product: Product }>(
+                `/products/${product._id}/stock`,
                 payload
             );
+
             onUpdated(data.product);
-            Swal.fire({ icon: "success", title: "עודכן!", timer: 1200, showConfirmButton: false });
+
+            Swal.fire({
+                icon: "success",
+                title: "עודכן!",
+                timer: 1200,
+                showConfirmButton: false,
+                background: "#F6F1E8",
+                color: "#1E1E1E",
+            });
+
             onClose();
         } catch (err: unknown) {
             const msg =
-                (axios.isAxiosError(err) && err.response?.data && (err.response.data as { error?: string }).error) ||
+                (axios.isAxiosError(err) &&
+                    (err.response?.data as { error?: string; message?: string } | undefined)?.error) ||
+                (axios.isAxiosError(err) &&
+                    (err.response?.data as { error?: string; message?: string } | undefined)?.message) ||
                 "Failed to update stock";
-            Swal.fire({ icon: "error", title: "שגיאה", text: msg });
+
+            Swal.fire({
+                icon: "error",
+                title: "שגיאה",
+                text: msg,
+                background: "#F6F1E8",
+                color: "#1E1E1E",
+                confirmButtonColor: "#B9895B",
+            });
         }
     };
 
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="w-full max-w-xl p-6 bg-white shadow-xl rounded-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" dir="rtl">
+            <div className="w-full max-w-xl p-6 bg-[#F6F1E8] shadow-xl rounded-2xl border border-[#B9895B]/20">
                 <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-semibold">ניהול מלאי — {product.title}</h3>
-                    <button onClick={onClose} className="px-2 py-1 text-white bg-red-600 rounded hover:bg-red-700">✕</button>
+                    <h3 className="text-xl font-semibold text-[#1E1E1E]">ניהול מלאי — {product.title}</h3>
+                    <button
+                        onClick={onClose}
+                        className="px-2 py-1 text-white bg-[#1E1E1E] rounded hover:opacity-90"
+                        type="button"
+                    >
+                        ✕
+                    </button>
                 </div>
 
-                {/* Action */}
                 <div className="grid grid-cols-1 gap-3 mb-4 md:grid-cols-3">
-                    <label className="col-span-1 text-sm font-medium md:col-span-3">פעולה</label>
-                    <select value={action} onChange={(e) => setAction(e.target.value as Action)} className="p-2 border rounded">
+                    <label className="col-span-1 text-sm font-medium md:col-span-3 text-[#3B3024]">פעולה</label>
+                    <select
+                        value={action}
+                        onChange={(e) => setAction(e.target.value as Action)}
+                        className="p-2 border border-[#B9895B]/25 rounded bg-white/50"
+                    >
                         <option value="set">Set (קבע ערכים)</option>
                         <option value="add">Add (הגדלת מלאי)</option>
                         <option value="subtract">Subtract (הפחתת מלאי)</option>
@@ -177,84 +229,157 @@ export default function StockEditorModal({ open, onClose, product, apiBase, onUp
                     </select>
                 </div>
 
-                {/* Sizes */}
                 <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-                    {/* L */}
-                    <fieldset className="p-3 border rounded-lg">
-                        <label className="flex items-center gap-2 text-sm font-semibold">
-                            <input type="checkbox" checked={useL} onChange={(e) => setUseL(e.target.checked)} />
+                    <fieldset className="p-3 border border-[#B9895B]/20 rounded-lg bg-white/40">
+                        <label className="flex items-center gap-2 text-sm font-semibold text-[#1E1E1E]">
+                            <input type="checkbox" checked={useL} onChange={(e) => setUseL(e.target.checked)} className="accent-[#B9895B]" />
                             L
                         </label>
+
                         {action === "set" && (
                             <div className="mt-2 space-y-2">
-                                <input placeholder="initial" value={lInitial} onChange={(e) => setLInitial(e.target.value)} className="w-full p-2 border rounded" />
-                                <input placeholder="current" value={lCurrent} onChange={(e) => setLCurrent(e.target.value)} className="w-full p-2 border rounded" />
+                                <input
+                                    placeholder="initial"
+                                    value={lInitial}
+                                    onChange={(e) => setLInitial(e.target.value)}
+                                    className="w-full p-2 border border-[#B9895B]/20 rounded bg-white/60"
+                                />
+                                <input
+                                    placeholder="current"
+                                    value={lCurrent}
+                                    onChange={(e) => setLCurrent(e.target.value)}
+                                    className="w-full p-2 border border-[#B9895B]/20 rounded bg-white/60"
+                                />
                             </div>
                         )}
+
                         {(action === "add" || action === "subtract") && (
                             <div className="mt-2">
-                                <input placeholder="delta" value={lDelta} onChange={(e) => setLDelta(e.target.value)} className="w-full p-2 border rounded" />
+                                <input
+                                    placeholder="delta"
+                                    value={lDelta}
+                                    onChange={(e) => setLDelta(e.target.value)}
+                                    className="w-full p-2 border border-[#B9895B]/20 rounded bg-white/60"
+                                />
                             </div>
                         )}
+
                         {action === "reset" && (
                             <div className="mt-2">
-                                <input placeholder="initial (אופציונלי)" value={lInitial} onChange={(e) => setLInitial(e.target.value)} className="w-full p-2 border rounded" />
+                                <input
+                                    placeholder="initial (אופציונלי)"
+                                    value={lInitial}
+                                    onChange={(e) => setLInitial(e.target.value)}
+                                    className="w-full p-2 border border-[#B9895B]/20 rounded bg-white/60"
+                                />
                             </div>
                         )}
                     </fieldset>
 
-                    {/* XL */}
-                    <fieldset className="p-3 border rounded-lg">
-                        <label className="flex items-center gap-2 text-sm font-semibold">
-                            <input type="checkbox" checked={useXL} onChange={(e) => setUseXL(e.target.checked)} />
+                    <fieldset className="p-3 border border-[#B9895B]/20 rounded-lg bg-white/40">
+                        <label className="flex items-center gap-2 text-sm font-semibold text-[#1E1E1E]">
+                            <input type="checkbox" checked={useXL} onChange={(e) => setUseXL(e.target.checked)} className="accent-[#B9895B]" />
                             XL
                         </label>
+
                         {action === "set" && (
                             <div className="mt-2 space-y-2">
-                                <input placeholder="initial" value={xlInitial} onChange={(e) => setXLInitial(e.target.value)} className="w-full p-2 border rounded" />
-                                <input placeholder="current" value={xlCurrent} onChange={(e) => setXLCurrent(e.target.value)} className="w-full p-2 border rounded" />
+                                <input
+                                    placeholder="initial"
+                                    value={xlInitial}
+                                    onChange={(e) => setXLInitial(e.target.value)}
+                                    className="w-full p-2 border border-[#B9895B]/20 rounded bg-white/60"
+                                />
+                                <input
+                                    placeholder="current"
+                                    value={xlCurrent}
+                                    onChange={(e) => setXLCurrent(e.target.value)}
+                                    className="w-full p-2 border border-[#B9895B]/20 rounded bg-white/60"
+                                />
                             </div>
                         )}
+
                         {(action === "add" || action === "subtract") && (
                             <div className="mt-2">
-                                <input placeholder="delta" value={xlDelta} onChange={(e) => setXLDelta(e.target.value)} className="w-full p-2 border rounded" />
+                                <input
+                                    placeholder="delta"
+                                    value={xlDelta}
+                                    onChange={(e) => setXLDelta(e.target.value)}
+                                    className="w-full p-2 border border-[#B9895B]/20 rounded bg-white/60"
+                                />
                             </div>
                         )}
+
                         {action === "reset" && (
                             <div className="mt-2">
-                                <input placeholder="initial (אופציונלי)" value={xlInitial} onChange={(e) => setXLInitial(e.target.value)} className="w-full p-2 border rounded" />
+                                <input
+                                    placeholder="initial (אופציונלי)"
+                                    value={xlInitial}
+                                    onChange={(e) => setXLInitial(e.target.value)}
+                                    className="w-full p-2 border border-[#B9895B]/20 rounded bg-white/60"
+                                />
                             </div>
                         )}
                     </fieldset>
 
-                    {/* XXL */}
-                    <fieldset className="p-3 border rounded-lg">
-                        <label className="flex items-center gap-2 text-sm font-semibold">
-                            <input type="checkbox" checked={useXXL} onChange={(e) => setUseXXL(e.target.checked)} />
+                    <fieldset className="p-3 border border-[#B9895B]/20 rounded-lg bg-white/40">
+                        <label className="flex items-center gap-2 text-sm font-semibold text-[#1E1E1E]">
+                            <input type="checkbox" checked={useXXL} onChange={(e) => setUseXXL(e.target.checked)} className="accent-[#B9895B]" />
                             XXL
                         </label>
+
                         {action === "set" && (
                             <div className="mt-2 space-y-2">
-                                <input placeholder="initial" value={xxlInitial} onChange={(e) => setXXLInitial(e.target.value)} className="w-full p-2 border rounded" />
-                                <input placeholder="current" value={xxlCurrent} onChange={(e) => setXXLCurrent(e.target.value)} className="w-full p-2 border rounded" />
+                                <input
+                                    placeholder="initial"
+                                    value={xxlInitial}
+                                    onChange={(e) => setXXLInitial(e.target.value)}
+                                    className="w-full p-2 border border-[#B9895B]/20 rounded bg-white/60"
+                                />
+                                <input
+                                    placeholder="current"
+                                    value={xxlCurrent}
+                                    onChange={(e) => setXXLCurrent(e.target.value)}
+                                    className="w-full p-2 border border-[#B9895B]/20 rounded bg-white/60"
+                                />
                             </div>
                         )}
+
                         {(action === "add" || action === "subtract") && (
                             <div className="mt-2">
-                                <input placeholder="delta" value={xxlDelta} onChange={(e) => setXXLDelta(e.target.value)} className="w-full p-2 border rounded" />
+                                <input
+                                    placeholder="delta"
+                                    value={xxlDelta}
+                                    onChange={(e) => setXXLDelta(e.target.value)}
+                                    className="w-full p-2 border border-[#B9895B]/20 rounded bg-white/60"
+                                />
                             </div>
                         )}
+
                         {action === "reset" && (
                             <div className="mt-2">
-                                <input placeholder="initial (אופציונלי)" value={xxlInitial} onChange={(e) => setXXLInitial(e.target.value)} className="w-full p-2 border rounded" />
+                                <input
+                                    placeholder="initial (אופציונלי)"
+                                    value={xxlInitial}
+                                    onChange={(e) => setXXLInitial(e.target.value)}
+                                    className="w-full p-2 border border-[#B9895B]/20 rounded bg-white/60"
+                                />
                             </div>
                         )}
                     </fieldset>
                 </div>
 
                 <div className="flex items-center justify-end gap-3 mt-6">
-                    <button onClick={onClose} className="px-4 py-2 border rounded">בטל</button>
-                    <button onClick={onSubmit} disabled={disabled} className={`rounded px-4 py-2 text-white ${disabled ? "bg-gray-400" : "bg-[#97BE5A] hover:bg-[#7ea649]"}`}>
+                    <button onClick={onClose} className="px-4 py-2 border border-[#B9895B]/25 rounded bg-white/50" type="button">
+                        בטל
+                    </button>
+                    <button
+                        onClick={onSubmit}
+                        disabled={disabled}
+                        className={`rounded px-4 py-2 text-white ${disabled ? "bg-[#B9895B]/35 cursor-not-allowed" : "bg-[#B9895B] hover:brightness-95 active:brightness-90"
+                            }`}
+                        type="button"
+                    >
                         שמור
                     </button>
                 </div>

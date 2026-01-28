@@ -13,6 +13,7 @@ export type Opinion = {
 
 type ApiErrorBody = {
   message?: string;
+  error?: string;
 };
 
 function is404(err: unknown) {
@@ -50,6 +51,27 @@ async function postFormWithFallback<T>(pathA: string, pathB: string, fd: FormDat
   }
 }
 
+async function deleteWithFallback<T>(
+  paths: string[],
+  token: string
+): Promise<T> {
+  let lastErr: unknown = null;
+
+  for (const p of paths) {
+    try {
+      const { data } = await axios.delete<T>(`${VITE_API_URL}${p}`, {
+        headers: { "x-auth-token": token },
+      });
+      return data;
+    } catch (err) {
+      lastErr = err;
+      if (!is404(err)) throw err;
+    }
+  }
+
+  throw lastErr;
+}
+
 export async function getOpinions(limit = 24): Promise<Opinion[]> {
   const a = `/opinion?limit=${limit}`;
   const b = `/api/opinion?limit=${limit}`;
@@ -74,9 +96,27 @@ export async function createOpinion(payload: {
   return postFormWithFallback<Opinion>(`/opinion`, `/api/opinion`, fd);
 }
 
+export async function deleteOpinion(opinionId: string, token: string): Promise<{ ok?: boolean; id?: string }> {
+  const id = encodeURIComponent(opinionId);
+
+  const paths = [
+    `/api/opinions/${id}`,
+    `/opinions/${id}`,
+    `/api/opinion/${id}`,
+    `/opinion/${id}`,
+  ];
+
+  return deleteWithFallback<{ ok?: boolean; id?: string }>(paths, token);
+}
+
 export function getOpinionErrorMessage(error: unknown): string {
   if (axios.isAxiosError<ApiErrorBody>(error)) {
-    return error.response?.data?.message || error.message || "משהו השתבש. נסה שוב.";
+    return (
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      "משהו השתבש. נסה שוב."
+    );
   }
   return "משהו השתבש. נסה שוב.";
 }

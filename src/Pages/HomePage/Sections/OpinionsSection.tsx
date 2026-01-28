@@ -1,12 +1,65 @@
 import { useEffect, useMemo, useState } from "react";
 import {
     createOpinion,
+    deleteOpinion,
     getOpinions,
     getOpinionErrorMessage,
     type Opinion,
 } from "../../../Services/opinionApi.ts";
 
 const MAX_TEXT = 220;
+
+const readAuthToken = (): string => {
+    const keys = ["token", "authToken", "accessToken", "jwt"];
+    for (const k of keys) {
+        const v = localStorage.getItem(k);
+        if (v && v.trim()) return v.trim();
+    }
+    return "";
+};
+
+const parseJwtPayload = (token: string): Record<string, unknown> | null => {
+    try {
+        const part = token.split(".")[1];
+        if (!part) return null;
+
+        const base64 = part.replace(/-/g, "+").replace(/_/g, "/");
+        const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+
+        const json = decodeURIComponent(
+            atob(padded)
+                .split("")
+                .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+                .join("")
+        );
+
+        const parsed = JSON.parse(json) as unknown;
+        if (!parsed || typeof parsed !== "object") return null;
+        return parsed as Record<string, unknown>;
+    } catch {
+        return null;
+    }
+};
+
+const isAdminFromToken = (token: string): boolean => {
+    if (!token) return false;
+    const p = parseJwtPayload(token);
+    if (!p) return false;
+
+    const isAdmin = p.isAdmin === true;
+    if (isAdmin) return true;
+
+    const role = typeof p.role === "string" ? p.role : "";
+    if (role === "admin") return true;
+
+    const roles = Array.isArray(p.roles) ? p.roles : [];
+    if (roles.some((x) => x === "admin")) return true;
+
+    const permissions = Array.isArray(p.permissions) ? p.permissions : [];
+    if (permissions.some((x) => x === "admin")) return true;
+
+    return false;
+};
 
 const StarIcon = ({ filled }: { filled: boolean }) => (
     <svg
@@ -53,7 +106,17 @@ const StarsDisplay = ({ value }: { value: number }) => (
     </div>
 );
 
-const ReviewCard = ({ op }: { op: Opinion }) => {
+const ReviewCard = ({
+    op,
+    canDelete,
+    deleting,
+    onDelete,
+}: {
+    op: Opinion;
+    canDelete: boolean;
+    deleting: boolean;
+    onDelete: (id: string) => void;
+}) => {
     const [open, setOpen] = useState(false);
     const text = (op.text || "").trim();
     const hasText = text.length > 0;
@@ -63,6 +126,22 @@ const ReviewCard = ({ op }: { op: Opinion }) => {
     return (
         <article className="relative">
             <div className="pointer-events-none absolute -inset-3 -z-10 rounded-[28px] opacity-70 blur-2xl bg-[radial-gradient(circle_at_30%_25%,rgba(185,137,91,0.25),transparent_55%),radial-gradient(circle_at_75%_80%,rgba(232,217,194,0.40),transparent_60%)]" />
+
+            {canDelete && (
+                <button
+                    type="button"
+                    onClick={() => onDelete(op._id)}
+                    disabled={deleting}
+                    className={`absolute top-2 right-2 z-10 rounded-xl px-3 py-1.5 text-xs font-semibold transition ${deleting
+                            ? "bg-[#1E1E1E]/10 text-[#1E1E1E]/55 cursor-not-allowed"
+                            : "bg-white/55 backdrop-blur border border-[#B9895B]/25 text-[#3B3024] hover:bg-white/70"
+                        }`}
+                    aria-label="מחק חוות דעת"
+                    title="מחק חוות דעת"
+                >
+                    {deleting ? "מוחק..." : "מחק"}
+                </button>
+            )}
 
             <div className="relative flex flex-col items-center text-center">
                 <div className="h-16 w-16 rounded-full p-[1px] bg-[#1E1E1E]/12 shadow-[0_10px_30px_rgba(30,30,30,0.12)]">
@@ -115,8 +194,12 @@ const OpinionsSection = () => {
     const [consent, setConsent] = useState(false);
 
     const [submitting, setSubmitting] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+
     const [err, setErr] = useState<string | null>(null);
     const [ok, setOk] = useState<string | null>(null);
+
+    const [isAdmin, setIsAdmin] = useState(false);
 
     const previewUrl = useMemo(() => (image ? URL.createObjectURL(image) : ""), [image]);
 
@@ -124,6 +207,19 @@ const OpinionsSection = () => {
         if (!previewUrl) return;
         return () => URL.revokeObjectURL(previewUrl);
     }, [previewUrl]);
+
+    useEffect(() => {
+        const t = readAuthToken();
+        setIsAdmin(isAdminFromToken(t));
+
+        const onStorage = () => {
+            const nt = readAuthToken();
+            setIsAdmin(isAdminFromToken(nt));
+        };
+
+        window.addEventListener("storage", onStorage);
+        return () => window.removeEventListener("storage", onStorage);
+    }, []);
 
     useEffect(() => {
         let mounted = true;
@@ -187,24 +283,47 @@ const OpinionsSection = () => {
         }
     };
 
+    const onDelete = async (id: string) => {
+        setErr(null);
+        setOk(null);
+
+        if (!isAdmin) return;
+
+        const confirmed = window.confirm("למחוק את חוות הדעת הזו?");
+        if (!confirmed) return;
+
+        const token = readAuthToken();
+        if (!token) {
+            setErr("חסר טוקן אדמין");
+            return;
+        }
+
+        try {
+            setDeletingId(id);
+            await deleteOpinion(id, token);
+            setOpinions((prev) => prev.filter((x) => x._id !== id));
+            setOk("נמחק ✅");
+        } catch (error: unknown) {
+            setErr(getOpinionErrorMessage(error));
+        } finally {
+            setDeletingId(null);
+        }
+    };
+
     return (
         <section className="w-full" dir="rtl">
             <div className="px-4 mx-auto max-w-7xl py-14 sm:px-6 lg:px-8">
                 <div className="text-center">
                     <h2 className="text-[32px] sm:text-4xl font-extrabold tracking-tight text-[#1E1E1E] leading-[1.12]">
                         ספרו לנו איך היה
-                        <span className="block mt-1 text-[#B9895B] text-[18px] sm:text-xl font-semibold tracking-wide">
-                            דקה אחת וזה נשמר פה
-                        </span>
                     </h2>
 
-                    <p className="mt-3 text-[14px] sm:text-[15px] leading-relaxed text-[#1E1E1E]/70">
+                    <p className="mt-3 text-[14px] sm:text-[15px] leading-relaxed text-[#3B3024]/80">
                         מעלים תמונה של הקעקוע, נותנים דירוג, ואם בא לכם גם משפט קצר.
                         <br />
                         זה עוזר לאחרים להבין את הסטייל לפני שקובעים.
                     </p>
                 </div>
-
 
                 <div className="mt-10 grid gap-10 lg:grid-cols-[420px,1fr] lg:items-start">
                     <form
@@ -260,7 +379,7 @@ const OpinionsSection = () => {
 
                                     {!image && (
                                         <div className="text-xs text-[#B9895B] opacity-90">
-                                            כדי לפרסם צריך להעלות תמונה
+                                            כדי לשתף צריך להעלות תמונה
                                         </div>
                                     )}
                                 </div>
@@ -282,7 +401,7 @@ const OpinionsSection = () => {
                                     onChange={(e) => setText(e.target.value.slice(0, MAX_TEXT))}
                                     rows={3}
                                     maxLength={MAX_TEXT}
-                                    placeholder="מה אהבת? מה יצא לך הכי יפה? 🙂"
+                                    placeholder="רק אם בא לך... 😉"
                                     className="w-full resize-none rounded-2xl border border-[#B9895B]/20 bg-[#F6F1E8]/55 px-4 py-3 text-[#1E1E1E] placeholder:text-[#1E1E1E]/45 focus:outline-none focus:ring-2 focus:ring-[#B9895B]/30 focus:border-[#B9895B]/30"
                                 />
                                 <div className="text-end text-xs text-[#1E1E1E]/55">
@@ -311,7 +430,7 @@ const OpinionsSection = () => {
                                         : "bg-[#B9895B] text-white hover:brightness-95 active:brightness-90"
                                     }`}
                             >
-                                {submitting ? "שולח..." : "פרסם ביקורת"}
+                                {submitting ? "שולח..." : "שתף"}
                             </button>
                         </div>
                     </form>
@@ -336,7 +455,13 @@ const OpinionsSection = () => {
                         ) : (
                             <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
                                 {opinions.map((op) => (
-                                    <ReviewCard key={op._id} op={op} />
+                                    <ReviewCard
+                                        key={op._id}
+                                        op={op}
+                                        canDelete={isAdmin}
+                                        deleting={deletingId === op._id}
+                                        onDelete={onDelete}
+                                    />
                                 ))}
                             </div>
                         )}

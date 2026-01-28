@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../../Services/axiosInstance";
 import { motion } from "framer-motion";
 
 const SkeletonTile = () => (
@@ -63,8 +63,13 @@ export default function GalleryPage() {
         };
     }, [VITE_API_URL, category]);
 
-    const handleSketchClick = (sketchUrl: string) => {
-        navigate("/apply-sketch", { state: { selectedSketch: sketchUrl } });
+    const handleSketchClick = (imgPath: string) => {
+        navigate("/apply-sketch", {
+            state: {
+                category: category || "small",
+                selectedSketch: imgPath,
+            },
+        });
     };
 
     return (
@@ -102,10 +107,7 @@ export default function GalleryPage() {
 
                     <div className="relative px-5 sm:px-8 py-7">
                         {loading && (
-                            <div
-                                className="grid gap-5"
-                                style={{ gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))" }}
-                            >
+                            <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))" }}>
                                 {Array.from({ length: 12 }).map((_, i) => (
                                     <SkeletonTile key={i} />
                                 ))}
@@ -125,10 +127,7 @@ export default function GalleryPage() {
                         )}
 
                         {!loading && !error && images.length > 0 && (
-                            <div
-                                className="grid gap-5"
-                                style={{ gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))" }}
-                            >
+                            <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))" }}>
                                 {images.map((img, index) => {
                                     const fullUrl = `${VITE_API_URL}${img}`;
                                     return (
@@ -138,7 +137,7 @@ export default function GalleryPage() {
                                             initial={{ opacity: 0, y: 16 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: Math.min(index * 0.03, 0.35) }}
-                                            onClick={() => handleSketchClick(fullUrl)}
+                                            onClick={() => handleSketchClick(img)}
                                             className="group relative overflow-hidden rounded-2xl border border-[#B9895B]/18 bg-white/30 backdrop-blur-xl shadow-[0_14px_40px_rgba(30,30,30,0.12)] transition hover:shadow-[0_22px_70px_rgba(30,30,30,0.16)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#B9895B]/35"
                                             aria-label={`בחר סקיצה ${index + 1}`}
                                             title="בחר סקיצה"
@@ -158,9 +157,7 @@ export default function GalleryPage() {
                                             </div>
 
                                             <div className="p-3 text-center">
-                                                <div className="text-xs font-semibold text-[#1E1E1E]/85">
-                                                    סקיצה {index + 1}
-                                                </div>
+                                                <div className="text-xs font-semibold text-[#1E1E1E]/85">סקיצה {index + 1}</div>
                                             </div>
                                         </motion.button>
                                     );
@@ -170,9 +167,7 @@ export default function GalleryPage() {
                     </div>
                 </div>
 
-                <div className="mt-4 text-center text-xs text-[#1E1E1E]/55">
-                    טיפ: לחיצה על סקיצה תפתח את כלי ההדמיה.
-                </div>
+                <div className="mt-4 text-center text-xs text-[#1E1E1E]/55">טיפ: לחיצה על סקיצה תפתח את כלי ההדמיה.</div>
             </div>
         </div>
     );

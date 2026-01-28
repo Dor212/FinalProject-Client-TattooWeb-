@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Product } from "../../Types/TProduct";
 import StockEditorModal from "../../components/admin/StockEditorModal";
@@ -6,9 +6,10 @@ import AdminHeader from "./Sections/AdminHeader";
 import AdminKpis from "./Sections/AdminKpis";
 import AdminTabs from "./Sections/AdminTabs";
 import ProductsSection from "./Sections/ProductsSection";
-import SketchesSection from "./Sections/SketchesSection";
 import CanvasesSection from "./Sections/CanvasesSection";
-import type { AdminTab } from "./Sections/types";
+import SketchesSection from "./Sections/SketchesSection";
+import type { AdminTab, SketchCategory } from "./Sections/types";
+import { SKETCH_CATEGORIES } from "./Sections/types";
 import { useAdminPanel } from "./hooks/useAdminPanel";
 
 const AdminPage = () => {
@@ -21,23 +22,23 @@ const AdminPage = () => {
     const {
         loading,
         products,
-        imagesByCategory,
         canvases,
+        sketchesByCategory,
         refreshAll,
-        uploadSketch,
-        deleteSketch,
-        uploadProduct,
-        deleteProduct,
         uploadCanvas,
         deleteCanvas,
-        patchProductInState,
-        metrics,
+        uploadSketch,
+        deleteSketch,
     } = useAdminPanel(apiBase);
 
     const openStockEditor = (p: Product) => {
         setSelectedProduct(p);
         setStockModalOpen(true);
     };
+
+    const sketchesCount = useMemo(() => {
+        return SKETCH_CATEGORIES.reduce((sum, cat) => sum + (sketchesByCategory?.[cat]?.length || 0), 0);
+    }, [sketchesByCategory]);
 
     return (
         <div
@@ -56,10 +57,10 @@ const AdminPage = () => {
 
                 <div className="grid gap-4 mt-10 sm:grid-cols-3">
                     <AdminKpis
-                        productsCount={metrics.productsCount}
-                        productsRevenueILS={metrics.productsRevenueILS}
-                        sketchesCount={metrics.sketchesCount}
-                        canvasesCount={metrics.canvasesCount}
+                        productsCount={products.length}
+                        productsRevenueILS={products.reduce((sum, p) => sum + (p.price || 0), 0)}
+                        sketchesCount={sketchesCount}
+                        canvasesCount={canvases.length}
                     />
                 </div>
 
@@ -80,8 +81,8 @@ const AdminPage = () => {
                             <ProductsSection
                                 loading={loading}
                                 products={products}
-                                onUpload={uploadProduct}
-                                onDelete={deleteProduct}
+                                onUpload={() => Promise.resolve({ ok: false })}
+                                onDelete={() => Promise.resolve(false)}
                                 onOpenStock={openStockEditor}
                             />
                         </motion.div>
@@ -99,7 +100,7 @@ const AdminPage = () => {
                             <SketchesSection
                                 apiBase={apiBase}
                                 loading={loading}
-                                imagesByCategory={imagesByCategory}
+                                imagesByCategory={sketchesByCategory as Record<SketchCategory, string[]>}
                                 onUpload={uploadSketch}
                                 onDelete={deleteSketch}
                             />
@@ -131,7 +132,10 @@ const AdminPage = () => {
                         onClose={() => setStockModalOpen(false)}
                         product={selectedProduct}
                         apiBase={apiBase}
-                        onUpdated={patchProductInState}
+                        onUpdated={() => {
+                            refreshAll();
+                            setStockModalOpen(false);
+                        }}
                     />
                 )}
             </div>

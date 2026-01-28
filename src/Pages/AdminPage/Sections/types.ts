@@ -5,10 +5,17 @@ export type AdminTab = "products" | "sketches" | "canvases";
 
 export type CanvasSize = "80×25" | "80×60" | "50×40";
 
+export type CanvasVariant = {
+    id: string;
+    label?: string;
+    color: string;
+    imageUrl: string;
+};
+
 export type CanvasItem = {
-    _id: string;
+    _id?: string;
     name: string;
     size: CanvasSize;
     imageUrl: string;
-    createdAt?: string;
+    variants?: CanvasVariant[];
 };

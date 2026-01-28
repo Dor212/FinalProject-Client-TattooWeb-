@@ -5,26 +5,33 @@ const Footer = () => {
     const year = new Date().getFullYear();
 
     return (
-        <FbFooter container dir="rtl" className="bg-[#F1F3C2]">
-            <div className="w-full px-4 py-4 mx-auto max-w-7xl sm:py-3">
-                <div className="flex flex-col items-center gap-1 text-center sm:flex-row sm:justify-between sm:text-start">
+        <FbFooter
+            container
+            dir="rtl"
+            className="bg-[#F6F1E8] border-t border-[#B9895B]/30"
+        >
+            <div className="w-full max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-2">
+                <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:justify-between sm:gap-3">
                     <FbFooter.Copyright
                         href="/"
                         by="Omer Aviv Tattoo Studio"
                         year={year}
-                        className="text-[#3B3024] opacity-90 text-sm"
+                        className="text-[#1E1E1E] opacity-75 text-[11px] sm:text-xs leading-none"
                     />
 
                     <div className="flex flex-col items-center gap-1 sm:flex-row sm:gap-3">
                         <Link
                             to="/legal"
-                            className="text-sm text-[#3B3024] opacity-80 hover:opacity-100 hover:underline underline-offset-4 transition"
+                            className="text-[11px] sm:text-xs text-[#1E1E1E] opacity-70 hover:opacity-100 hover:text-[#B9895B] transition leading-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B9895B]/35 rounded"
                         >
-                            הצהרת פרטיות · מדיניות נגישות · תנאי שימוש
+                            הצהרת פרטיות · נגישות · תנאי שימוש
                         </Link>
 
-                        <span className="text-xs text-[#3B3024] opacity-60 leading-none">
-                            Built by Y.M.A
+                        <span className="hidden sm:inline-block h-3 w-px bg-[#B9895B]/30" />
+
+                        <span className="text-[11px] text-[#1E1E1E] opacity-55 leading-none pb-0.5 sm:pb-0 sm:mt-0">
+                            Built by{" "}
+                            <span className="text-[#B9895B] opacity-90 font-medium">Y.M.A</span>
                         </span>
                     </div>
                 </div>

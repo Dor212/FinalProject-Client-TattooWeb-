@@ -1,10 +1,10 @@
 import { joiResolver } from "@hookform/resolvers/joi";
 import { useForm } from "react-hook-form";
 import RegisterSchema from "../../Validations/RegisterSchema";
-import axios from "axios";
+import axios from "../../Services/axiosInstance";
 import { Link, useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
 import { motion } from "framer-motion";
+import { toastError, toastSuccess } from "../../Services/authToast";
 
 type RegisterForm = {
     name: {
@@ -39,24 +39,11 @@ const RegisterPage = () => {
         try {
             const res = await axios.post(`${VITE_API_URL}/users/register`, form);
             if (res.status >= 200 && res.status < 300) {
-                Swal.fire({
-                    position: "top",
-                    icon: "success",
-                    title: "Account created",
-                    showConfirmButton: false,
-                    timer: 1300,
-                });
+                toastSuccess("נרשמת ✅");
                 nav("/login");
             }
-        } catch (err) {
-            console.log(err);
-            Swal.fire({
-                position: "top",
-                icon: "error",
-                title: "Sorry, something went wrong",
-                showConfirmButton: false,
-                timer: 1500,
-            });
+        } catch {
+            toastError("משהו השתבש בהרשמה");
         }
     };
 

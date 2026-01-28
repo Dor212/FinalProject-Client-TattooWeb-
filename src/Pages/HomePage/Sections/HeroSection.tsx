@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { FaWhatsapp } from "react-icons/fa";
 
@@ -6,74 +6,83 @@ type Props = { logoSrc: string; phone: string };
 
 const HEADER_H = 72;
 
+// חשוב: לשים URL שמחזיר 200 (לא 301)
+const VIDEO_SRC = "https://www.omeravivart.com/movieOmer.mp4";
+
 const HeroSection = ({ logoSrc, phone }: Props) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const [started, setStarted] = useState(false);
-    const [primed, setPrimed] = useState(false);
 
-    const startVideo = async () => {
-        if (started) return;
-        setStarted(true);
-
+    const startVideo = useCallback(async () => {
         const v = videoRef.current;
         if (!v) return;
 
         try {
-            v.muted = true;          // בלי סאונד
+            // כדי שלא תקבל "פליי" תקוע: חייב להתחיל לנגן באמת
+            v.muted = true; // מאפשר play יציב באייפון
             v.playsInline = true;
-            await v.play();          // טאצ’ אמיתי → אין Play overlay
-        } catch { /* empty */ }
-    };
+
+            await v.play();
+            setStarted(true);
+        } catch {
+            // אם עדיין נחסם, הטאץ׳ הבא ינסה שוב
+        }
+    }, []);
+
+    // נסה autoplay (מושתק). אם זה מצליח, לא תראה שום פליי בכלל.
+    useEffect(() => {
+        const v = videoRef.current;
+        if (!v) return;
+
+        const tryAuto = async () => {
+            try {
+                v.muted = true;
+                await v.play();
+                setStarted(true);
+            } catch {
+                // לא נורא, טאץ׳ ראשון יפעיל
+            }
+        };
+
+        tryAuto();
+    }, []);
 
     return (
         <section
             id="logo"
-            className="relative w-full h-[100svh] overflow-hidden"
+            className="relative w-full h-[100svh] overflow-hidden bg-[#F6F1E8]"
             style={{ marginTop: -HEADER_H }}
+            // טאץ׳/קליק בכל מקום בסקשן = מתחיל וידאו (בלי כפתור פליי)
+            onTouchStartCapture={startVideo}
+            onMouseDownCapture={startVideo}
+            onClickCapture={startVideo}
         >
-            {/* VIDEO */}
+            {/* וידאו */}
             <video
                 ref={videoRef}
-                className="absolute inset-0 z-0 object-cover w-full h-full"
-                src="https://www.omeravivart.com/movieOmer.mp4"
+                className="absolute inset-0 object-cover w-full h-full"
+                src={VIDEO_SRC}
                 playsInline
                 muted
                 loop
+                autoPlay
                 preload="auto"
+                poster={logoSrc} // מבטל "שחור" לפני התחלה
                 controls={false}
-                onLoadedData={() => {
-                    const v = videoRef.current;
-                    if (!v || primed) return;
-
-                    // “Prime” כדי שיצויר פריים ראשון גם בלי לנגן
-                    try {
-                        v.pause();
-                        v.currentTime = 0.01;
-                    } catch { /* empty */ }
-                    setPrimed(true);
-                }}
+                disablePictureInPicture
             />
 
+            {/* פייד חום החוצה (לא "נכנס" יותר מדי לתוך הסרטון) */}
+            <div className="absolute inset-0 pointer-events-none">
+                {/* רדיאלי: מרכז כמעט שקוף, הקצוות חומים */}
+                <div className="absolute inset-0 [background:radial-gradient(closest-side,rgba(59,48,36,0)_62%,rgba(59,48,36,0.35)_100%)]" />
+                {/* תחתון: כדי לחבר יפה לרקע האתר */}
+                <div className="absolute inset-x-0 bottom-0 h-[18svh] bg-gradient-to-b from-transparent to-[#F6F1E8]" />
+            </div>
 
-            {/* FADE חום – יוצא מהווידאו החוצה (לא נכנס אליו) */}
-            <div className="absolute inset-x-0 bottom-0 z-10 h-[18svh] pointer-events-none
-                bg-gradient-to-b from-transparent to-[#F6F1E8]" />
-
-            {/* OVERLAY כהה עדין (לא חובה אבל היה לך) */}
-            <div className="absolute inset-0 z-10 pointer-events-none bg-black/20" />
-
-            {/* שכבת טאצ’ ראשונה – בלי כפתור */}
-            {!started && (
-                <div
-                    onTouchStart={startVideo}
-                    onClick={startVideo}
-                    className="absolute inset-0 z-20"
-                />
-            )}
-
-            {/* CONTENT */}
+            {/* תוכן מעל */}
             <div
-                className="relative z-30 flex h-[100svh] w-full flex-col items-center justify-center px-6 text-center"
+                className="relative z-10 flex h-[100svh] w-full flex-col items-center justify-center px-6 text-center"
                 style={{ paddingTop: HEADER_H }}
             >
                 <motion.div
@@ -87,7 +96,8 @@ const HeroSection = ({ logoSrc, phone }: Props) => {
                         src={logoSrc}
                         alt="Omer Tattoo Studio Logo"
                         draggable={false}
-                        className="block h-full w-auto max-w-[92vw] object-contain select-none"
+                        loading="eager"
+                        className="block h-full w-auto max-w-[92vw] object-contain select-none pointer-events-none"
                     />
                 </motion.div>
 
@@ -95,14 +105,21 @@ const HeroSection = ({ logoSrc, phone }: Props) => {
                     href={`https://wa.me/${phone}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    whileTap={{ scale: 0.97 }}
-                    className="mt-6 inline-flex items-center gap-2 px-8 py-3
-                        rounded-xl bg-white/55 text-[#1E1E1E]
-                        border border-white/35 backdrop-blur-md"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="mt-6 inline-flex items-center justify-center gap-2 px-8 py-3 text-sm font-semibold rounded-xl bg-white/55 text-[#1E1E1E] border border-white/35 shadow-sm backdrop-blur-md hover:bg-[#B9895B] hover:text-[#F6F1E8] hover:border-[#B9895B] transition-all duration-150 transform-gpu will-change-transform focus:outline-none focus:ring-2 focus:ring-[#B9895B]/45 focus:ring-offset-2 focus:ring-offset-transparent"
+                    aria-label="שלחו הודעה בוואטסאפ"
                 >
-                    <FaWhatsapp />
+                    <FaWhatsapp className="text-base" />
                     לקביעת תור
                 </motion.a>
+
+                {/* אם autoplay נכשל, אין כפתור פליי. פשוט רמז קטן (לא חובה). */}
+                {!started && (
+                    <div className="mt-3 text-xs text-[#3B3024]/70 select-none">
+                        נגיעה במסך תתחיל את הוידאו
+                    </div>
+                )}
             </div>
         </section>
     );

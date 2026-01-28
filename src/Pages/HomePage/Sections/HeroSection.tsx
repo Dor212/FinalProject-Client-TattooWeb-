@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { FaWhatsapp } from "react-icons/fa";
 
@@ -6,34 +6,46 @@ type Props = { logoSrc: string; phone: string };
 
 const HeroSection = ({ logoSrc, phone }: Props) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
-
     const HEADER_H = 72;
+
+    const [activated, setActivated] = useState(false);
 
     useEffect(() => {
         const v = videoRef.current;
         if (!v) return;
 
-        const tryPlay = async () => {
+        // נסיון autoplay שקט כדי “לחמם” את הוידאו
+        const warmup = async () => {
             try {
-                v.muted = true;          // קריטי לאייפון
-                v.playsInline = true;    // קריטי לאייפון
+                v.muted = true;
+                v.playsInline = true;
                 await v.play();
             } catch {
-                // autoplay יכול להיחסם, זה בסדר
+                // iOS יכול לחסום, זה בסדר
             }
         };
 
-        const io = new IntersectionObserver(
-            ([e]) => {
-                if (e.isIntersecting) tryPlay();
-                else v.pause();
-            },
-            { threshold: 0.15 }
-        );
-
-        io.observe(v);
-        return () => io.disconnect();
+        warmup();
     }, []);
+
+    const onFirstTouch = async () => {
+        const v = videoRef.current;
+        if (!v) return;
+
+        setActivated(true);
+
+        try {
+            // אם אתה רוצה בלי סאונד תמיד, תשאיר muted=true ולא תיגע בזה
+            // v.muted = false;
+
+            v.muted = true; // בלי סאונד
+            v.playsInline = true;
+
+            await v.play();
+        } catch {
+            // אם עדיין נחסם, אין מה לעשות מעבר לזה בלי פקדים
+        }
+    };
 
     return (
         <section
@@ -49,12 +61,26 @@ const HeroSection = ({ logoSrc, phone }: Props) => {
                 muted
                 loop
                 autoPlay
-                preload="metadata"
+                preload="auto"
+                controls={false}
+                controlsList="nodownload noplaybackrate noremoteplayback"
+                disablePictureInPicture
             />
 
             <div className="absolute inset-0 pointer-events-none bg-black/25" />
             <div className="absolute inset-0 pointer-events-none [box-shadow:inset_0_0_140px_rgba(0,0,0,0.55)]" />
             <div className="absolute inset-x-0 bottom-0 h-[22svh] pointer-events-none bg-gradient-to-b from-transparent to-[#F6F1E8]" />
+
+            {/* שכבת טאצ׳ ראשונה: מסתירה את הפליי של iOS ומאפשרת gesture */}
+            {!activated && (
+                <button
+                    type="button"
+                    onClick={onFirstTouch}
+                    onTouchStart={onFirstTouch}
+                    className="absolute inset-0 z-20 bg-transparent cursor-pointer"
+                    aria-label="נגיעה להתחלת הסרטון"
+                />
+            )}
 
             <div
                 className="relative z-10 flex h-[100svh] w-full flex-col items-center justify-center px-6 text-center"

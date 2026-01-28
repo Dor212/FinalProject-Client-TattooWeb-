@@ -16,13 +16,6 @@ type UploadVariant = {
     image: File | null;
 };
 
-const joinUrl = (base: string, maybeUrl: string) => {
-    if (!maybeUrl) return "";
-    if (/^https?:\/\//i.test(maybeUrl)) return maybeUrl;
-    const b = base.replace(/\/+$/, "");
-    const p = maybeUrl.replace(/^\/+/, "");
-    return `${b}/${p}`;
-};
 
 const CanvasesSection = ({
     loading,

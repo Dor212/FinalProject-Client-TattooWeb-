@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Swal from "sweetalert2";
-
 import { useCart } from "../../../components/context/CartContext";
 import { useCanvases } from "../../CanvasesPage/hooks/useCanvases";
 import type { CanvasItem } from "../../CanvasesPage/components/types";

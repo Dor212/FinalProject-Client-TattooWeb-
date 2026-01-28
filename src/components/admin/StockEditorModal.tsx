@@ -29,6 +29,7 @@ type Props = {
     onClose: () => void;
     product: Product;
     onUpdated: (updated: Product) => void;
+    apiBase: string;
 };
 
 const isPositiveInt = (v: string) => /^\d+$/.test(v);

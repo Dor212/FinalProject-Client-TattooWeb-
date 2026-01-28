@@ -36,6 +36,7 @@ const ProductsSection = ({
     const [stockXXL, setStockXXL] = useState("");
 
     const submit = async () => {
+        console.log("SUBMIT CLICKED");
         const res = await onUpload({
             title: productTitle,
             price: productPrice,

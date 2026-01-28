@@ -15,6 +15,7 @@ import CookieBanner from "./components/cookies/CookieBanner";
 import CanvasesPage from "./Pages/CanvasesPage/CanvasesPage";
 import CheckoutPage from "./Pages/CheckoutPage/CheckoutPage";
 import RequireAuth from "./components/routing/RequireAuth";
+import PaymentResultPage from "./Pages/PaymentResultPage/PaymentResultPage";
 
 function App() {
   useAuthInit();
@@ -49,6 +50,9 @@ function App() {
           <Route element={<RequireAuth />}>
             <Route path="/AdminPage" element={<AdminPage />} />
           </Route>
+          <Route path="/payment/success" element={<PaymentResultPage kind="success" />} />
+          <Route path="/payment/failure" element={<PaymentResultPage kind="failure" />} />
+          <Route path="/payment/cancel" element={<PaymentResultPage kind="cancel" />} />
         </Routes>
 
         <CookieBanner />

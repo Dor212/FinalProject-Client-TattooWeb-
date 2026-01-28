@@ -44,13 +44,6 @@ const AdminPage = () => {
         <div
             dir="rtl"
             className="min-h-[100svh] pt-24 pb-16 px-4 font-serif text-[#1E1E1E]"
-            style={{
-                backgroundImage: "url('/backgrounds/BG4.png')",
-                backgroundRepeat: "no-repeat",
-                backgroundSize: "contain",
-                backgroundPosition: "right top",
-                backgroundAttachment: "fixed",
-            }}
         >
             <div className="mx-auto max-w-7xl">
                 <AdminHeader onRefresh={refreshAll} />

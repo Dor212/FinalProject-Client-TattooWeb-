@@ -9,6 +9,7 @@ const HEADER_H = 72;
 const HeroSection = ({ logoSrc, phone }: Props) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const [started, setStarted] = useState(false);
+    const [primed, setPrimed] = useState(false);
 
     const startVideo = async () => {
         if (started) return;
@@ -39,7 +40,20 @@ const HeroSection = ({ logoSrc, phone }: Props) => {
                 muted
                 loop
                 preload="auto"
+                controls={false}
+                onLoadedData={() => {
+                    const v = videoRef.current;
+                    if (!v || primed) return;
+
+                    // “Prime” כדי שיצויר פריים ראשון גם בלי לנגן
+                    try {
+                        v.pause();
+                        v.currentTime = 0.01;
+                    } catch { /* empty */ }
+                    setPrimed(true);
+                }}
             />
+
 
             {/* FADE חום – יוצא מהווידאו החוצה (לא נכנס אליו) */}
             <div className="absolute inset-x-0 bottom-0 z-10 h-[18svh] pointer-events-none

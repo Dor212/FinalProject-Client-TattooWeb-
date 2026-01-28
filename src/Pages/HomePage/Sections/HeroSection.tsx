@@ -8,77 +8,63 @@ const HeroSection = ({ logoSrc, phone }: Props) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const HEADER_H = 72;
 
-    const [activated, setActivated] = useState(false);
+    const [started, setStarted] = useState(false);
 
     useEffect(() => {
+        if (!started) return;
         const v = videoRef.current;
         if (!v) return;
 
-        // נסיון autoplay שקט כדי “לחמם” את הוידאו
-        const warmup = async () => {
+        const run = async () => {
             try {
-                v.muted = true;
+                v.muted = true;           // תשאיר true אם אתה לא רוצה סאונד
                 v.playsInline = true;
                 await v.play();
-            } catch {
-                // iOS יכול לחסום, זה בסדר
-            }
+            } catch { /* empty */ }
         };
 
-        warmup();
-    }, []);
+        // נותן ל-DOM “להתיישב” ואז מנגן
+        requestAnimationFrame(() => void run());
+    }, [started]);
 
-    const onFirstTouch = async () => {
-        const v = videoRef.current;
-        if (!v) return;
-
-        setActivated(true);
-
-        try {
-            // אם אתה רוצה בלי סאונד תמיד, תשאיר muted=true ולא תיגע בזה
-            // v.muted = false;
-
-            v.muted = true; // בלי סאונד
-            v.playsInline = true;
-
-            await v.play();
-        } catch {
-            // אם עדיין נחסם, אין מה לעשות מעבר לזה בלי פקדים
-        }
+    const startVideo = () => {
+        if (started) return;
+        setStarted(true);
     };
 
     return (
         <section
             id="logo"
-            className="relative w-full h-[100svh] overflow-hidden"
+            className="relative w-full h-[100svh] overflow-hidden bg-black"
             style={{ marginTop: -HEADER_H }}
         >
-            <video
-                ref={videoRef}
-                className="absolute inset-0 object-cover w-full h-full"
-                src="https://www.omeravivart.com/movieOmer.mp4"
-                playsInline
-                muted
-                loop
-                autoPlay
-                preload="auto"
-                controls={false}
-                controlsList="nodownload noplaybackrate noremoteplayback"
-                disablePictureInPicture
-            />
+            {/* עד הטאץ' הראשון אין VIDEO בכלל -> אין פליי של Safari */}
+            {started && (
+                <video
+                    ref={videoRef}
+                    className="absolute inset-0 object-cover w-full h-full"
+                    src="https://www.omeravivart.com/movieOmer.mp4"
+                    playsInline
+                    muted
+                    loop
+                    preload="auto"
+                    controls={false}
+                    disablePictureInPicture
+                />
+            )}
 
             <div className="absolute inset-0 pointer-events-none bg-black/25" />
             <div className="absolute inset-0 pointer-events-none [box-shadow:inset_0_0_140px_rgba(0,0,0,0.55)]" />
             <div className="absolute inset-x-0 bottom-0 h-[22svh] pointer-events-none bg-gradient-to-b from-transparent to-[#F6F1E8]" />
 
-            {/* שכבת טאצ׳ ראשונה: מסתירה את הפליי של iOS ומאפשרת gesture */}
-            {!activated && (
+            {/* שכבה שקולטת טאץ' ראשון (בלי להציג שום כפתור) */}
+            {!started && (
                 <button
                     type="button"
-                    onClick={onFirstTouch}
-                    onTouchStart={onFirstTouch}
-                    className="absolute inset-0 z-20 bg-transparent cursor-pointer"
-                    aria-label="נגיעה להתחלת הסרטון"
+                    onClick={startVideo}
+                    onTouchStart={startVideo}
+                    className="absolute inset-0 z-20 bg-transparent"
+                    aria-label="Start video"
                 />
             )}
 

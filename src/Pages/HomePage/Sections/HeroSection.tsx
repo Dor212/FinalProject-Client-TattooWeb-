@@ -4,25 +4,31 @@ import { FaWhatsapp } from "react-icons/fa";
 
 type Props = { logoSrc: string; phone: string };
 
+const HEADER_H = 72;
+
 const HeroSection = ({ logoSrc, phone }: Props) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
-
-    const HEADER_H = 72;
 
     useEffect(() => {
         const v = videoRef.current;
         if (!v) return;
 
-        const io = new IntersectionObserver(
-            ([e]) => {
-                if (e.isIntersecting) v.play().catch(() => { });
-                else v.pause();
-            },
-            { threshold: 0.15 }
-        );
+        // iOS Safari: force these as properties too
+        v.muted = true;
+        v.playsInline = true;
+        v.autoplay = true;
 
-        io.observe(v);
-        return () => io.disconnect();
+        const tryPlay = () => v.play().catch(() => { });
+
+        // try immediately + when browser says it's ready
+        tryPlay();
+        v.addEventListener("canplay", tryPlay);
+        v.addEventListener("loadeddata", tryPlay);
+
+        return () => {
+            v.removeEventListener("canplay", tryPlay);
+            v.removeEventListener("loadeddata", tryPlay);
+        };
     }, []);
 
     return (
@@ -35,10 +41,12 @@ const HeroSection = ({ logoSrc, phone }: Props) => {
                 ref={videoRef}
                 className="absolute inset-0 object-cover w-full h-full"
                 src="/movieOmer.mp4"
+                poster="/heroPoster.jpg"
                 playsInline
-                preload="metadata"
+                preload="auto"
                 loop
                 muted
+                autoPlay
             />
 
             <div className="absolute inset-0 pointer-events-none bg-black/25" />

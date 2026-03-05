@@ -24,8 +24,7 @@ const Header = () => {
     []
   );
   const isCanvasPage = CANVAS_ROUTES.some((p) => pathname.startsWith(p));
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const SHOW_MINIMAL_LOGO_ONLY = true;
+
 
   const HOME_PATH = "/";
   const HOME_LOGO_SECTION_ID = "logo";

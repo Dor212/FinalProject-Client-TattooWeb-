@@ -6,7 +6,7 @@ import { Download, Mail, RotateCcw, ChevronDown, ChevronUp, ImagePlus, Sparkles,
 import { animated } from "@react-spring/web";
 
 import type { Env, LocationState, Cat } from "./applySketch.types";
-import { CAT_RULES, CAT_UI, OVERLAY_BASE } from "./applySketch.constants";
+import { CAT_RULES, CAT_UI } from "./applySketch.constants";
 import { joinUrl, normalizeCat } from "./applySketch.utils";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useSketchGallery } from "./hooks/useSketchGallery";

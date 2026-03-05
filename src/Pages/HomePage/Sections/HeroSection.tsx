@@ -13,7 +13,7 @@ const HeroSection = ({ logoSrc, phone }: Props) => {
     const videoRef = useRef<HTMLVideoElement | null>(null);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [started, setStarted] = useState(false);
+    const [, setStarted] = useState(false);
     const startedRef = useRef(false);
 
     const primeFirstFrame = useCallback(() => {

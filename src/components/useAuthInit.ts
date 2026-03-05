@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import api from "../Services/axiosInstance";
-import { clearToken, decode, getToken, isTokenExpired } from "../Services/tokenServices";
+import { clearToken, getToken, isTokenExpired } from "../Services/tokenServices";
 import { userActions } from "../Store/UserSlice";
 
 const useAuthInit = () => {
@@ -21,10 +21,9 @@ const useAuthInit = () => {
 
     (async () => {
       try {
-        const decoded = decode(token);
-        const res = await api.get(`/users/${decoded._id}`);
+        const res = await api.get(`/users/me`);
         if (!alive) return;
-        dispatch(userActions.login(res.data));
+        dispatch(userActions.login(res.data.user ?? res.data));
       } catch {
         if (!alive) return;
         clearToken();

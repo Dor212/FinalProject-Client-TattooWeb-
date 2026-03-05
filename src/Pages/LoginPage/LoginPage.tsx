@@ -1,15 +1,14 @@
-// src/Pages/LoginPage/LoginPage.tsx
 import { joiResolver } from "@hookform/resolvers/joi";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import Swal from "sweetalert2";
 import axios from "../../Services/axiosInstance";
 import { userActions } from "../../Store/UserSlice";
 import { decode, isTokenExpired, setToken } from "../../Services/tokenServices";
 import { LoginSchema } from "../../Validations/LoginSchema";
+import { getHttpErrorMessage, toast } from "../../Services/toast";
 
 type LoginForm = {
     email: string;
@@ -52,13 +51,7 @@ const LoginPage = () => {
             const tokenStr = data.token;
 
             if (isTokenExpired(tokenStr)) {
-                Swal.fire({
-                    position: "top-end",
-                    icon: "error",
-                    title: "ההתחברות פגה, נסה שוב",
-                    showConfirmButton: false,
-                    timer: 1600,
-                });
+                toast.error("ההתחברות פגה", "נסה שוב");
                 return;
             }
 
@@ -68,25 +61,14 @@ const LoginPage = () => {
             const userResponse = await axios.get(`/users/${decoded._id}`);
             dispatch(userActions.login(userResponse.data));
 
-            Swal.fire({
-                position: "top-end",
-                icon: "success",
-                title: "התחברת בהצלחה",
-                showConfirmButton: false,
-                timer: 1200,
-            });
+            toast.success("התחברת בהצלחה", undefined, 1400);
 
             const st = location.state as LocationState | null;
             const redirectTo = st?.from?.pathname || "/AdminPage";
             nav(redirectTo, { replace: true });
         } catch (error: unknown) {
-            Swal.fire({
-                position: "top-end",
-                icon: "error",
-                title: "אימייל או סיסמה לא נכונים",
-                showConfirmButton: false,
-                timer: 1600,
-            });
+            const msg = getHttpErrorMessage(error, "אימייל או סיסמה לא נכונים");
+            toast.error(msg);
         }
     };
 

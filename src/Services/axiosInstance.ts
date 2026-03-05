@@ -1,6 +1,6 @@
 import axios from "axios";
 import { clearToken, getToken } from "./tokenServices";
-import { toastError } from "./authToast";
+import { toast } from "./toast";
 import store from "../Store/BigPie";
 import { userActions } from "../Store/UserSlice";
 
@@ -32,11 +32,11 @@ axiosInstance.interceptors.response.use(
       clearToken();
       delete axiosInstance.defaults.headers.common["x-auth-token"];
       store.dispatch(userActions.logout());
-      toastError("פג תוקף ההתחברות, התחבר מחדש");
+      toast.error("פג תוקף ההתחברות", "התחבר מחדש");
     }
 
     if (status === 403) {
-      toastError("אין לך הרשאה לבצע פעולה זו");
+      toast.error("אין לך הרשאה", "לא ניתן לבצע את הפעולה הזאת");
     }
 
     return Promise.reject(error);

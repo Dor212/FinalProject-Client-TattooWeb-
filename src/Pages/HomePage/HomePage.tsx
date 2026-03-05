@@ -19,7 +19,6 @@ import FloatingSocialButtons from "../../components/FloatingSocialButtons.tsx";
 import { useCart } from "../../components/context/CartContext";
 import CanvasesHomeSection from "./Sections/CanvasesHomeSection.tsx";
 
-
 const SIZE_KEYS = ["l", "xl", "xxl"] as const;
 type SizeKey = (typeof SIZE_KEYS)[number];
 
@@ -147,25 +146,41 @@ const HomePage = () => {
                     instagramUrl={"https://www.instagram.com/omeraviv_tattoo/"}
                     tiktokUrl={"https://www.tiktok.com/@omeraviv_tattoo"}
                 />
-               
+
                 <Element name="logo">
                     <div id="home-logo">
                         <HeroSection logoSrc={logoSrc} phone="972528787419" />
                     </div>
                 </Element>
 
-                <div className="pt-20">
-                    <ShopMerchSection
-                        products={products}
-                        sizeKeys={SIZE_KEYS}
-                        selectedSizes={selectedSizes}
-                        setSelectedSizes={setSelectedSizes}
-                        quantities={quantities}
-                        setQuantities={setQuantities}
-                        addToCart={addToCart}
-                        isOutOfStock={isOutOfStock}
-                        onSeeMore={() => navigate("/products")}
+                <div className="relative z-30 -mt-16 overflow-hidden pointer-events-none">
+                    <div
+                        className="w-full h-32"
+                        style={{
+                            background: `linear-gradient(to bottom, 
+                                rgba(185,137,91,0) 0%, 
+                                rgba(185,137,91,0.6) 20%, 
+                                rgba(100,72,45,1) 50%, 
+                                rgba(185,137,91,0.6) 80%, 
+                                rgba(185,137,91,0) 100%)`,
+                        }}
                     />
+                </div>
+
+                <div className="relative z-10 pt-20">
+                    {products.length > 0 && (
+                        <ShopMerchSection
+                            products={products}
+                            sizeKeys={SIZE_KEYS}
+                            selectedSizes={selectedSizes}
+                            setSelectedSizes={setSelectedSizes}
+                            quantities={quantities}
+                            setQuantities={setQuantities}
+                            addToCart={addToCart}
+                            isOutOfStock={isOutOfStock}
+                            onSeeMore={() => navigate("/products")}
+                        />
+                    )}
 
                     <CanvasesHomeSection onOpenCart={() => setIsCartOpen(true)} />
 

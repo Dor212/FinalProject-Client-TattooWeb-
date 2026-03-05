@@ -26,11 +26,31 @@ const SketchesSection = ({
 }) => {
     const [selectedCategory, setSelectedCategory] = useState<SketchCategory>("small");
     const [imageFile, setImageFile] = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const [deletingKey, setDeletingKey] = useState<string | null>(null);
 
     const submit = async () => {
-        const ok = await onUpload(selectedCategory, imageFile);
-        if (!ok) return;
-        setImageFile(null);
+        if (uploading) return;
+        if (!imageFile) return;
+
+        setUploading(true);
+        try {
+            const ok = await onUpload(selectedCategory, imageFile);
+            if (!ok) return;
+            setImageFile(null);
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const doDelete = async (cat: SketchCategory, imgUrl: string) => {
+        const key = `${cat}::${imgUrl}`;
+        setDeletingKey(key);
+        try {
+            await onDelete(cat, imgUrl);
+        } finally {
+            setDeletingKey(null);
+        }
     };
 
     return (
@@ -65,8 +85,8 @@ const SketchesSection = ({
                         <FilePick value={imageFile?.name} onPick={setImageFile} />
                     </Field>
 
-                    <PrimaryBtn onClick={submit} icon={<FaPlus />}>
-                        העלה סקיצה
+                    <PrimaryBtn onClick={submit} icon={<FaPlus />} disabled={uploading || !imageFile}>
+                        {uploading ? "מעבד..." : "העלה סקיצה"}
                     </PrimaryBtn>
                 </div>
             </CardShell>
@@ -87,30 +107,46 @@ const SketchesSection = ({
                             </div>
                         ) : (
                             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
-                                {(imagesByCategory[cat] || []).map((imgUrl) => (
-                                    <div
-                                        key={imgUrl}
-                                        className="group relative overflow-hidden rounded-2xl border border-[#B9895B]/14 bg-white/35 backdrop-blur shadow-[0_12px_40px_rgba(30,30,30,0.10)]"
-                                    >
-                                        <img
-                                            src={joinUrl(apiBase, imgUrl)}
-                                            alt="sketch"
-                                            className={cls("object-cover w-full aspect-square")}
-                                            loading="lazy"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => onDelete(cat, imgUrl)}
-                                            className="absolute transition opacity-0 top-2 left-2 group-hover:opacity-100"
-                                            aria-label="מחיקה"
-                                            title="מחיקה"
+                                {(imagesByCategory[cat] || []).map((imgUrl) => {
+                                    const key = `${cat}::${imgUrl}`;
+                                    const isDeleting = deletingKey === key;
+                                    return (
+                                        <div
+                                            key={imgUrl}
+                                            className="group relative overflow-hidden rounded-2xl border border-[#B9895B]/14 bg-white/35 backdrop-blur shadow-[0_12px_40px_rgba(30,30,30,0.10)]"
                                         >
-                                            <div className="grid w-10 h-10 text-red-600 border place-items-center rounded-2xl bg-white/55 border-red-200/70 hover:bg-white/70">
-                                                <FaTrash />
-                                            </div>
-                                        </button>
-                                    </div>
-                                ))}
+                                            <img
+                                                src={joinUrl(apiBase, imgUrl)}
+                                                alt="sketch"
+                                                className={cls("object-cover w-full aspect-square", isDeleting && "opacity-60")}
+                                                loading="lazy"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => doDelete(cat, imgUrl)}
+                                                disabled={isDeleting}
+                                                className={cls(
+                                                    "absolute transition top-2 left-2",
+                                                    "opacity-0 group-hover:opacity-100",
+                                                    isDeleting && "opacity-100"
+                                                )}
+                                                aria-label="מחיקה"
+                                                title="מחיקה"
+                                            >
+                                                <div
+                                                    className={cls(
+                                                        "grid w-10 h-10 border place-items-center rounded-2xl",
+                                                        isDeleting
+                                                            ? "bg-white/55 border-red-200/70 text-red-600 opacity-70 cursor-not-allowed"
+                                                            : "bg-white/55 border-red-200/70 text-red-600 hover:bg-white/70"
+                                                    )}
+                                                >
+                                                    <FaTrash />
+                                                </div>
+                                            </button>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

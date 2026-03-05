@@ -1,15 +1,8 @@
-import Swal from "sweetalert2";
+export { toast as default, toast, dialog, getHttpErrorMessage } from "./toast";
 
-const toast = Swal.mixin({
-  toast: true,
-  position: "top-end",
-  showConfirmButton: false,
-  timer: 1600,
-  timerProgressBar: true,
-  background: "#F6F1E8",
-  color: "#1E1E1E",
-});
+import { toast as t } from "./toast";
 
-export const toastSuccess = (title: string) => toast.fire({ icon: "success", title });
-export const toastError = (title: string) => toast.fire({ icon: "error", title });
-export const toastInfo = (title: string) => toast.fire({ icon: "info", title });
+export const toastSuccess = (title: string, text?: string) => t.success(title, text);
+export const toastError = (title: string, text?: string) => t.error(title, text);
+export const toastWarning = (title: string, text?: string) => t.warning(title, text);
+export const toastInfo = (title: string, text?: string) => t.info(title, text);

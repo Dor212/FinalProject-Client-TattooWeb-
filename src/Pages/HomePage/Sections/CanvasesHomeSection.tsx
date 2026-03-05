@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import Swal from "sweetalert2";
+import { toast } from "../../../Services/toast";
 import { useCart } from "../../../components/context/CartContext";
 import { useCanvases } from "../../CanvasesPage/hooks/useCanvases";
 import type { CanvasItem } from "../../CanvasesPage/components/types";
@@ -15,108 +15,74 @@ const cls = (...xs: Array<string | false | null | undefined>) => xs.filter(Boole
 
 function ImageStage({ src, size }: { src: string; size: CanvasItem["size"] }) {
     const stageClass =
-        size === "80×25" ? "h-[clamp(240px,44svh,420px)]" : "h-[clamp(280px,48svh,460px)]";
+        size === "80×25" ? "h-[clamp(200px,35svh,320px)]" : "h-[clamp(240px,40svh,360px)]";
 
     return (
         <div
             className={cls(
-                "relative w-full rounded-[26px] overflow-hidden border border-[#B9895B]/16 bg-white/20 backdrop-blur-xl shadow-[0_18px_70px_rgba(30,30,30,0.14)] p-3",
+                "relative w-full rounded-2xl overflow-hidden border border-[#1E1E1E]/10 bg-[#F6F1E8] shadow-inner",
                 stageClass
             )}
         >
-            <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_18%_10%,rgba(185,137,91,0.16),transparent_55%),radial-gradient(circle_at_88%_92%,rgba(232,217,194,0.32),transparent_58%)]" />
-            <div className="relative w-full h-full rounded-[20px] overflow-hidden bg-[#F6F1E8]/72 ring-1 ring-black/5 shadow-[0_10px_24px_rgba(0,0,0,0.11)]">
-                <img
-                    src={src}
-                    alt=""
-                    className="block object-contain w-full h-full"
-                    loading="lazy"
-                    decoding="async"
-                />
-            </div>
+            <img
+                src={src}
+                alt="canvas"
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 hover:scale-[1.03]"
+            />
         </div>
     );
 }
 
-function CanvasCard({ item, onAdd }: { item: CanvasItem; onAdd: (item: CanvasItem) => void }) {
+function PreviewCard({
+    item,
+    onAdd,
+    onOpen,
+}: {
+    item: CanvasItem;
+    onAdd: (c: CanvasItem) => void;
+    onOpen: () => void;
+}) {
     const price = priceForSize(item.size);
-    const hasVariants = (item.variants?.length || 0) > 0;
-
-    const [activeId, setActiveId] = useState<string>("__base");
-
-    const activeSrc = useMemo(() => {
-        if (activeId === "__base") return item.imageUrl;
-        const hit = item.variants?.find((v) => v.id === activeId);
-        return hit?.imageUrl || item.imageUrl;
-    }, [activeId, item.imageUrl, item.variants]);
-
-    const handleAdd = () => {
-        onAdd({ ...item, imageUrl: activeSrc });
-    };
 
     return (
-        <div className="w-full min-w-0 rounded-[28px] border border-[#B9895B]/14 bg-white/18 backdrop-blur-xl shadow-[0_22px_80px_rgba(30,30,30,0.12)] overflow-hidden">
-            <div className="p-3.5 sm:p-4">
-                <ImageStage src={activeSrc} size={item.size} />
+        <motion.div
+            whileHover={{ scale: 1.02, y: -2 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="relative w-full p-5 rounded-3xl bg-[#E8D9C2]/70 backdrop-blur-md shadow-md border border-[#1E1E1E]/25 outline outline-1 outline-[#F6F1E8]/55 outline-offset-0 hover:shadow-lg hover:border-[#1E1E1E]/35 transition-all"
+        >
+            <ImageStage src={item.imageUrl} size={item.size} />
 
-                {hasVariants && (
-                    <div className="flex items-center justify-center gap-2 mt-3">
-                        <button
-                            type="button"
-                            onClick={() => setActiveId("__base")}
-                            title="תמונה ראשית"
-                            aria-label="תמונה ראשית"
-                            className={cls(
-                                "h-7 w-7 rounded-xl border transition grid place-items-center",
-                                activeId === "__base"
-                                    ? "border-[#B9895B] ring-2 ring-[#B9895B]/25 bg-white/70"
-                                    : "border-[#B9895B]/18 bg-white/45 hover:bg-white/60"
-                            )}
-                        >
-                            <span className="h-3.5 w-3.5 rounded-md bg-[linear-gradient(135deg,rgba(185,137,91,0.25),rgba(246,241,232,0.85))] border border-[#B9895B]/18" />
-                        </button>
+            <div className="mt-4 text-[#1E1E1E]">
+                <h3 className="text-xl font-bold tracking-tight">{item.name}</h3>
+                <p className="text-sm font-medium opacity-70">{item.size}</p>
+                <p className="text-lg font-semibold text-[#B9895B] mt-1">{formatILS(price)}</p>
 
-                        {(item.variants || []).map((v) => {
-                            const active = v.id === activeId;
-                            return (
-                                <button
-                                    key={v.id}
-                                    type="button"
-                                    onClick={() => setActiveId(v.id)}
-                                    title={v.label ? `${v.label}` : "צבע"}
-                                    aria-label={v.label ? `${v.label}` : "צבע"}
-                                    className={cls(
-                                        "h-7 w-7 rounded-xl border transition",
-                                        active
-                                            ? "border-[#B9895B] ring-2 ring-[#B9895B]/25"
-                                            : "border-[#B9895B]/18 hover:ring-2 hover:ring-[#B9895B]/15"
-                                    )}
-                                    style={{ backgroundColor: v.color }}
-                                />
-                            );
-                        })}
-                    </div>
-                )}
-
-                <div className="mt-3 text-center">
-                    <div className="font-extrabold text-[13.5px] sm:text-[14.5px] text-[#1E1E1E] truncate">
-                        {item.name}
-                    </div>
-
-                    <div className="mt-1 text-[15px] sm:text-[16px] font-extrabold text-[#B9895B]">
-                        {formatILS(price)}
-                    </div>
+                <div className="mt-4 space-y-2">
+                    <button
+                        type="button"
+                        onClick={() => onAdd(item)}
+                        className="w-full py-2 font-semibold rounded-xl bg-[#B9895B] text-[#F6F1E8] shadow-sm hover:shadow-md hover:bg-[#A97A51] transition-all duration-200 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#B9895B]/40"
+                    >
+                        <span>הוסף לסל</span>
+                        <motion.span
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: [0.35, 0.9, 0.35] }}
+                            transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                            className="inline-block w-1.5 h-1.5 rounded-full bg-[#F6F1E8]"
+                        />
+                    </button>
 
                     <button
                         type="button"
-                        onClick={handleAdd}
-                        className="mt-2.5 w-full rounded-2xl bg-[#B9895B] text-white py-2.5 text-[13.5px] sm:text-sm font-extrabold shadow-[0_16px_46px_rgba(30,30,30,0.15)] transition hover:brightness-95 active:brightness-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#B9895B]/35"
+                        onClick={onOpen}
+                        className="w-full py-2 text-sm font-semibold rounded-xl border border-[#1E1E1E]/15 text-[#1E1E1E] bg-[#F6F1E8]/80 hover:bg-[#E8D9C2]/80 transition-all duration-200"
                     >
-                        הוסף לעגלה
+                        לכל הקאנבסים
                     </button>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 }
 
@@ -132,25 +98,6 @@ export default function CanvasesHomeSection({ onOpenCart }: Props) {
         [filtered]
     );
 
-    const toast = useMemo(
-        () =>
-            Swal.mixin({
-                toast: true,
-                position: "top-end",
-                showConfirmButton: false,
-                timer: 850,
-                backdrop: false,
-                background: "#F6F1E8",
-                color: "#3B3024",
-                customClass: {
-                    popup: "rounded-2xl border border-[#B9895B]/25 shadow-lg",
-                    title: "text-sm font-extrabold",
-                    htmlContainer: "text-xs opacity-80",
-                },
-            }),
-        []
-    );
-
     const onAdd = (item: CanvasItem) => {
         cart.addCanvas(
             {
@@ -161,83 +108,77 @@ export default function CanvasesHomeSection({ onOpenCart }: Props) {
             },
             1
         );
-
         onOpenCart();
-
-        void toast.fire({
-            title: "נוסף",
-            html: `<span>${item.name}</span>`,
-        });
+        toast.success("נוסף", item.name, 850);
     };
 
     return (
-        <section className="container px-5 pb-10 mx-auto pt-14">
-            <div className="max-w-5xl mx-auto text-center">
-                <motion.h2
-                    initial={{ opacity: 0, y: 16 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.45 }}
-                    className="text-2xl sm:text-3xl font-extrabold text-[#1E1E1E]"
-                >
-                    קאנבסים בעיצוב הסטודיו
-                </motion.h2>
+        <motion.section
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+            viewport={{ once: true }}
+            className="container relative px-5 mx-auto overflow-hidden text-center pt-28 pb-28 md:pt-32 md:pb-32"
+            dir="rtl"
+        >
+            <div
+                className="absolute inset-0 bg-[#B9895B]/60"
+                style={{
+                    WebkitMaskImage:
+                        "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)",
+                    maskImage:
+                        "linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%)",
+                }}
+            />
 
-                <motion.p
-                    initial={{ opacity: 0, y: 12 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.45, delay: 0.05 }}
-                    className="mt-2 text-sm sm:text-base text-[#1E1E1E]/65"
-                >
-                    כל קאנבס הוא יצירה בפני עצמה · מידה קבועה · איכות סטודיו
-                </motion.p>
+            <div className="relative z-[2]">
+                <div className="max-w-5xl mx-auto mb-12">
+                    <h2
+                        className="text-3xl md:text-5xl font-black tracking-tight text-[#1E1E1E] drop-shadow-sm"
+                    >
+                        קאנבסים
+                    </h2>
+                    <p className="mt-3 text-sm md:text-base text-[#1E1E1E]/75 max-w-lg mx-auto">
+                        בחר קאנבס בעיצוב אישי או מהגלריה שלנו להשלמת האווירה בסטודיו או בבית
+                    </p>
+                </div>
 
-                <div className="grid grid-cols-2 gap-4 mt-7 lg:grid-cols-3 sm:gap-5">
-                    {loading ? (
-                        Array.from({ length: 3 }).map((_, i) => (
-                            <div
-                                key={i}
-                                className="rounded-[28px] border border-[#B9895B]/14 bg-white/18 backdrop-blur-xl shadow-[0_22px_80px_rgba(30,30,30,0.12)] overflow-hidden animate-pulse"
-                            >
-                                <div className="p-3.5 sm:p-4">
-                                    <div className="h-[clamp(240px,44svh,420px)] rounded-[26px] bg-white/20 border border-[#B9895B]/16" />
-                                    <div className="h-4 mt-3 rounded bg-white/25" />
-                                    <div className="h-5 mt-2 rounded bg-white/25" />
-                                    <div className="h-10 mt-3 rounded-2xl bg-white/25" />
-                                </div>
-                            </div>
-                        ))
-                    ) : error ? (
-                        <div className="text-sm text-red-700 col-span-full">{error}</div>
-                    ) : (
-                        previewItems.map((item, idx) => (
-                            <motion.div
-                                key={item._id}
-                                initial={{ opacity: 0, y: 18 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.38, delay: idx * 0.06 }}
-                                className="min-w-0"
-                            >
-                                <CanvasCard item={item} onAdd={onAdd} />
-                            </motion.div>
-                        ))
+                <div className="max-w-6xl mx-auto">
+                    {loading && (
+                        <div className="text-center text-sm text-[#1E1E1E]/70 py-10">טוען קאנבסים...</div>
+                    )}
+
+                    {!loading && error && (
+                        <div className="py-10 text-sm text-center text-red-600">שגיאה בטעינת קאנבסים</div>
+                    )}
+
+                    {!loading && !error && previewItems.length === 0 && (
+                        <div className="text-center text-sm text-[#1E1E1E]/70 py-10">אין קאנבסים להצגה כרגע</div>
+                    )}
+
+                    {!loading && !error && previewItems.length > 0 && (
+                        <div className="grid grid-cols-1 gap-10 md:grid-cols-3 justify-items-center">
+                            {previewItems.map((item) => (
+                                <PreviewCard
+                                    key={item._id}
+                                    item={item}
+                                    onAdd={onAdd}
+                                    onOpen={() => navigate("/canvases")}
+                                />
+                            ))}
+                        </div>
                     )}
                 </div>
 
-                <div className="flex justify-center mt-7">
+                <div className="flex justify-center mt-12">
                     <button
                         onClick={() => navigate("/canvases")}
-                        className="px-6 py-3 rounded-2xl font-extrabold bg-[#1E1E1E] text-[#F6F1E8] hover:brightness-110 transition"
+                        className="px-8 py-2.5 rounded-full border border-[#1E1E1E]/15 text-[#1E1E1E] bg-[#F6F1E8]/80 hover:bg-[#E8D9C2]/80 hover:border-[#B9895B]/35 transition-all duration-200 shadow-sm"
                     >
-                        לכל הקאנבסים
+                        לגלריה המלאה
                     </button>
                 </div>
             </div>
-        </section>
+        </motion.section>
     );
 }
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { useMemo as _useMemo, useState } from "react";

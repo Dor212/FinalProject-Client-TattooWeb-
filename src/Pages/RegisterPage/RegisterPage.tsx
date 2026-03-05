@@ -4,7 +4,7 @@ import RegisterSchema from "../../Validations/RegisterSchema";
 import axios from "../../Services/axiosInstance";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { toastError, toastSuccess } from "../../Services/authToast";
+import { getHttpErrorMessage, toast } from "../../Services/toast";
 
 type RegisterForm = {
     name: {
@@ -17,7 +17,6 @@ type RegisterForm = {
 };
 
 const RegisterPage = () => {
-    const { VITE_API_URL } = import.meta.env;
     const nav = useNavigate();
 
     const {
@@ -37,13 +36,14 @@ const RegisterPage = () => {
 
     const onSubmit = async (form: RegisterForm) => {
         try {
-            const res = await axios.post(`${VITE_API_URL}/users/register`, form);
+            const res = await axios.post(`/users/register`, form);
             if (res.status >= 200 && res.status < 300) {
-                toastSuccess("נרשמת ✅");
+                toast.success("נרשמת ✅", undefined, 1600);
                 nav("/login");
             }
-        } catch {
-            toastError("משהו השתבש בהרשמה");
+        } catch (error: unknown) {
+            const msg = getHttpErrorMessage(error, "משהו השתבש בהרשמה");
+            toast.error(msg);
         }
     };
 

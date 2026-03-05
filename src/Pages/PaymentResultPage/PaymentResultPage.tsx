@@ -1,79 +1,108 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
-import { verifyHypPayment } from "../../api/hypayApi";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import axios from "../../Services/axiosInstance";
+import { useCart } from "../../components/context/CartContext";
 
-type Status = "loading" | "verified" | "not_verified" | "error";
+type Props = {
+    kind: "success" | "failure" | "cancel";
+};
 
-export default function PaymentResultPage({ kind }: { kind: "success" | "failure" | "cancel" }) {
+export default function PaymentResultPage({ kind }: Props) {
     const location = useLocation();
-    const [status, setStatus] = useState<Status>("loading");
-    const [message, setMessage] = useState<string>("");
+    const navigate = useNavigate();
+    const cart = useCart();
 
-    const title = useMemo(() => {
-        if (kind === "cancel") return "התשלום בוטל";
-        if (kind === "failure") return "התשלום נכשל";
-        return "בודקים את התשלום...";
-    }, [kind]);
+    const [loading, setLoading] = useState(true);
+    const [verified, setVerified] = useState<boolean | null>(null);
+    const [orderId, setOrderId] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         let alive = true;
 
-        async function run() {
+        async function confirm() {
+            if (kind !== "success") {
+                setVerified(false);
+                setLoading(false);
+                return;
+            }
+
             try {
-                if (kind === "cancel") {
-                    if (!alive) return;
-                    setStatus("not_verified");
-                    setMessage("העסקה בוטלה על ידי המשתמש.");
-                    return;
-                }
+                const res = await axios.get(`/api/orders/confirm-payment${location.search}`);
 
-                const result = await verifyHypPayment(location.search);
                 if (!alive) return;
 
-                if (!result.ok) {
-                    setStatus("error");
-                    setMessage(result.message);
-                    return;
-                }
+                const ok = Boolean(res?.data?.verified);
+                setVerified(ok);
+                setOrderId(res?.data?.orderId || null);
 
-                if (result.verified) {
-                    setStatus("verified");
-                    setMessage("התשלום אומת בהצלחה ✅");
+                if (ok) {
+                    cart.clear();
                 } else {
-                    setStatus("not_verified");
-                    setMessage(`התשלום לא אומת. CCode=${result.ccode}`);
+                    setError("התשלום לא אומת מול חברת הסליקה");
                 }
-            } catch (e) {
+            } catch (e: unknown) {
                 if (!alive) return;
-                setStatus("error");
-                setMessage(e instanceof Error ? e.message : "Unknown error");
+                setVerified(false);
+                setError("שגיאה באימות התשלום");
+            } finally {
+                if (alive) setLoading(false);
             }
         }
 
-        run();
+        confirm();
         return () => {
             alive = false;
         };
-    }, [kind, location.search]);
+    }, [kind, location.search, cart]);
+
+    const title =
+        kind === "success"
+            ? verified
+                ? "התשלום בוצע בהצלחה 🎉"
+                : "אימות התשלום נכשל"
+            : kind === "failure"
+                ? "התשלום נכשל"
+                : "התשלום בוטל";
+
+    const subtitle =
+        kind === "success"
+            ? verified
+                ? "ההזמנה נקלטה ונשלחה לעומר"
+                : error || "הייתה בעיה באימות התשלום"
+            : kind === "failure"
+                ? "הכרטיס סורב או שהעסקה נכשלה"
+                : "לא בוצע חיוב בכרטיס";
 
     return (
-        <div className="min-h-[60vh] flex items-center justify-center px-4">
-            <div className="w-full max-w-lg rounded-2xl bg-[#F1F3C2] text-[#3B3024] shadow p-6">
-                <h1 className="mb-2 text-xl font-semibold">{title}</h1>
+        <div dir="rtl" className="min-h-[60svh] flex items-center justify-center px-4">
+            <div className="max-w-md w-full rounded-3xl border border-[#B9895B]/20 bg-white/60 backdrop-blur-xl p-6 text-center shadow-xl">
+                <h1 className="text-2xl font-extrabold text-[#3B3024]">{title}</h1>
 
-                {status === "loading" && <p className="opacity-80">רגע… מאמתים מול הסליקה.</p>}
+                <p className="mt-3 text-sm text-[#3B3024]/75">{subtitle}</p>
 
-                {status !== "loading" && (
-                    <p className={`${status === "verified" ? "font-semibold" : ""}`}>{message}</p>
+                {loading && <div className="mt-4 text-sm">בודק תשלום…</div>}
+
+                {!loading && orderId && (
+                    <div className="mt-4 text-xs text-[#3B3024]/60">מספר הזמנה: {orderId}</div>
                 )}
 
-                <div className="flex gap-2 mt-5">
-                    <a
-                        href="/"
-                        className="inline-flex items-center justify-center rounded-xl px-4 py-2 bg-[#3B3024] text-[#F1F3C2]"
+                <div className="flex flex-col gap-3 mt-6">
+                    <button
+                        onClick={() => navigate("/")}
+                        className="w-full rounded-xl py-3 font-semibold bg-[#B9895B] text-white hover:brightness-95"
                     >
                         חזרה לדף הבית
-                    </a>
+                    </button>
+
+                    {!verified && kind === "success" && (
+                        <button
+                            onClick={() => navigate("/checkout")}
+                            className="w-full rounded-xl py-3 font-semibold border border-[#B9895B]/30 text-[#3B3024]"
+                        >
+                            נסה שוב לתשלום
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

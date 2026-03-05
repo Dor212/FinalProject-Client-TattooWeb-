@@ -3,6 +3,7 @@ import axios from "../../../Services/axiosInstance";
 import type { Product } from "../../../Types/TProduct";
 import type { CanvasItem, CanvasSize, SketchCategory } from "../Sections/types";
 import { SKETCH_CATEGORIES } from "../Sections/types";
+import { toast, getHttpErrorMessage } from "../../../Services/toast";
 
 type UploadCanvasVariant = {
     id: string;
@@ -18,6 +19,12 @@ const emptySketches = (): SketchesMap => ({
     medium: [],
     large: [],
 });
+
+const extractFilenameFromUrl = (url: string) => {
+    const clean = String(url || "").split("?")[0];
+    const parts = clean.split("/").filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : "";
+};
 
 export function useAdminPanel(apiBase: string) {
     const [loading, setLoading] = useState(true);
@@ -36,14 +43,22 @@ export function useAdminPanel(apiBase: string) {
 
             setProducts(Array.isArray(productsRes.data) ? productsRes.data : []);
             setCanvases(Array.isArray(canvasesRes.data) ? canvasesRes.data : []);
+
             setSketchesByCategory(() => {
-                const data = sketchesRes.data || ({} as SketchesMap);
                 const normalized: SketchesMap = emptySketches();
+                const data = sketchesRes.data;
+
                 for (const cat of SKETCH_CATEGORIES) {
-                    normalized[cat] = Array.isArray(data[cat]) ? data[cat] : [];
+                    normalized[cat] = Array.isArray(data?.[cat]) ? data[cat] : [];
                 }
+
                 return normalized;
             });
+        } catch (err: unknown) {
+            toast.error("שגיאה בטעינת נתונים", getHttpErrorMessage(err, "נסה לרענן"));
+            setProducts([]);
+            setCanvases([]);
+            setSketchesByCategory(emptySketches());
         } finally {
             setLoading(false);
         }
@@ -75,13 +90,14 @@ export function useAdminPanel(apiBase: string) {
 
                 const res = await axios.post<Product>(`${apiBase}/products`, fd);
                 setProducts((prev) => [res.data, ...prev]);
+                toast.success("המוצר הועלה", undefined, 1200);
                 return { ok: true as const };
-            } catch {
-                alert("שגיאה בהעלאת מוצר");
+            } catch (err: unknown) {
+                toast.error("שגיאה בהעלאת מוצר", getHttpErrorMessage(err, "נסה שוב"));
                 return { ok: false as const };
             }
         },
-        [apiBase],
+        [apiBase]
     );
 
     const deleteProduct = useCallback(
@@ -89,48 +105,45 @@ export function useAdminPanel(apiBase: string) {
             try {
                 await axios.delete(`${apiBase}/products/${id}`);
                 setProducts((prev) => prev.filter((p) => p._id !== id));
+                toast.success("המוצר נמחק", undefined, 1100);
                 return true;
-            } catch {
-                alert("שגיאה במחיקת מוצר");
+            } catch (err: unknown) {
+                toast.error("שגיאה במחיקת מוצר", getHttpErrorMessage(err, "נסה שוב"));
                 return false;
             }
         },
-        [apiBase],
+        [apiBase]
     );
+
     const uploadCanvas = useCallback(
         async (payload: { name: string; size: CanvasSize; image: File | null; variants?: UploadCanvasVariant[] }) => {
-            const formData = new FormData();
-            formData.append("name", payload.name);
-            formData.append("size", payload.size);
-            if (payload.image) formData.append("image", payload.image);
-
-            const rawVariants = (payload.variants ?? [])
-                .filter((v) => Boolean(v?.id) && Boolean(v?.color) && Boolean(v?.image))
-                .map((v) => ({ id: v.id, color: v.color, label: v.label ?? "" }));
-
-            if (rawVariants.length > 0) {
-                const variantImageIds = rawVariants.map((v) => v.id);
-
-                formData.append("variants", JSON.stringify(rawVariants));
-                formData.append("variantImageIds", JSON.stringify(variantImageIds));
-
-                for (const v of payload.variants ?? []) {
-                    if (!v.image) continue;
-                    if (!variantImageIds.includes(v.id)) continue;
-                    formData.append("variantImages", v.image);
-                }
-            }
-
             try {
-                const res = await axios.post<CanvasItem>(`${apiBase}/canvases/upload`, formData);
+                const formData = new FormData();
+                formData.append("name", payload.name);
+                formData.append("size", payload.size);
+                if (payload.image) formData.append("image", payload.image);
+
+                if (payload.variants && payload.variants.length > 0) {
+                    for (const v of payload.variants) {
+                        if (!v.image) continue;
+                        formData.append("variants", v.image);
+                        formData.append("variantMeta", JSON.stringify({ id: v.id, color: v.color, label: v.label || "" }));
+                    }
+                }
+
+                const res = await axios.post<CanvasItem>(`${apiBase}/canvases`, formData, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                });
+
                 setCanvases((prev) => [res.data, ...prev]);
+                toast.success("הקאנבס הועלה", undefined, 1200);
                 return { ok: true as const };
-            } catch {
-                alert("שגיאה בהעלאת קאנבס");
+            } catch (err: unknown) {
+                toast.error("שגיאה בהעלאת קאנבס", getHttpErrorMessage(err, "נסה שוב"));
                 return { ok: false as const };
             }
         },
-        [apiBase],
+        [apiBase]
     );
 
     const deleteCanvas = useCallback(
@@ -138,48 +151,70 @@ export function useAdminPanel(apiBase: string) {
             try {
                 await axios.delete(`${apiBase}/canvases/${id}`);
                 setCanvases((prev) => prev.filter((c) => c._id !== id));
+                toast.success("הקאנבס נמחק", undefined, 1100);
                 return true;
-            } catch {
-                alert("שגיאה במחיקת קאנבס");
+            } catch (err: unknown) {
+                toast.error("שגיאה במחיקת קאנבס", getHttpErrorMessage(err, "נסה שוב"));
                 return false;
             }
         },
-        [apiBase],
+        [apiBase]
     );
+
     const uploadSketch = useCallback(
-        async (category: SketchCategory, file: File | null) => {
-            if (!file) return false;
+        async (category: SketchCategory, file: File | null): Promise<boolean> => {
             try {
+                if (!file) return false;
+
                 const fd = new FormData();
                 fd.append("image", file);
-                const res = await axios.post<{ ok: boolean; fileUrl?: string }>(`${apiBase}/sketches/${category}`, fd);
-                if (!res.data?.ok) return false;
 
-                await refreshAll();
+                const res = await axios.post<{ ok: boolean; imageUrl: string }>(`${apiBase}/sketches/${category}`, fd, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                });
+
+                const url = res.data?.imageUrl;
+                if (!url) return false;
+
+                setSketchesByCategory((prev) => ({
+                    ...prev,
+                    [category]: [url, ...(prev[category] || [])],
+                }));
+
+                toast.success("הסקיצה הועלתה", undefined, 1200);
                 return true;
-            } catch {
-                alert("שגיאה בהעלאת סקיצה");
+            } catch (err: unknown) {
+                toast.error("שגיאה בהעלאת סקיצה", getHttpErrorMessage(err, "נסה שוב"));
                 return false;
             }
         },
-        [apiBase, refreshAll],
+        [apiBase]
     );
 
     const deleteSketch = useCallback(
-        async (category: SketchCategory, fileUrl: string) => {
+        async (category: SketchCategory, fileUrl: string): Promise<boolean> => {
             try {
-                await axios.delete(`${apiBase}/sketches/${category}`, { data: { fileUrl } });
+                const filename = extractFilenameFromUrl(fileUrl);
+                if (!filename) {
+                    toast.error("שם קובץ לא תקין");
+                    return false;
+                }
+
+                await axios.delete(`${apiBase}/sketches/${category}/${encodeURIComponent(filename)}`);
+
                 setSketchesByCategory((prev) => ({
                     ...prev,
                     [category]: (prev[category] || []).filter((u) => u !== fileUrl),
                 }));
+
+                toast.success("הסקיצה נמחקה", undefined, 1100);
                 return true;
-            } catch {
-                alert("שגיאה במחיקת סקיצה");
+            } catch (err: unknown) {
+                toast.error("שגיאה במחיקת סקיצה", getHttpErrorMessage(err, "נסה שוב"));
                 return false;
             }
         },
-        [apiBase],
+        [apiBase]
     );
 
     return {

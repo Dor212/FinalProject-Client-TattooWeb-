@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "../../Services/axiosInstance";
 import { useCart } from "../../components/context/CartContext.tsx";
+import { createHypPayment } from "../../api/hypayApi.ts";
 
 type Customer = {
     fullname: string;
@@ -14,7 +14,15 @@ type Customer = {
     notes?: string;
 };
 
-const API = import.meta.env.VITE_API_URL as string;
+type PayloadItem = {
+    _id?: string;
+    title: string;
+    size?: string;
+    quantity: number;
+    price?: number;
+    imageUrl?: string;
+    category?: string;
+};
 
 const formatILS = (n: number) =>
     new Intl.NumberFormat("he-IL", { style: "currency", currency: "ILS", maximumFractionDigits: 0 }).format(n);
@@ -27,6 +35,16 @@ function minLen(v: string, n: number) {
     return trim(v).length >= n;
 }
 
+function makeOrderId() {
+    const r = Math.floor(Math.random() * 1_000_000);
+    return `ORD-${Date.now()}-${r}`;
+}
+
+function safeNumber(v: unknown): number {
+    const n = typeof v === "number" ? v : Number(v);
+    return Number.isFinite(n) ? n : 0;
+}
+
 export default function CheckoutPage() {
     const cart = useCart();
     const navigate = useNavigate();
@@ -34,8 +52,13 @@ export default function CheckoutPage() {
     const [loading, setLoading] = useState(false);
     const [err, setErr] = useState<string | null>(null);
 
-    const productsPayload = useMemo(() => cart.getMerchPayload(), [cart]);
-    const canvasesPayload = useMemo(() => cart.getCanvasPayload(), [cart]);
+    const productsPayload = useMemo(() => cart.getMerchPayload() as PayloadItem[], [cart]);
+    const canvasesPayload = useMemo(() => cart.getCanvasPayload() as PayloadItem[], [cart]);
+
+    const combinedCartPayload = useMemo(
+        () => [...canvasesPayload, ...productsPayload],
+        [canvasesPayload, productsPayload]
+    );
 
     const needsZip = productsPayload.length > 0;
 
@@ -63,67 +86,78 @@ export default function CheckoutPage() {
         setErr(null);
         if (!canSubmit || loading) return;
 
-        setLoading(true);
+        const totalShekels = safeNumber(cart.totals.total);
+        const amount = Math.round(totalShekels * 100) / 100;
 
-        const succeeded: Array<"canvas" | "product"> = [];
+        if (!Number.isFinite(amount) || amount <= 0) {
+            setErr("סכום לתשלום לא תקין");
+            return;
+        }
+
+        const orderId = makeOrderId();
+
+        const customerDetails = {
+            fullname: form.fullname,
+            phone: form.phone,
+            email: form.email || null,
+            city: form.city,
+            street: form.street,
+            houseNumber: form.houseNumber,
+            zip: form.zip,
+            notes: form.notes || "",
+        };
 
         try {
-            if (canvasesPayload.length > 0) {
-                await axios.post(`${API}/api/orders`, {
+            setLoading(true);
+
+            sessionStorage.setItem(
+                `pendingOrder:${orderId}`,
+                JSON.stringify({
                     source: "checkout",
                     section: "/checkout",
-                    customerDetails: {
-                        fullname: form.fullname,
-                        phone: form.phone,
-                        email: form.email || null,
-                        city: form.city,
-                        street: form.street,
-                        houseNumber: form.houseNumber,
-                        zip: form.zip,
-                        notes: form.notes || "",
-                    },
-                    cart: canvasesPayload,
-                });
-                succeeded.push("canvas");
+                    customerDetails,
+                    cart: combinedCartPayload,
+                })
+            );
+
+            const streetFull = `${trim(form.street)} ${trim(form.houseNumber)}`.trim();
+
+            const res = await createHypPayment({
+                amount,
+                orderId,
+                info: `Omer Aviv order ${orderId}`,
+                pageLang: "HEB",
+                coin: 1,
+                tmp: 1,
+                clientName: trim(form.fullname),
+                email: form.email ? trim(form.email) : undefined,
+                phone: trim(form.phone),
+                cell: trim(form.phone),
+                street: streetFull || undefined,
+                city: trim(form.city) || undefined,
+                zip: trim(form.zip) || undefined,
+            });
+
+            if (!res.ok) {
+                setErr(res.message || "שגיאה ביצירת תשלום");
+                setLoading(false);
+                return;
             }
 
-            if (productsPayload.length > 0) {
-                await axios.post(`${API}/users/orders`, {
-                    customerDetails: {
-                        fullname: form.fullname,
-                        phone: form.phone,
-                        email: form.email || null,
-                        city: form.city,
-                        street: form.street,
-                        houseNumber: form.houseNumber,
-                        zip: form.zip,
-                    },
-                    cart: productsPayload,
-                });
-                succeeded.push("product");
-            }
-
-            cart.clear();
-            setLoading(false);
-            navigate("/", { replace: true });
+            window.location.href = String(res.paymentUrl);
         } catch (e: unknown) {
-            if (succeeded.includes("canvas")) cart.clear("canvas");
-            if (succeeded.includes("product")) cart.clear("product");
-
             const msg =
-                typeof e === "object" && e !== null && "message" in e ? String((e as { message?: unknown }).message) : null;
-
-            const tail =
-                succeeded.length > 0 ? "חלק מהפריטים נשלחו בהצלחה והוסרו מהעגלה כדי למנוע כפילויות." : "";
-
-            setErr([msg || "שגיאה בשליחת ההזמנה", tail].filter(Boolean).join(" "));
+                typeof e === "object" && e !== null && "message" in e
+                    ? String((e as { message?: unknown }).message)
+                    : null;
+            setErr(msg || "שגיאה ביצירת תשלום");
             setLoading(false);
         }
     };
 
     if (cart.items.length === 0) {
         return (
-            <div dir="rtl" className="max-w-2xl p-4 mx-auto pt-24">
+            <div dir="rtl" className="max-w-2xl p-4 pt-24 mx-auto">
                 <h1 className="text-2xl font-extrabold text-[#B9895B]">תשלום</h1>
                 <p className="mt-3 text-[#1E1E1E]/75">העגלה ריקה.</p>
             </div>
@@ -145,14 +179,12 @@ export default function CheckoutPage() {
                         <div className="flex items-center justify-between gap-4">
                             <div>
                                 <h2 className="text-lg md:text-xl font-extrabold text-[#1E1E1E]">סיכום עגלה</h2>
-                                <p className="mt-1 text-xs md:text-sm text-[#1E1E1E]/65">בדיקה מהירה לפני שליחה</p>
+                                <p className="mt-1 text-xs md:text-sm text-[#1E1E1E]/65">בדיקה מהירה לפני תשלום</p>
                             </div>
 
                             <div className="text-left">
-                                <div className="text-xs text-[#1E1E1E]/60">סה״כ משוער</div>
-                                <div className="text-lg md:text-xl font-extrabold text-[#B9895B]">
-                                    {formatILS(cart.totals.total)}
-                                </div>
+                                <div className="text-xs text-[#1E1E1E]/60">סה״כ</div>
+                                <div className="text-lg md:text-xl font-extrabold text-[#B9895B]">{formatILS(safeNumber(cart.totals.total))}</div>
                             </div>
                         </div>
 
@@ -166,42 +198,27 @@ export default function CheckoutPage() {
                                         <div className="text-sm font-semibold text-[#1E1E1E] truncate">{i.name}</div>
                                         <div className="text-xs text-[#1E1E1E]/65">
                                             {i.kind === "canvas" ? "קאנבס" : "מוצר"} · מידה:{" "}
-                                            <span className="font-semibold text-[#1E1E1E]/80">
-                                                {String(i.size).toUpperCase()}
-                                            </span>{" "}
-                                            · כמות:{" "}
+                                            <span className="font-semibold text-[#1E1E1E]/80">{String(i.size).toUpperCase()}</span> · כמות:{" "}
                                             <span className="font-semibold text-[#1E1E1E]/80">{i.qty}</span>
                                         </div>
                                     </div>
 
                                     {i.kind === "product" ? (
-                                        <div className="text-xs font-semibold text-[#B9895B] whitespace-nowrap">
-                                            {formatILS(i.price * i.qty)}
-                                        </div>
+                                        <div className="text-xs font-semibold text-[#B9895B] whitespace-nowrap">{formatILS(i.price * i.qty)}</div>
                                     ) : (
                                         <div className="text-xs text-[#1E1E1E]/55 whitespace-nowrap">
-                                            {i.category === "pair"
-                                                ? "PAIR"
-                                                : i.category === "triple"
-                                                    ? "TRIPLE"
-                                                    : "STANDARD"}
+                                            {i.category === "pair" ? "PAIR" : i.category === "triple" ? "TRIPLE" : "STANDARD"}
                                         </div>
                                     )}
                                 </div>
                             ))}
                         </div>
 
-                        <div className="mt-3 text-xs text-[#1E1E1E]/60">
-                            קאנבסים מחושבים סופית בצד השרת לפי כמות. מוצרים לפי המחיר שמופיע בעגלה.
-                        </div>
+                        <div className="mt-3 text-xs text-[#1E1E1E]/60">קאנבסים מחושבים סופית בצד השרת לפי כמות. מוצרים לפי המחיר שמופיע בעגלה.</div>
                     </div>
 
                     <div className="relative p-5 md:p-7">
-                        {err && (
-                            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                                {err}
-                            </div>
-                        )}
+                        {err && <div className="p-3 mb-4 text-sm text-red-700 border border-red-200 rounded-2xl bg-red-50">{err}</div>}
 
                         <div className="grid grid-cols-1 gap-4">
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -272,9 +289,7 @@ export default function CheckoutPage() {
 
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-semibold text-[#1E1E1E]/80">
-                                        מיקוד{needsZip ? "" : " (אופציונלי)"}
-                                    </label>
+                                    <label className="block text-sm font-semibold text-[#1E1E1E]/80">מיקוד{needsZip ? "" : " (אופציונלי)"}</label>
                                     <input
                                         value={form.zip}
                                         onChange={(e) => setForm((p) => ({ ...p, zip: e.target.value }))}
@@ -302,14 +317,18 @@ export default function CheckoutPage() {
                                         : "bg-[#B9895B] text-white hover:brightness-95 active:brightness-90"
                                     }`}
                             >
-                                {loading ? "שולח..." : "שלח הזמנה"}
+                                {loading ? "מעביר לתשלום..." : "המשך לתשלום"}
                             </button>
 
-                            {needsZip && (
-                                <div className="text-center text-[11px] text-[#1E1E1E]/55">
-                                    בעגלה יש מוצרים, לכן מיקוד נדרש למשלוח.
-                                </div>
-                            )}
+                            {needsZip && <div className="text-center text-[11px] text-[#1E1E1E]/55">בעגלה יש מוצרים, לכן מיקוד נדרש למשלוח.</div>}
+
+                            <button
+                                type="button"
+                                onClick={() => navigate("/cart")}
+                                className="w-full rounded-xl py-3 font-semibold border border-[#B9895B]/18 text-[#1E1E1E]/75 hover:bg-white/40"
+                            >
+                                חזרה לעגלה
+                            </button>
                         </div>
                     </div>
                 </div>

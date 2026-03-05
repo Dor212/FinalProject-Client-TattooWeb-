@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../../Services/axiosInstance";
-import axios from "axios";
-import Swal from "sweetalert2";
 import { Product } from "../../Types/TProduct";
+import { getHttpErrorMessage, toast } from "../../Services/toast";
 
 type Action = "set" | "add" | "subtract" | "reset" | "remove";
 type SizeKey = "l" | "xl" | "xxl";
@@ -87,28 +86,9 @@ export default function StockEditorModal({ open, onClose, product, onUpdated }: 
         const validXL = !useXL || ((xlInitial === "" || isPositiveInt(xlInitial)) && (xlCurrent === "" || isPositiveInt(xlCurrent)));
         const validXXL = !useXXL || ((xxlInitial === "" || isPositiveInt(xxlInitial)) && (xxlCurrent === "" || isPositiveInt(xxlCurrent)));
         return !(useL || useXL || useXXL) || !(validL && validXL && validXXL);
-    }, [
-        action,
-        useL,
-        useXL,
-        useXXL,
-        lDelta,
-        xlDelta,
-        xxlDelta,
-        lInitial,
-        lCurrent,
-        xlInitial,
-        xlCurrent,
-        xxlInitial,
-        xxlCurrent,
-    ]);
+    }, [action, useL, useXL, useXXL, lDelta, xlDelta, xxlDelta, lInitial, lCurrent, xlInitial, xlCurrent, xxlInitial, xxlCurrent]);
 
-    const maybePut = <T extends object>(
-        flag: boolean,
-        key: SizeKey,
-        data: T,
-        target: Partial<Record<SizeKey, T>>
-    ): void => {
+    const maybePut = <T extends object>(flag: boolean, key: SizeKey, data: T, target: Partial<Record<SizeKey, T>>): void => {
         if (flag) target[key] = data;
     };
 
@@ -118,19 +98,28 @@ export default function StockEditorModal({ open, onClose, product, onUpdated }: 
             maybePut(
                 useL,
                 "l",
-                { ...(lInitial !== "" ? { initial: Number(lInitial) } : {}), ...(lCurrent !== "" ? { current: Number(lCurrent) } : {}) },
+                {
+                    ...(lInitial !== "" ? { initial: Number(lInitial) } : {}),
+                    ...(lCurrent !== "" ? { current: Number(lCurrent) } : {}),
+                },
                 sizes
             );
             maybePut(
                 useXL,
                 "xl",
-                { ...(xlInitial !== "" ? { initial: Number(xlInitial) } : {}), ...(xlCurrent !== "" ? { current: Number(xlCurrent) } : {}) },
+                {
+                    ...(xlInitial !== "" ? { initial: Number(xlInitial) } : {}),
+                    ...(xlCurrent !== "" ? { current: Number(xlCurrent) } : {}),
+                },
                 sizes
             );
             maybePut(
                 useXXL,
                 "xxl",
-                { ...(xxlInitial !== "" ? { initial: Number(xxlInitial) } : {}), ...(xxlCurrent !== "" ? { current: Number(xxlCurrent) } : {}) },
+                {
+                    ...(xxlInitial !== "" ? { initial: Number(xxlInitial) } : {}),
+                    ...(xxlCurrent !== "" ? { current: Number(xxlCurrent) } : {}),
+                },
                 sizes
             );
             return { action, sizes, createStockIfMissing: true };
@@ -163,39 +152,13 @@ export default function StockEditorModal({ open, onClose, product, onUpdated }: 
         try {
             const payload = buildPayload();
 
-            const { data } = await api.patch<{ message: string; product: Product }>(
-                `/products/${product._id}/stock`,
-                payload
-            );
+            const { data } = await api.patch<{ message: string; product: Product }>(`/products/${product._id}/stock`, payload);
 
             onUpdated(data.product);
-
-            Swal.fire({
-                icon: "success",
-                title: "עודכן!",
-                timer: 1200,
-                showConfirmButton: false,
-                background: "#F6F1E8",
-                color: "#1E1E1E",
-            });
-
+            toast.success("עודכן!", undefined, 1200);
             onClose();
         } catch (err: unknown) {
-            const msg =
-                (axios.isAxiosError(err) &&
-                    (err.response?.data as { error?: string; message?: string } | undefined)?.error) ||
-                (axios.isAxiosError(err) &&
-                    (err.response?.data as { error?: string; message?: string } | undefined)?.message) ||
-                "Failed to update stock";
-
-            Swal.fire({
-                icon: "error",
-                title: "שגיאה",
-                text: msg,
-                background: "#F6F1E8",
-                color: "#1E1E1E",
-                confirmButtonColor: "#B9895B",
-            });
+            toast.error("שגיאה", getHttpErrorMessage(err, "Failed to update stock"));
         }
     };
 
@@ -206,11 +169,7 @@ export default function StockEditorModal({ open, onClose, product, onUpdated }: 
             <div className="w-full max-w-xl p-6 bg-[#F6F1E8] shadow-xl rounded-2xl border border-[#B9895B]/20">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-semibold text-[#1E1E1E]">ניהול מלאי — {product.title}</h3>
-                    <button
-                        onClick={onClose}
-                        className="px-2 py-1 text-white bg-[#1E1E1E] rounded hover:opacity-90"
-                        type="button"
-                    >
+                    <button onClick={onClose} className="px-2 py-1 text-white bg-[#1E1E1E] rounded hover:opacity-90" type="button">
                         ✕
                     </button>
                 </div>
@@ -325,7 +284,12 @@ export default function StockEditorModal({ open, onClose, product, onUpdated }: 
 
                     <fieldset className="p-3 border border-[#B9895B]/20 rounded-lg bg-white/40">
                         <label className="flex items-center gap-2 text-sm font-semibold text-[#1E1E1E]">
-                            <input type="checkbox" checked={useXXL} onChange={(e) => setUseXXL(e.target.checked)} className="accent-[#B9895B]" />
+                            <input
+                                type="checkbox"
+                                checked={useXXL}
+                                onChange={(e) => setUseXXL(e.target.checked)}
+                                className="accent-[#B9895B]"
+                            />
                             XXL
                         </label>
 
@@ -370,18 +334,23 @@ export default function StockEditorModal({ open, onClose, product, onUpdated }: 
                     </fieldset>
                 </div>
 
-                <div className="flex items-center justify-end gap-3 mt-6">
-                    <button onClick={onClose} className="px-4 py-2 border border-[#B9895B]/25 rounded bg-white/50" type="button">
-                        בטל
-                    </button>
+                <div className="mt-6 flex gap-3">
                     <button
-                        onClick={onSubmit}
-                        disabled={disabled}
-                        className={`rounded px-4 py-2 text-white ${disabled ? "bg-[#B9895B]/35 cursor-not-allowed" : "bg-[#B9895B] hover:brightness-95 active:brightness-90"
-                            }`}
                         type="button"
+                        onClick={onClose}
+                        className="w-1/3 rounded-xl border border-[#B9895B]/25 bg-white/50 py-2.5 font-extrabold text-[#1E1E1E] hover:bg-white/60 active:bg-white/70"
                     >
-                        שמור
+                        ביטול
+                    </button>
+
+                    <button
+                        type="button"
+                        disabled={disabled}
+                        onClick={onSubmit}
+                        className={`w-2/3 rounded-xl py-2.5 font-extrabold text-white ${disabled ? "bg-[#B9895B]/35 cursor-not-allowed" : "bg-[#B9895B] hover:brightness-95 active:brightness-90"
+                            }`}
+                    >
+                        שמירה
                     </button>
                 </div>
             </div>

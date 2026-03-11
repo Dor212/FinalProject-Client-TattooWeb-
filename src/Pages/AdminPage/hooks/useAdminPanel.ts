@@ -69,36 +69,39 @@ export function useAdminPanel(apiBase: string) {
     }, [refreshAll]);
 
     const uploadProduct = useCallback(
-        async (payload: {
-            title: string;
-            price: string;
-            description?: string;
-            image: File | null;
-            stockL?: string;
-            stockXL?: string;
-            stockXXL?: string;
-        }) => {
-            try {
-                const fd = new FormData();
-                fd.append("title", payload.title);
-                fd.append("price", payload.price);
-                if (payload.description) fd.append("description", payload.description);
-                if (payload.image) fd.append("image", payload.image);
-                if (payload.stockL) fd.append("stockL", payload.stockL);
-                if (payload.stockXL) fd.append("stockXL", payload.stockXL);
-                if (payload.stockXXL) fd.append("stockXXL", payload.stockXXL);
+  async (payload: {
+    title: string;
+    price: string;
+    description?: string;
+    image: File | null;
+    stockL?: string;
+    stockXL?: string;
+    stockXXL?: string;
+  }) => {
+    try {
+      const fd = new FormData();
+      fd.append("title", payload.title);
+      fd.append("price", payload.price);
+      if (payload.description) fd.append("description", payload.description);
+      if (payload.image) fd.append("image", payload.image);
+      if (payload.stockL) fd.append("stockL", payload.stockL);
+      if (payload.stockXL) fd.append("stockXL", payload.stockXL);
+      if (payload.stockXXL) fd.append("stockXXL", payload.stockXXL);
 
-                const res = await axios.post<Product>(`${apiBase}/products`, fd);
-                setProducts((prev) => [res.data, ...prev]);
-                toast.success("המוצר הועלה", undefined, 1200);
-                return { ok: true as const };
-            } catch (err: unknown) {
-                toast.error("שגיאה בהעלאת מוצר", getHttpErrorMessage(err, "נסה שוב"));
-                return { ok: false as const };
-            }
-        },
-        [apiBase]
-    );
+      const res = await axios.post<Product>(`${apiBase}/products/upload`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setProducts((prev) => [res.data, ...prev]);
+      toast.success("המוצר הועלה", undefined, 1200);
+      return { ok: true as const };
+    } catch (err: unknown) {
+      toast.error("שגיאה בהעלאת מוצר", getHttpErrorMessage(err, "נסה שוב"));
+      return { ok: false as const };
+    }
+  },
+  [apiBase]
+);
 
     const deleteProduct = useCallback(
         async (id: string) => {
@@ -116,35 +119,54 @@ export function useAdminPanel(apiBase: string) {
     );
 
     const uploadCanvas = useCallback(
-        async (payload: { name: string; size: CanvasSize; image: File | null; variants?: UploadCanvasVariant[] }) => {
-            try {
-                const formData = new FormData();
-                formData.append("name", payload.name);
-                formData.append("size", payload.size);
-                if (payload.image) formData.append("image", payload.image);
+  async (payload: {
+    name: string;
+    size: CanvasSize;
+    image: File | null;
+    variants?: UploadCanvasVariant[];
+  }) => {
+    try {
+      const formData = new FormData();
+      formData.append("name", payload.name);
+      formData.append("size", payload.size);
+      if (payload.image) formData.append("image", payload.image);
 
-                if (payload.variants && payload.variants.length > 0) {
-                    for (const v of payload.variants) {
-                        if (!v.image) continue;
-                        formData.append("variants", v.image);
-                        formData.append("variantMeta", JSON.stringify({ id: v.id, color: v.color, label: v.label || "" }));
-                    }
-                }
+      const variantsMeta: Array<{ id: string; color: string; label?: string }> = [];
+      const variantImageIds: string[] = [];
 
-                const res = await axios.post<CanvasItem>(`${apiBase}/canvases`, formData, {
-                    headers: { "Content-Type": "multipart/form-data" },
-                });
+      if (payload.variants && payload.variants.length > 0) {
+        for (const v of payload.variants) {
+          if (!v.image) continue;
 
-                setCanvases((prev) => [res.data, ...prev]);
-                toast.success("הקאנבס הועלה", undefined, 1200);
-                return { ok: true as const };
-            } catch (err: unknown) {
-                toast.error("שגיאה בהעלאת קאנבס", getHttpErrorMessage(err, "נסה שוב"));
-                return { ok: false as const };
-            }
-        },
-        [apiBase]
-    );
+          formData.append("variantImages", v.image);
+          variantsMeta.push({
+            id: v.id,
+            color: v.color,
+            label: v.label || "",
+          });
+          variantImageIds.push(v.id);
+        }
+      }
+
+      if (variantsMeta.length > 0) {
+        formData.append("variants", JSON.stringify(variantsMeta));
+        formData.append("variantImageIds", JSON.stringify(variantImageIds));
+      }
+
+      const res = await axios.post<CanvasItem>(`${apiBase}/canvases/upload`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setCanvases((prev) => [res.data, ...prev]);
+      toast.success("הקאנבס הועלה", undefined, 1200);
+      return { ok: true as const };
+    } catch (err: unknown) {
+      toast.error("שגיאה בהעלאת קאנבס", getHttpErrorMessage(err, "נסה שוב"));
+      return { ok: false as const };
+    }
+  },
+  [apiBase]
+);
 
     const deleteCanvas = useCallback(
         async (id: string) => {

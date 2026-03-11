@@ -68,7 +68,7 @@ export function useAdminPanel(apiBase: string) {
         refreshAll();
     }, [refreshAll]);
 
-    const uploadProduct = useCallback(
+   const uploadProduct = useCallback(
   async (payload: {
     title: string;
     price: string;
@@ -118,7 +118,7 @@ export function useAdminPanel(apiBase: string) {
         [apiBase]
     );
 
-    const uploadCanvas = useCallback(
+   const uploadCanvas = useCallback(
   async (payload: {
     name: string;
     size: CanvasSize;
@@ -134,7 +134,7 @@ export function useAdminPanel(apiBase: string) {
       const variantsMeta: Array<{ id: string; color: string; label?: string }> = [];
       const variantImageIds: string[] = [];
 
-      if (payload.variants && payload.variants.length > 0) {
+      if (payload.variants?.length) {
         for (const v of payload.variants) {
           if (!v.image) continue;
 

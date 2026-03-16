@@ -1,8 +1,83 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type RefObject,
+} from "react";
 import { useGesture } from "@use-gesture/react";
 import { to, useSpring } from "@react-spring/web";
 import type { Cat, Frame } from "../applySketch.types";
 import { CAT_RULES, OVERLAY_BASE } from "../applySketch.constants";
+
+type Rect = {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+};
+
+type OverlaySnapshot = {
+    translate: [number, number];
+    rotate: number;
+    scale: number;
+};
+
+const clamp = (value: number, min: number, max: number) =>
+    Math.max(min, Math.min(max, value));
+
+const getContainedRect = (
+    containerWidth: number,
+    containerHeight: number,
+    mediaWidth: number,
+    mediaHeight: number
+): Rect | null => {
+    if (!containerWidth || !containerHeight || !mediaWidth || !mediaHeight) return null;
+
+    const containerRatio = containerWidth / containerHeight;
+    const mediaRatio = mediaWidth / mediaHeight;
+
+    if (mediaRatio > containerRatio) {
+        const width = containerWidth;
+        const height = width / mediaRatio;
+        return {
+            left: 0,
+            top: (containerHeight - height) / 2,
+            width,
+            height,
+        };
+    }
+
+    const height = containerHeight;
+    const width = height * mediaRatio;
+
+    return {
+        left: (containerWidth - width) / 2,
+        top: 0,
+        width,
+        height,
+    };
+};
+
+const loadImageSize = (src: string) =>
+    new Promise<{ width: number; height: number }>((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+            const width = img.naturalWidth || img.width;
+            const height = img.naturalHeight || img.height;
+
+            if (!width || !height) {
+                reject(new Error("Could not read image size"));
+                return;
+            }
+
+            resolve({ width, height });
+        };
+        img.onerror = () => reject(new Error("Could not load image"));
+        img.src = src;
+    });
 
 export function useOverlayController({
     ready,
@@ -21,7 +96,7 @@ export function useOverlayController({
     currentSketch: string | null;
     scaleMin: number;
     scaleMax: number;
-    workAreaRef: React.RefObject<HTMLDivElement>;
+    workAreaRef: RefObject<HTMLDivElement | null>;
 }) {
     const [frame, setFrame] = useState<Frame>({
         translate: [0, 0],
@@ -29,7 +104,7 @@ export function useOverlayController({
         scale: [1, 1],
     });
 
-    const frameRef = useRef<Frame>(frame);
+    const frameRef = useRef(frame);
     useEffect(() => {
         frameRef.current = frame;
     }, [frame]);
@@ -41,84 +116,185 @@ export function useOverlayController({
         rotateZ: 0,
     }));
 
-    const lastInitKeyRef = useRef<string>("");
+    const lastInitKeyRef = useRef("");
     const hasUserMovedRef = useRef(false);
     const prevDepsRef = useRef({ userImage, currentSketch, activeCat });
+    const userImageSizeRef = useRef<{ width: number; height: number } | null>(null);
+    const imageRectRef = useRef<Rect | null>(null);
 
-    const computeCentered = (cat: Cat) => {
+    const getImageRect = useCallback((): Rect | null => {
         const el = workAreaRef.current;
-        if (!el) return null;
+        const size = userImageSizeRef.current;
+        if (!el || !size) return null;
 
-        const w = el.clientWidth;
-        const h = el.clientHeight;
-        if (!w || !h) return null;
+        return getContainedRect(el.clientWidth, el.clientHeight, size.width, size.height);
+    }, [workAreaRef]);
 
-        const base = Math.min(w, h);
-        const targetPx = base * CAT_RULES[cat].initialTargetRatio;
-
-        const initialScale = Math.max(scaleMin, Math.min(scaleMax, targetPx / OVERLAY_BASE));
-        const scaled = OVERLAY_BASE * initialScale;
-
-        const cx = Math.max(14, w / 2 - scaled / 2);
-        const cy = Math.max(14, h / 2 - scaled / 2);
-
-        return { cx, cy, initialScale };
-    };
-
-    const centerAndInitScale = (cat: Cat, force = false) => {
-        if (!ready) return;
-
-        const key = `${cat}::${userImage || ""}::${currentSketch || ""}`;
-        if (!force && lastInitKeyRef.current === key) return;
-        if (!force && hasUserMovedRef.current) return;
-
-        const data = computeCentered(cat);
-        if (!data) return;
-
-        lastInitKeyRef.current = key;
-
+    const getSnapshot = useCallback((): OverlaySnapshot => {
         if (isMobile) {
-            api.start({ x: data.cx, y: data.cy, scale: data.initialScale, rotateZ: 0 });
-        } else {
-            setFrame({ translate: [data.cx, data.cy], rotate: 0, scale: [data.initialScale, data.initialScale] });
+            return {
+                translate: [x.get(), y.get()],
+                rotate: rotateZ.get(),
+                scale: scale.get(),
+            };
         }
-    };
 
-    const requestCenter = (force = false) => {
-        if (!ready) return;
-
-        let tries = 0;
-        const tick = () => {
-            tries += 1;
-            const before = lastInitKeyRef.current;
-            centerAndInitScale(activeCat, force);
-
-            const after = lastInitKeyRef.current;
-            const didInit = before !== after;
-
-            if (!didInit && tries < 10) requestAnimationFrame(tick);
+        return {
+            translate: frameRef.current.translate,
+            rotate: frameRef.current.rotate,
+            scale: frameRef.current.scale[0],
         };
+    }, [isMobile, rotateZ, scale, x, y]);
 
-        requestAnimationFrame(tick);
-    };
+    const applySnapshot = useCallback(
+        (next: OverlaySnapshot) => {
+            const clampedScale = clamp(next.scale, scaleMin, scaleMax);
 
-    const resetInit = () => {
+            if (isMobile) {
+                api.start({
+                    x: next.translate[0],
+                    y: next.translate[1],
+                    scale: clampedScale,
+                    rotateZ: next.rotate,
+                });
+                return;
+            }
+
+            setFrame({
+                translate: next.translate,
+                rotate: next.rotate,
+                scale: [clampedScale, clampedScale],
+            });
+        },
+        [api, isMobile, scaleMax, scaleMin]
+    );
+
+    const computeCentered = useCallback(
+        (cat: Cat) => {
+            const rect = getImageRect();
+            if (!rect) return null;
+
+            const base = Math.min(rect.width, rect.height);
+            const targetPx = base * CAT_RULES[cat].initialTargetRatio;
+            const initialScale = clamp(targetPx / OVERLAY_BASE, scaleMin, scaleMax);
+            const scaled = OVERLAY_BASE * initialScale;
+
+            return {
+                rect,
+                translate: [
+                    rect.left + rect.width / 2 - scaled / 2,
+                    rect.top + rect.height / 2 - scaled / 2,
+                ] as [number, number],
+                initialScale,
+            };
+        },
+        [getImageRect, scaleMax, scaleMin]
+    );
+
+    const centerAndInitScale = useCallback(
+        (cat: Cat, force = false) => {
+            if (!ready) return false;
+
+            const key = `${cat}::${userImage || ""}::${currentSketch || ""}`;
+            if (!force && lastInitKeyRef.current === key) return false;
+            if (!force && hasUserMovedRef.current) return false;
+
+            const data = computeCentered(cat);
+            if (!data) return false;
+
+            lastInitKeyRef.current = key;
+            imageRectRef.current = data.rect;
+
+            applySnapshot({
+                translate: data.translate,
+                rotate: 0,
+                scale: data.initialScale,
+            });
+
+            return true;
+        },
+        [applySnapshot, computeCentered, currentSketch, ready, userImage]
+    );
+
+    const requestCenter = useCallback(
+        (force = false) => {
+            if (!ready) return;
+
+            let tries = 0;
+
+            const tick = () => {
+                tries += 1;
+                const didInit = centerAndInitScale(activeCat, force);
+
+                if (!didInit && tries < 10) {
+                    requestAnimationFrame(tick);
+                }
+            };
+
+            requestAnimationFrame(tick);
+        },
+        [activeCat, centerAndInitScale, ready]
+    );
+
+    const resetInit = useCallback(() => {
         hasUserMovedRef.current = false;
         lastInitKeyRef.current = "";
-    };
+    }, []);
 
-    const rotate = () => {
+    const rotate = useCallback(() => {
         if (!ready) return;
-        hasUserMovedRef.current = true;
-        if (isMobile) api.start({ rotateZ: (rotateZ.get() + 90) % 360 });
-        else setFrame((prev) => ({ ...prev, rotate: (prev.rotate + 90) % 360 }));
-    };
 
-    const reset = () => {
+        hasUserMovedRef.current = true;
+        const snapshot = getSnapshot();
+
+        applySnapshot({
+            ...snapshot,
+            rotate: (snapshot.rotate + 90) % 360,
+        });
+    }, [applySnapshot, getSnapshot, ready]);
+
+    const reset = useCallback(() => {
         if (!ready) return;
         resetInit();
         requestCenter(true);
-    };
+    }, [ready, requestCenter, resetInit]);
+
+    const remapToNextImageRect = useCallback(
+        (nextRect: Rect) => {
+            const prevRect = imageRectRef.current;
+            if (!prevRect) {
+                imageRectRef.current = nextRect;
+                return;
+            }
+
+            const snapshot = getSnapshot();
+
+            const relX = prevRect.width
+                ? (snapshot.translate[0] - prevRect.left) / prevRect.width
+                : 0;
+            const relY = prevRect.height
+                ? (snapshot.translate[1] - prevRect.top) / prevRect.height
+                : 0;
+
+            const prevBase = Math.min(prevRect.width, prevRect.height);
+            const nextBase = Math.min(nextRect.width, nextRect.height);
+            const nextScale = prevBase
+                ? clamp(snapshot.scale * (nextBase / prevBase), scaleMin, scaleMax)
+                : snapshot.scale;
+
+            imageRectRef.current = nextRect;
+
+            applySnapshot({
+                translate: [
+                    nextRect.left + relX * nextRect.width,
+                    nextRect.top + relY * nextRect.height,
+                ],
+                rotate: snapshot.rotate,
+                scale: nextScale,
+            });
+        },
+        [applySnapshot, getSnapshot, scaleMax, scaleMin]
+    );
 
     const bindMobile = useGesture(
         {
@@ -134,14 +310,25 @@ export function useOverlayController({
             },
             onPinch: ({ offset: [s, a] }) => {
                 hasUserMovedRef.current = true;
-                const clamped = Math.max(scaleMin, Math.min(scaleMax, s));
-                api.start({ scale: clamped, rotateZ: a });
+                api.start({
+                    scale: clamp(s, scaleMin, scaleMax),
+                    rotateZ: a,
+                });
             },
         },
         {
-            drag: { from: () => [x.get(), y.get()] },
+            drag: {
+                from: () => {
+                    const snapshot = getSnapshot();
+                    return snapshot.translate;
+                },
+                filterTaps: true,
+            },
             pinch: {
-                from: () => [scale.get(), rotateZ.get()],
+                from: () => {
+                    const snapshot = getSnapshot();
+                    return [snapshot.scale, snapshot.rotate] as [number, number];
+                },
                 scaleBounds: { min: scaleMin, max: scaleMax },
                 rubberband: true,
                 preventDefault: true,
@@ -162,10 +349,11 @@ export function useOverlayController({
             onWheel: ({ event, delta: [, dy] }) => {
                 event.preventDefault();
                 hasUserMovedRef.current = true;
+
                 setFrame((prev) => {
                     const factor = Math.exp(-dy / 320);
                     const next = prev.scale[0] * factor;
-                    const clamped = Math.max(scaleMin, Math.min(scaleMax, next));
+                    const clamped = clamp(next, scaleMin, scaleMax);
                     return { ...prev, scale: [clamped, clamped] };
                 });
             },
@@ -174,17 +362,56 @@ export function useOverlayController({
             },
             onPinch: ({ offset: [s, a] }) => {
                 hasUserMovedRef.current = true;
-                setFrame((prev) => {
-                    const clamped = Math.max(scaleMin, Math.min(scaleMax, s));
-                    return { ...prev, scale: [clamped, clamped], rotate: a };
-                });
+                const clamped = clamp(s, scaleMin, scaleMax);
+                setFrame((prev) => ({
+                    ...prev,
+                    scale: [clamped, clamped],
+                    rotate: a,
+                }));
             },
         },
         {
-            drag: { from: () => frameRef.current.translate },
+            drag: {
+                from: () => frameRef.current.translate,
+                filterTaps: true,
+            },
+            pinch: {
+                from: () =>
+                    [frameRef.current.scale[0], frameRef.current.rotate] as [number, number],
+                scaleBounds: { min: scaleMin, max: scaleMax },
+                rubberband: true,
+            },
             eventOptions: { passive: false },
         }
     );
+
+    useEffect(() => {
+        if (!userImage) {
+            userImageSizeRef.current = null;
+            imageRectRef.current = null;
+            return;
+        }
+
+        let cancelled = false;
+
+        loadImageSize(userImage)
+            .then((size) => {
+                if (cancelled) return;
+                userImageSizeRef.current = size;
+                resetInit();
+                requestCenter(true);
+            })
+            .catch(() => {
+                if (cancelled) return;
+                userImageSizeRef.current = null;
+                imageRectRef.current = null;
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [requestCenter, resetInit, userImage]);
+
     useEffect(() => {
         if (!ready) return;
 
@@ -192,27 +419,38 @@ export function useOverlayController({
             prevDepsRef.current.userImage !== userImage ||
             prevDepsRef.current.currentSketch !== currentSketch ||
             prevDepsRef.current.activeCat !== activeCat;
+
         if (depsChanged || lastInitKeyRef.current === "") {
             prevDepsRef.current = { userImage, currentSketch, activeCat };
             resetInit();
             requestCenter(true);
         }
-    }, [ready, userImage, currentSketch, activeCat]);
+    }, [activeCat, currentSketch, ready, requestCenter, resetInit, userImage]);
 
     useEffect(() => {
         if (!ready) return;
+
         const el = workAreaRef.current;
         if (!el) return;
+
         const ro = new ResizeObserver(() => {
-            requestCenter(false);
+            const nextRect = getImageRect();
+            if (!nextRect) return;
+
+            if (!imageRectRef.current || lastInitKeyRef.current === "") {
+                requestCenter(false);
+                return;
+            }
+
+            remapToNextImageRect(nextRect);
         });
+
         ro.observe(el);
         return () => ro.disconnect();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ready]);
+    }, [getImageRect, ready, remapToNextImageRect, requestCenter, workAreaRef]);
 
-    const desktopStyle = useMemo(() => {
-        return {
+    const desktopStyle = useMemo(
+        () => ({
             position: "absolute" as const,
             left: 0,
             top: 0,
@@ -225,15 +463,21 @@ export function useOverlayController({
             userSelect: "none" as const,
             willChange: "transform",
             touchAction: "none" as const,
-        };
-    }, [frame]);
+        }),
+        [frame]
+    );
 
-    const mobileTransform = useMemo(() => {
-        return to([x, y, scale, rotateZ], (tx, ty, s, r) => `translate(${tx}px, ${ty}px) rotate(${r}deg) scale(${s})`);
-    }, [x, y, scale, rotateZ]);
+    const mobileTransform = useMemo(
+        () =>
+            to(
+                [x, y, scale, rotateZ],
+                (tx, ty, s, r) => `translate(${tx}px, ${ty}px) rotate(${r}deg) scale(${s})`
+            ),
+        [rotateZ, scale, x, y]
+    );
 
-    const mobileStyle = useMemo(() => {
-        return {
+    const mobileStyle = useMemo(
+        () => ({
             position: "absolute" as const,
             left: 0,
             top: 0,
@@ -246,8 +490,9 @@ export function useOverlayController({
             cursor: "grab",
             userSelect: "none" as const,
             transform: mobileTransform,
-        };
-    }, [mobileTransform]);
+        }),
+        [mobileTransform]
+    );
 
     return {
         frame,
@@ -263,5 +508,7 @@ export function useOverlayController({
         requestCenter,
         rotate,
         reset,
+        getSnapshot,
+        getImageRect,
     };
 }

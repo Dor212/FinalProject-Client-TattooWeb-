@@ -1,12 +1,21 @@
 import { useLocation } from "react-router-dom";
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import html2canvas from "html2canvas";
 import axios from "../../Services/axiosInstance";
-import { Download, Mail, RotateCcw, ChevronDown, ChevronUp, ImagePlus, Sparkles, X } from "lucide-react";
+import {
+    Download,
+    Mail,
+    RotateCcw,
+    ChevronDown,
+    ChevronUp,
+    ImagePlus,
+    Sparkles,
+    X,
+} from "lucide-react";
 import { animated } from "@react-spring/web";
 
 import type { Env, LocationState, Cat } from "./applySketch.types";
-import { CAT_RULES, CAT_UI } from "./applySketch.constants";
+import { CAT_RULES, CAT_UI, OVERLAY_BASE } from "./applySketch.constants";
 import { joinUrl, normalizeCat } from "./applySketch.utils";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useSketchGallery } from "./hooks/useSketchGallery";
@@ -15,6 +24,56 @@ import { useOverlayController } from "./hooks/useOverlayController";
 import DetailsPanel from "./components/DetailsPanel";
 import SketchPickerDesktop from "./components/SketchPickerDesktop";
 import SketchPickerMobile from "./components/SketchPickerMobile";
+
+type Rect = {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+};
+
+const MAX_EXPORT_SIDE = 2200;
+
+const loadImageElement = (src: string) =>
+    new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error("Image load failed"));
+        img.src = src;
+    });
+
+const getContainedRect = (
+    containerWidth: number,
+    containerHeight: number,
+    mediaWidth: number,
+    mediaHeight: number
+): Rect | null => {
+    if (!containerWidth || !containerHeight || !mediaWidth || !mediaHeight) return null;
+
+    const containerRatio = containerWidth / containerHeight;
+    const mediaRatio = mediaWidth / mediaHeight;
+
+    if (mediaRatio > containerRatio) {
+        const width = containerWidth;
+        const height = width / mediaRatio;
+        return { left: 0, top: (containerHeight - height) / 2, width, height };
+    }
+
+    const height = containerHeight;
+    const width = height * mediaRatio;
+    return { left: (containerWidth - width) / 2, top: 0, width, height };
+};
+
+const fitIntoBox = (
+    boxWidth: number,
+    boxHeight: number,
+    mediaWidth: number,
+    mediaHeight: number
+) => {
+    const rect = getContainedRect(boxWidth, boxHeight, mediaWidth, mediaHeight);
+    return rect ?? { left: 0, top: 0, width: boxWidth, height: boxHeight };
+};
 
 const ApplySketchPage = () => {
     const { state } = useLocation() as { state: LocationState | null };
@@ -41,6 +100,14 @@ const ApplySketchPage = () => {
     const [sketchPickerOpenMobile, setSketchPickerOpenMobile] = useState(false);
 
     const workAreaRef = useRef<HTMLDivElement>(null);
+    const desktopDetailsAnchorRef = useRef<HTMLDivElement>(null);
+
+    const [desktopDetailsStyle, setDesktopDetailsStyle] = useState<{
+        top: number;
+        right: number;
+        width: number;
+    } | null>(null);
+
     const isMobile = useIsMobile(1024);
 
     const rules = CAT_RULES[activeCat];
@@ -62,26 +129,60 @@ const ApplySketchPage = () => {
     useEffect(() => {
         if (!selectedSketch) return;
         setCurrentSketch(joinUrl(VITE_API_URL, selectedSketch));
-        overlay.resetInit();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedSketch, VITE_API_URL]);
 
     useEffect(() => {
         if (!currentSketch && availableSketches.length > 0) {
             setCurrentSketch(joinUrl(VITE_API_URL, availableSketches[0]));
-            overlay.resetInit();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [availableSketches, currentSketch, VITE_API_URL]);
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    useEffect(() => {
+        if (!detailsOpen || isMobile) {
+            setDesktopDetailsStyle(null);
+            return;
+        }
+
+        const updateDesktopDetailsPosition = () => {
+            const anchor = desktopDetailsAnchorRef.current;
+            if (!anchor) return;
+
+            const rect = anchor.getBoundingClientRect();
+            const viewportPadding = 16;
+            const gap = 12;
+            const width = Math.min(420, Math.max(300, window.innerWidth - viewportPadding * 2));
+
+            let right = window.innerWidth - rect.right;
+            right = Math.max(
+                viewportPadding,
+                Math.min(right, window.innerWidth - viewportPadding - width)
+            );
+
+            setDesktopDetailsStyle({
+                top: rect.bottom + gap,
+                right,
+                width,
+            });
+        };
+
+        updateDesktopDetailsPosition();
+
+        window.addEventListener("resize", updateDesktopDetailsPosition);
+        window.addEventListener("scroll", updateDesktopDetailsPosition, true);
+
+        return () => {
+            window.removeEventListener("resize", updateDesktopDetailsPosition);
+            window.removeEventListener("scroll", updateDesktopDetailsPosition, true);
+        };
+    }, [detailsOpen, isMobile]);
+
+    const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onloadend = () => {
             setUserImage(reader.result as string);
-            overlay.resetInit();
         };
         reader.readAsDataURL(file);
 
@@ -91,7 +192,6 @@ const ApplySketchPage = () => {
     const onSelectSketch = (imgPathOrUrl: string) => {
         const full = joinUrl(VITE_API_URL, imgPathOrUrl);
         setCurrentSketch(full);
-        overlay.resetInit();
         if (isMobile) setSketchPickerOpenMobile(false);
     };
 
@@ -99,7 +199,10 @@ const ApplySketchPage = () => {
         if (!workAreaRef.current) return null;
         await new Promise((r) => setTimeout(r, 120));
 
-        const sc = Math.min(2, typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1);
+        const sc = Math.min(
+            2,
+            typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
+        );
 
         const canvas = await html2canvas(workAreaRef.current, {
             useCORS: true,
@@ -111,11 +214,82 @@ const ApplySketchPage = () => {
         return canvas;
     };
 
+    const composeExportCanvas = async () => {
+        if (!userImage || !currentSketch || !workAreaRef.current) return null;
+
+        try {
+            const [baseImage, sketchImage] = await Promise.all([
+                loadImageElement(userImage),
+                loadImageElement(currentSketch),
+            ]);
+
+            const overlaySnapshot = overlay.getSnapshot();
+            const imageRect = overlay.getImageRect();
+
+            if (!imageRect || !workAreaRef.current.clientWidth || !workAreaRef.current.clientHeight) {
+                return await captureWorkArea();
+            }
+
+            const baseWidth = baseImage.naturalWidth || baseImage.width;
+            const baseHeight = baseImage.naturalHeight || baseImage.height;
+            if (!baseWidth || !baseHeight) return await captureWorkArea();
+
+            const exportScale = Math.min(1, MAX_EXPORT_SIDE / Math.max(baseWidth, baseHeight));
+            const exportWidth = Math.max(1, Math.round(baseWidth * exportScale));
+            const exportHeight = Math.max(1, Math.round(baseHeight * exportScale));
+
+            const canvas = document.createElement("canvas");
+            canvas.width = exportWidth;
+            canvas.height = exportHeight;
+
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return await captureWorkArea();
+
+            ctx.clearRect(0, 0, exportWidth, exportHeight);
+            ctx.drawImage(baseImage, 0, 0, exportWidth, exportHeight);
+
+            const relativeX = (overlaySnapshot.translate[0] - imageRect.left) / imageRect.width;
+            const relativeY = (overlaySnapshot.translate[1] - imageRect.top) / imageRect.height;
+
+            const overlayBoxWidth =
+                (OVERLAY_BASE * overlaySnapshot.scale * exportWidth) / imageRect.width;
+            const overlayBoxHeight =
+                (OVERLAY_BASE * overlaySnapshot.scale * exportHeight) / imageRect.height;
+
+            const overlayX = relativeX * exportWidth;
+            const overlayY = relativeY * exportHeight;
+
+            const fittedSketch = fitIntoBox(
+                overlayBoxWidth,
+                overlayBoxHeight,
+                sketchImage.naturalWidth || sketchImage.width,
+                sketchImage.naturalHeight || sketchImage.height
+            );
+
+            ctx.save();
+            ctx.translate(overlayX + overlayBoxWidth / 2, overlayY + overlayBoxHeight / 2);
+            ctx.rotate((overlaySnapshot.rotate * Math.PI) / 180);
+            ctx.globalAlpha = 0.88;
+            ctx.drawImage(
+                sketchImage,
+                -overlayBoxWidth / 2 + fittedSketch.left,
+                -overlayBoxHeight / 2 + fittedSketch.top,
+                fittedSketch.width,
+                fittedSketch.height
+            );
+            ctx.restore();
+
+            return canvas;
+        } catch {
+            return await captureWorkArea();
+        }
+    };
+
     const handleSend = async () => {
         if (!canSend) return;
 
         try {
-            const canvas = await captureWorkArea();
+            const canvas = await composeExportCanvas();
             if (!canvas) return;
 
             const image = canvas.toDataURL("image/png");
@@ -137,7 +311,7 @@ const ApplySketchPage = () => {
         if (!ready) return;
 
         try {
-            const canvas = await captureWorkArea();
+            const canvas = await composeExportCanvas();
             if (!canvas) return;
 
             const link = document.createElement("a");
@@ -193,12 +367,16 @@ const ApplySketchPage = () => {
                                             onClick={() => setActiveCat(c.key)}
                                             className={[
                                                 "group relative px-4 py-2 rounded-2xl text-sm font-extrabold transition",
-                                                active ? "bg-[#B9895B] text-white shadow-sm" : "text-[#1E1E1E]/70 hover:bg-white/60",
+                                                active
+                                                    ? "bg-[#B9895B] text-white shadow-sm"
+                                                    : "text-[#1E1E1E]/70 hover:bg-white/60",
                                             ].join(" ")}
                                         >
                                             <span className="inline-flex items-center gap-2">
                                                 <span className="text-base">{c.label}</span>
-                                                <span className={active ? "text-white/85" : "text-[#1E1E1E]/55"}>{c.hint}</span>
+                                                <span className={active ? "text-white/85" : "text-[#1E1E1E]/55"}>
+                                                    {c.hint}
+                                                </span>
                                             </span>
                                         </button>
                                     );
@@ -209,10 +387,16 @@ const ApplySketchPage = () => {
                                 <label className="inline-flex items-center gap-2 rounded-2xl bg-[#B9895B] px-5 py-3 text-sm font-extrabold text-white shadow-sm hover:brightness-95 active:brightness-90 cursor-pointer">
                                     <ImagePlus size={18} />
                                     העלאת תמונה
-                                    <input type="file" accept="image/*" capture="environment" onChange={handleImageUpload} className="hidden" />
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        capture="environment"
+                                        onChange={handleImageUpload}
+                                        className="hidden"
+                                    />
                                 </label>
 
-                                <div className="relative">
+                                <div ref={desktopDetailsAnchorRef} className="relative">
                                     <button
                                         type="button"
                                         onClick={() => setDetailsOpen((v) => !v)}
@@ -221,19 +405,6 @@ const ApplySketchPage = () => {
                                         פרטי שליחה
                                         {detailsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                                     </button>
-
-                                    {detailsOpen && (
-                                        <div className="absolute z-50 mt-3 right-0 w-[min(420px,calc(100vw-2rem))]">
-                                            <DetailsPanel
-                                                name={name}
-                                                phone={phone}
-                                                email={email}
-                                                setName={setName}
-                                                setPhone={setPhone}
-                                                setEmail={setEmail}
-                                            />
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </div>
@@ -278,7 +449,9 @@ const ApplySketchPage = () => {
                         <div className="border-b border-[#B9895B]/14 bg-white/35 px-4 sm:px-6 py-4">
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="text-center sm:text-start">
-                                    <div className="text-lg sm:text-xl font-extrabold text-[#3B3024]">אזור עבודה</div>
+                                    <div className="text-lg sm:text-xl font-extrabold text-[#3B3024]">
+                                        אזור עבודה
+                                    </div>
                                     <div className="mt-1 text-xs sm:text-sm text-[#1E1E1E]/65 max-w-xl mx-auto sm:mx-0">
                                         גרירה להזזה, צביטה/גלגלת לשינוי גודל. הסקיצה לא זזה לבד.
                                     </div>
@@ -329,8 +502,12 @@ const ApplySketchPage = () => {
                                             <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#B9895B]/14 text-[#B9895B]">
                                                 <ImagePlus size={22} />
                                             </div>
-                                            <div className="mt-3 text-lg font-extrabold text-[#3B3024]">נתחיל עם תמונה שלך</div>
-                                            <div className="mt-2 text-sm text-[#1E1E1E]/70">תמונה חדה באור טוב עושה פלאים.</div>
+                                            <div className="mt-3 text-lg font-extrabold text-[#3B3024]">
+                                                נתחיל עם תמונה שלך
+                                            </div>
+                                            <div className="mt-2 text-sm text-[#1E1E1E]/70">
+                                                תמונה חדה באור טוב עושה פלאים.
+                                            </div>
                                             <label className="mt-4 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#B9895B] px-5 py-3 text-sm font-extrabold text-white shadow-sm hover:brightness-95 active:brightness-90 cursor-pointer">
                                                 <ImagePlus size={18} />
                                                 העלאת תמונה
@@ -384,11 +561,14 @@ const ApplySketchPage = () => {
 
                             {userImage && availableSketches.length > 0 && (
                                 <div className="mt-4 rounded-[22px] border border-[#B9895B]/14 bg-white/40 backdrop-blur px-3 py-3">
-                                    <div className="text-xs font-extrabold text-[#3B3024] text-center">החלפת סקיצה מהירה</div>
+                                    <div className="text-xs font-extrabold text-[#3B3024] text-center">
+                                        החלפת סקיצה מהירה
+                                    </div>
                                     <div className="flex justify-start gap-3 pb-1 mt-3 overflow-auto">
                                         {availableSketches.map((imgPath, idx) => {
                                             const fullUrl = joinUrl(VITE_API_URL, imgPath);
                                             const active = currentSketch === fullUrl;
+
                                             return (
                                                 <button
                                                     key={`${imgPath}-strip-${idx}`}
@@ -396,7 +576,9 @@ const ApplySketchPage = () => {
                                                     onClick={() => onSelectSketch(imgPath)}
                                                     className={[
                                                         "shrink-0 relative h-16 w-16 rounded-2xl border bg-white/55 transition",
-                                                        active ? "border-[#B9895B] ring-2 ring-[#B9895B]/25" : "border-[#B9895B]/14 hover:border-[#B9895B]/45",
+                                                        active
+                                                            ? "border-[#B9895B] ring-2 ring-[#B9895B]/25"
+                                                            : "border-[#B9895B]/14 hover:border-[#B9895B]/45",
                                                     ].join(" ")}
                                                     title="בחר סקיצה"
                                                 >
@@ -452,7 +634,9 @@ const ApplySketchPage = () => {
                                         disabled={!canSend}
                                         className={[
                                             "inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-extrabold transition shadow-sm",
-                                            canSend ? "bg-[#B9895B] text-white hover:brightness-95 active:brightness-90" : "bg-[#B9895B]/35 text-white/70 cursor-not-allowed",
+                                            canSend
+                                                ? "bg-[#B9895B] text-white hover:brightness-95 active:brightness-90"
+                                                : "bg-[#B9895B]/35 text-white/70 cursor-not-allowed",
                                         ].join(" ")}
                                     >
                                         <Mail size={18} />
@@ -470,6 +654,26 @@ const ApplySketchPage = () => {
                     </div>
                 </div>
 
+                {detailsOpen && !isMobile && desktopDetailsStyle && (
+                    <div
+                        className="fixed z-[70]"
+                        style={{
+                            top: desktopDetailsStyle.top,
+                            right: desktopDetailsStyle.right,
+                            width: desktopDetailsStyle.width,
+                        }}
+                    >
+                        <DetailsPanel
+                            name={name}
+                            phone={phone}
+                            email={email}
+                            setName={setName}
+                            setPhone={setPhone}
+                            setEmail={setEmail}
+                        />
+                    </div>
+                )}
+
                 <SketchPickerMobile
                     open={sketchPickerOpenMobile}
                     onClose={() => setSketchPickerOpenMobile(false)}
@@ -481,11 +685,18 @@ const ApplySketchPage = () => {
 
                 {detailsOpen && isMobile && (
                     <div className="fixed inset-0 z-50 lg:hidden">
-                        <button type="button" onClick={() => setDetailsOpen(false)} className="absolute inset-0 bg-black/35" aria-label="סגור" />
+                        <button
+                            type="button"
+                            onClick={() => setDetailsOpen(false)}
+                            className="absolute inset-0 bg-black/35"
+                            aria-label="סגור"
+                        />
                         <div className="absolute left-0 right-0 bottom-0 rounded-t-[28px] border-t border-[#B9895B]/18 bg-[#F6F1E8] shadow-[0_-18px_70px_rgba(0,0,0,0.22)]">
                             <div className="px-4 py-4 mx-auto max-w-7xl">
                                 <div className="flex items-center justify-between">
-                                    <div className="text-base font-extrabold text-[#3B3024]">פרטי שליחה</div>
+                                    <div className="text-base font-extrabold text-[#3B3024]">
+                                        פרטי שליחה
+                                    </div>
                                     <button
                                         type="button"
                                         onClick={() => setDetailsOpen(false)}
@@ -496,7 +707,14 @@ const ApplySketchPage = () => {
                                     </button>
                                 </div>
                                 <div className="mt-3">
-                                    <DetailsPanel name={name} phone={phone} email={email} setName={setName} setPhone={setPhone} setEmail={setEmail} />
+                                    <DetailsPanel
+                                        name={name}
+                                        phone={phone}
+                                        email={email}
+                                        setName={setName}
+                                        setPhone={setPhone}
+                                        setEmail={setEmail}
+                                    />
                                 </div>
                             </div>
                         </div>

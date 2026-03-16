@@ -248,16 +248,18 @@ const ApplySketchPage = () => {
             ctx.clearRect(0, 0, exportWidth, exportHeight);
             ctx.drawImage(baseImage, 0, 0, exportWidth, exportHeight);
 
-            const relativeX = (overlaySnapshot.translate[0] - imageRect.left) / imageRect.width;
-            const relativeY = (overlaySnapshot.translate[1] - imageRect.top) / imageRect.height;
+            const centerRelativeX =
+                (overlaySnapshot.translate[0] + OVERLAY_BASE / 2 - imageRect.left) / imageRect.width;
+            const centerRelativeY =
+                (overlaySnapshot.translate[1] + OVERLAY_BASE / 2 - imageRect.top) / imageRect.height;
 
             const overlayBoxWidth =
                 (OVERLAY_BASE * overlaySnapshot.scale * exportWidth) / imageRect.width;
             const overlayBoxHeight =
                 (OVERLAY_BASE * overlaySnapshot.scale * exportHeight) / imageRect.height;
 
-            const overlayX = relativeX * exportWidth;
-            const overlayY = relativeY * exportHeight;
+            const overlayCenterX = centerRelativeX * exportWidth;
+            const overlayCenterY = centerRelativeY * exportHeight;
 
             const fittedSketch = fitIntoBox(
                 overlayBoxWidth,
@@ -267,7 +269,7 @@ const ApplySketchPage = () => {
             );
 
             ctx.save();
-            ctx.translate(overlayX + overlayBoxWidth / 2, overlayY + overlayBoxHeight / 2);
+            ctx.translate(overlayCenterX, overlayCenterY);
             ctx.rotate((overlaySnapshot.rotate * Math.PI) / 180);
             ctx.globalAlpha = 0.88;
             ctx.drawImage(

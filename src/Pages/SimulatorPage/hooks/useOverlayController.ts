@@ -177,13 +177,12 @@ export function useOverlayController({
             const base = Math.min(rect.width, rect.height);
             const targetPx = base * CAT_RULES[cat].initialTargetRatio;
             const initialScale = clamp(targetPx / OVERLAY_BASE, scaleMin, scaleMax);
-            const scaled = OVERLAY_BASE * initialScale;
 
             return {
                 rect,
                 translate: [
-                    rect.left + rect.width / 2 - scaled / 2,
-                    rect.top + rect.height / 2 - scaled / 2,
+                    rect.left + rect.width / 2 - OVERLAY_BASE / 2,
+                    rect.top + rect.height / 2 - OVERLAY_BASE / 2,
                 ] as [number, number],
                 initialScale,
             };
@@ -269,15 +268,19 @@ export function useOverlayController({
 
             const snapshot = getSnapshot();
 
-            const relX = prevRect.width
-                ? (snapshot.translate[0] - prevRect.left) / prevRect.width
-                : 0;
-            const relY = prevRect.height
-                ? (snapshot.translate[1] - prevRect.top) / prevRect.height
-                : 0;
+            const prevCenterX = snapshot.translate[0] + OVERLAY_BASE / 2;
+            const prevCenterY = snapshot.translate[1] + OVERLAY_BASE / 2;
+
+            const relCenterX = prevRect.width
+                ? (prevCenterX - prevRect.left) / prevRect.width
+                : 0.5;
+            const relCenterY = prevRect.height
+                ? (prevCenterY - prevRect.top) / prevRect.height
+                : 0.5;
 
             const prevBase = Math.min(prevRect.width, prevRect.height);
             const nextBase = Math.min(nextRect.width, nextRect.height);
+
             const nextScale = prevBase
                 ? clamp(snapshot.scale * (nextBase / prevBase), scaleMin, scaleMax)
                 : snapshot.scale;
@@ -286,8 +289,8 @@ export function useOverlayController({
 
             applySnapshot({
                 translate: [
-                    nextRect.left + relX * nextRect.width,
-                    nextRect.top + relY * nextRect.height,
+                    nextRect.left + relCenterX * nextRect.width - OVERLAY_BASE / 2,
+                    nextRect.top + relCenterY * nextRect.height - OVERLAY_BASE / 2,
                 ],
                 rotate: snapshot.rotate,
                 scale: nextScale,

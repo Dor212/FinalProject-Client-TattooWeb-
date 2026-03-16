@@ -2,13 +2,14 @@ import { joiResolver } from "@hookform/resolvers/joi";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import axios from "../../Services/axiosInstance";
 import { userActions } from "../../Store/UserSlice";
 import { decode, isTokenExpired, setToken } from "../../Services/tokenServices";
 import { LoginSchema } from "../../Validations/LoginSchema";
 import { getHttpErrorMessage, toast } from "../../Services/toast";
+import type { TUser } from "../../Types/TUser";
 
 type LoginForm = {
     email: string;
@@ -20,16 +21,9 @@ type JwtPayload = {
     exp?: number;
 };
 
-type LocationState = {
-    from?: {
-        pathname?: string;
-    };
-};
-
 const LoginPage = () => {
     const dispatch = useDispatch();
     const nav = useNavigate();
-    const location = useLocation();
     const [rememberMe, setRememberMe] = useState(true);
 
     const {
@@ -50,6 +44,11 @@ const LoginPage = () => {
             const { data } = await axios.post<{ token: string }>(`/users/login`, form);
             const tokenStr = data.token;
 
+            if (!tokenStr) {
+                toast.error("לא התקבל טוקן מהשרת");
+                return;
+            }
+
             if (isTokenExpired(tokenStr)) {
                 toast.error("ההתחברות פגה", "נסה שוב");
                 return;
@@ -58,14 +57,24 @@ const LoginPage = () => {
             setToken(tokenStr, rememberMe);
 
             const decoded = decode(tokenStr) as JwtPayload;
-            const userResponse = await axios.get(`/users/${decoded._id}`);
-            dispatch(userActions.login(userResponse.data));
+            if (!decoded?._id) {
+                toast.error("שגיאה בזיהוי המשתמש");
+                return;
+            }
+
+            const userResponse = await axios.get<TUser>(`/users/${decoded._id}`);
+            const currentUser = userResponse.data;
+
+            dispatch(userActions.login(currentUser));
 
             toast.success("התחברת בהצלחה", undefined, 1400);
 
-            const st = location.state as LocationState | null;
-            const redirectTo = st?.from?.pathname || "/AdminPage";
-            nav(redirectTo, { replace: true });
+            if (currentUser.isAdmin) {
+                nav("/AdminPage", { replace: true });
+                return;
+            }
+
+            nav("/", { replace: true });
         } catch (error: unknown) {
             const msg = getHttpErrorMessage(error, "אימייל או סיסמה לא נכונים");
             toast.error(msg);

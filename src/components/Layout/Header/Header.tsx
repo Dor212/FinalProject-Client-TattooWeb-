@@ -16,7 +16,9 @@ const Header = () => {
   const [hasProducts, setHasProducts] = useState<boolean>(false);
   const [hasCanvases, setHasCanvases] = useState<boolean>(false);
 
-  const user = useSelector((state: TRootState) => state.UserSlice.user);
+  const userState = useSelector((state: TRootState) => state.UserSlice);
+  const user = userState.user;
+  const isLoggedIn = userState.isLoggedIn || Boolean(user);
 
   const location = useLocation();
   const pathname = location.pathname;
@@ -56,7 +58,6 @@ const Header = () => {
         setHasCanvases(Array.isArray(canvasesRes.data) && canvasesRes.data.length > 0);
       } catch {
         if (cancelled) return;
-
         setHasProducts(false);
         setHasCanvases(false);
       }
@@ -124,7 +125,7 @@ const Header = () => {
           </Link>
         )}
 
-        {user?._id ? (
+        {isLoggedIn ? (
           <button
             onClick={logout}
             className="rounded-xl px-3 py-2 text-sm font-bold text-white bg-[#B9895B] hover:bg-[#a67952] transition"

@@ -2,15 +2,20 @@ import { Navbar } from "flowbite-react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { TRootState } from "../../../Store/BigPie";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { clearToken } from "../../../Services/tokenServices.ts";
 import { userActions } from "../../../Store/UserSlice.ts";
+import axios from "../../../Services/axiosInstance";
 
 const Header = () => {
   const BASE = import.meta.env.BASE_URL as string;
+  const API = import.meta.env.VITE_API_URL as string;
   const LOGO_SRC = `${BASE}LogoOme.png`;
 
   const [isOpen, setIsOpen] = useState(false);
+  const [hasProducts, setHasProducts] = useState<boolean>(false);
+  const [hasCanvases, setHasCanvases] = useState<boolean>(false);
+
   const user = useSelector((state: TRootState) => state.UserSlice.user);
 
   const location = useLocation();
@@ -19,12 +24,8 @@ const Header = () => {
   const dispatch = useDispatch();
   const nav = useNavigate();
 
-  const CANVAS_ROUTES = useMemo(
-    () => ["/canvas", "/canvases", "/simulator", "/ApplySketch"],
-    []
-  );
-  const isCanvasPage = CANVAS_ROUTES.some((p) => pathname.startsWith(p));
-
+  const HIDE_HEADER_ROUTES = ["/simulator", "/apply-sketch", "/ApplySketch"];
+  const shouldHideHeader = HIDE_HEADER_ROUTES.some((p) => pathname.startsWith(p));
 
   const HOME_PATH = "/";
   const HOME_LOGO_SECTION_ID = "logo";
@@ -38,6 +39,35 @@ const Header = () => {
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadNavAvailability = async () => {
+      try {
+        const [productsRes, canvasesRes] = await Promise.all([
+          axios.get(`${API}/products`),
+          axios.get(`${API}/canvases`),
+        ]);
+
+        if (cancelled) return;
+
+        setHasProducts(Array.isArray(productsRes.data) && productsRes.data.length > 0);
+        setHasCanvases(Array.isArray(canvasesRes.data) && canvasesRes.data.length > 0);
+      } catch {
+        if (cancelled) return;
+
+        setHasProducts(false);
+        setHasCanvases(false);
+      }
+    };
+
+    loadNavAvailability();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [API]);
 
   const scrollToHomeLogo = () => {
     const tryScroll = () => {
@@ -71,8 +101,6 @@ const Header = () => {
 
     requestAnimationFrame(tick);
   };
-
-  const shouldHideHeader = isCanvasPage;
 
   if (shouldHideHeader) return null;
 
@@ -116,26 +144,23 @@ const Header = () => {
       </div>
 
       <Navbar.Collapse className={isOpen ? "block" : "hidden md:block"}>
-        <Link
-          to="/"
-          className="block px-3 py-2 rounded-xl text-sm font-bold text-[#1E1E1E]/75 hover:text-[#B9895B] hover:bg-white/40 transition"
-        >
-          בית
-        </Link>
+        {hasCanvases && (
+          <Link
+            to="/canvases"
+            className="block px-3 py-2 rounded-xl text-sm font-bold text-[#1E1E1E]/75 hover:text-[#B9895B] hover:bg-white/40 transition"
+          >
+            קאנבסים
+          </Link>
+        )}
 
-        <Link
-          to="/canvases"
-          className="block px-3 py-2 rounded-xl text-sm font-bold text-[#1E1E1E]/75 hover:text-[#B9895B] hover:bg-white/40 transition"
-        >
-          קנבסים
-        </Link>
-
-        <Link
-          to="/products"
-          className="block px-3 py-2 rounded-xl text-sm font-bold text-[#1E1E1E]/75 hover:text-[#B9895B] hover:bg-white/40 transition"
-        >
-          מוצרים
-        </Link>
+        {hasProducts && (
+          <Link
+            to="/products"
+            className="block px-3 py-2 rounded-xl text-sm font-bold text-[#1E1E1E]/75 hover:text-[#B9895B] hover:bg-white/40 transition"
+          >
+            מוצרים
+          </Link>
+        )}
 
         <Link
           to="/apply-sketch"

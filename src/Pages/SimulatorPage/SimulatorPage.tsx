@@ -2,20 +2,10 @@ import { useLocation } from "react-router-dom";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import html2canvas from "html2canvas";
 import axios from "../../Services/axiosInstance";
-import {
-    Download,
-    Mail,
-    RotateCcw,
-    ChevronDown,
-    ChevronUp,
-    ImagePlus,
-    Sparkles,
-    X,
-} from "lucide-react";
-import { animated } from "@react-spring/web";
+import { Download, Mail, RotateCcw, ImagePlus, X } from "lucide-react";
 
 import type { Env, LocationState, Cat } from "./applySketch.types";
-import { CAT_RULES, CAT_UI, OVERLAY_BASE } from "./applySketch.constants";
+import { CAT_RULES, OVERLAY_BASE } from "./applySketch.constants";
 import { joinUrl, normalizeCat } from "./applySketch.utils";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useSketchGallery } from "./hooks/useSketchGallery";
@@ -326,191 +316,85 @@ const ApplySketchPage = () => {
     };
 
     return (
-        <div dir="rtl" className="min-h-[100svh] text-[#1E1E1E]">
-            <div className="sticky top-0 z-40 border-b border-[#B9895B]/14 bg-[#F6F1E8]/90 backdrop-blur">
-                <div className="px-4 py-4 mx-auto max-w-7xl">
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="flex items-center justify-between gap-3">
-                            <div className="text-center lg:text-start">
-                                <div className="flex items-center justify-center gap-2 lg:justify-start">
-                                    <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[#B9895B]/14 text-[#B9895B]">
-                                        <Sparkles size={20} />
-                                    </div>
-                                    <div className="text-xl sm:text-2xl font-extrabold tracking-wide text-[#3B3024]">
-                                        הדמיה מהירה
-                                    </div>
-                                </div>
-                                <div className="mt-1 text-xs sm:text-sm text-[#1E1E1E]/65 max-w-xl mx-auto lg:mx-0">
-                                    העלה תמונה, בחר סקיצה, כוון בעדינות, ושמור או שלח.
-                                </div>
-                            </div>
+        <div dir="rtl" className="min-h-[100svh] bg-[#F6F1E8] text-[#1E1E1E]">
+            <div className="sticky top-0 z-40 border-b border-[#B9895B]/14 bg-[#F6F1E8]/92 backdrop-blur">
+                <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                        <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-[#B9895B] px-4 py-2.5 text-sm font-extrabold text-white shadow-sm hover:brightness-95 active:brightness-90">
+                            <ImagePlus size={18} />
+                            העלאת תמונה
+                            <input
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                onChange={handleImageUpload}
+                                className="hidden"
+                            />
+                        </label>
 
-                            <label className="inline-flex lg:hidden items-center gap-2 rounded-2xl bg-[#B9895B] px-4 py-2 text-sm font-extrabold text-white shadow-sm hover:brightness-95 active:brightness-90 cursor-pointer">
-                                <ImagePlus size={18} />
-                                העלאת תמונה
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    capture="environment"
-                                    onChange={handleImageUpload}
-                                    className="hidden"
-                                />
-                            </label>
-                        </div>
-
-                        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-end">
-                            <div className="inline-flex items-center justify-center rounded-2xl border border-[#B9895B]/14 bg-white/45 p-1 mx-auto lg:mx-0">
-                                {CAT_UI.map((c) => {
-                                    const active = c.key === activeCat;
-                                    return (
-                                        <button
-                                            key={c.key}
-                                            type="button"
-                                            onClick={() => setActiveCat(c.key)}
-                                            className={[
-                                                "group relative px-4 py-2 rounded-2xl text-sm font-extrabold transition",
-                                                active
-                                                    ? "bg-[#B9895B] text-white shadow-sm"
-                                                    : "text-[#1E1E1E]/70 hover:bg-white/60",
-                                            ].join(" ")}
-                                        >
-                                            <span className="inline-flex items-center gap-2">
-                                                <span className="text-base">{c.label}</span>
-                                                <span className={active ? "text-white/85" : "text-[#1E1E1E]/55"}>
-                                                    {c.hint}
-                                                </span>
-                                            </span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            <div className="items-center hidden gap-2 lg:flex">
-                                <label className="inline-flex items-center gap-2 rounded-2xl bg-[#B9895B] px-5 py-3 text-sm font-extrabold text-white shadow-sm hover:brightness-95 active:brightness-90 cursor-pointer">
-                                    <ImagePlus size={18} />
-                                    העלאת תמונה
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        capture="environment"
-                                        onChange={handleImageUpload}
-                                        className="hidden"
-                                    />
-                                </label>
-
-                                <div ref={desktopDetailsAnchorRef} className="relative">
-                                    <button
-                                        type="button"
-                                        onClick={() => setDetailsOpen((v) => !v)}
-                                        className="inline-flex items-center gap-2 rounded-2xl border border-[#B9895B]/18 bg-white/45 px-5 py-3 text-sm font-extrabold text-[#3B3024] hover:bg-white/60"
-                                    >
-                                        פרטי שליחה
-                                        {detailsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-center gap-2 mt-3 lg:hidden">
                         <button
                             type="button"
                             onClick={() => setSketchPickerOpenMobile(true)}
-                            className="inline-flex items-center gap-2 rounded-2xl border border-[#B9895B]/18 bg-white/55 px-4 py-2 text-sm font-extrabold text-[#3B3024] hover:bg-white/70"
+                            className="inline-flex items-center gap-2 rounded-2xl border border-[#B9895B]/18 bg-white/70 px-4 py-2.5 text-sm font-extrabold text-[#3B3024] lg:hidden"
                         >
                             בחר סקיצה
-                            <ChevronUp size={18} />
                         </button>
 
-                        <button
-                            type="button"
-                            onClick={() => setDetailsOpen(true)}
-                            className="inline-flex items-center gap-2 rounded-2xl border border-[#B9895B]/18 bg-white/55 px-4 py-2 text-sm font-extrabold text-[#3B3024] hover:bg-white/70"
-                        >
-                            פרטי שליחה
-                            <ChevronUp size={18} />
-                        </button>
+                        {isMobile ? (
+                            <button
+                                type="button"
+                                onClick={() => setDetailsOpen(true)}
+                                className="inline-flex items-center gap-2 rounded-2xl border border-[#B9895B]/18 bg-white/70 px-4 py-2.5 text-sm font-extrabold text-[#3B3024]"
+                            >
+                                פרטי שליחה
+                            </button>
+                        ) : (
+                            <div ref={desktopDetailsAnchorRef}>
+                                <button
+                                    type="button"
+                                    onClick={() => setDetailsOpen((v) => !v)}
+                                    className="inline-flex items-center gap-2 rounded-2xl border border-[#B9895B]/18 bg-white/70 px-4 py-2.5 text-sm font-extrabold text-[#3B3024]"
+                                >
+                                    פרטי שליחה
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="hidden text-xs font-bold text-[#1E1E1E]/55 sm:block">
+                        {ready ? "מוכן לשמירה או שליחה" : "העלה תמונה ובחר סקיצה"}
                     </div>
                 </div>
             </div>
 
-            <div className="px-4 py-6 mx-auto max-w-7xl">
-                <div className="grid gap-5 lg:grid-cols-[320px,1fr]">
+            <div className="mx-auto max-w-7xl px-4 py-5">
+                <div className="grid gap-4 lg:grid-cols-[300px,1fr]">
                     <div className="hidden lg:block">
                         <SketchPickerDesktop
                             apiBase={VITE_API_URL}
                             activeCat={activeCat}
+                            onChangeCat={setActiveCat}
                             availableSketches={availableSketches}
                             currentSketch={currentSketch}
-                            userImage={userImage}
                             onSelectSketch={onSelectSketch}
                         />
                     </div>
 
-                    <div className="rounded-[28px] border border-[#B9895B]/14 bg-white/45 backdrop-blur shadow-[0_18px_70px_rgba(30,30,30,0.12)] overflow-hidden">
-                        <div className="border-b border-[#B9895B]/14 bg-white/35 px-4 sm:px-6 py-4">
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="text-center sm:text-start">
-                                    <div className="text-lg sm:text-xl font-extrabold text-[#3B3024]">
-                                        אזור עבודה
-                                    </div>
-                                    <div className="mt-1 text-xs sm:text-sm text-[#1E1E1E]/65 max-w-xl mx-auto sm:mx-0">
-                                        גרירה להזזה, צביטה/גלגלת לשינוי גודל. הסקיצה לא זזה לבד.
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-wrap justify-center gap-2 sm:justify-end">
-                                    <button
-                                        type="button"
-                                        onClick={overlay.rotate}
-                                        disabled={!ready}
-                                        className={[
-                                            "inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-extrabold transition",
-                                            ready
-                                                ? "border border-[#B9895B]/18 bg-white/55 text-[#3B3024] hover:bg-white/70"
-                                                : "border border-[#B9895B]/10 bg-white/30 text-[#1E1E1E]/40 cursor-not-allowed",
-                                        ].join(" ")}
-                                    >
-                                        <RotateCcw size={18} />
-                                        סיבוב
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={overlay.reset}
-                                        disabled={!ready}
-                                        className={[
-                                            "inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-extrabold transition",
-                                            ready
-                                                ? "border border-[#B9895B]/18 bg-white/55 text-[#3B3024] hover:bg-white/70"
-                                                : "border border-[#B9895B]/10 bg-white/30 text-[#1E1E1E]/40 cursor-not-allowed",
-                                        ].join(" ")}
-                                    >
-                                        Reset
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="p-4 sm:p-6">
+                    <div className="overflow-hidden rounded-[30px] border border-[#B9895B]/14 bg-white/50 shadow-[0_18px_70px_rgba(30,30,30,0.10)]">
+                        <div className="p-4 sm:p-5">
                             <div
                                 ref={workAreaRef}
-                                className="relative w-full aspect-[4/5] sm:aspect-[16/10] lg:aspect-[16/9] rounded-[26px] border border-[#B9895B]/14 bg-[#F6F1E8]/55 overflow-hidden"
+                                className="relative w-full overflow-hidden rounded-[26px] border border-[#B9895B]/14 bg-[#F8F4EC] aspect-[4/5] sm:aspect-[16/10] lg:aspect-[16/9]"
                                 style={{ touchAction: "none" }}
                             >
                                 {!userImage && (
-                                    <div className="absolute inset-0 grid p-6 place-items-center">
-                                        <div className="w-full max-w-md rounded-[26px] border border-[#B9895B]/14 bg-white/55 backdrop-blur p-6 text-center shadow-sm">
-                                            <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#B9895B]/14 text-[#B9895B]">
-                                                <ImagePlus size={22} />
+                                    <div className="absolute inset-0 grid place-items-center p-6">
+                                        <div className="rounded-[24px] border border-[#B9895B]/14 bg-white/75 px-6 py-6 text-center shadow-sm">
+                                            <div className="text-base font-extrabold text-[#3B3024]">
+                                                העלה תמונה כדי להתחיל
                                             </div>
-                                            <div className="mt-3 text-lg font-extrabold text-[#3B3024]">
-                                                נתחיל עם תמונה שלך
-                                            </div>
-                                            <div className="mt-2 text-sm text-[#1E1E1E]/70">
-                                                תמונה חדה באור טוב עושה פלאים.
-                                            </div>
-                                            <label className="mt-4 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#B9895B] px-5 py-3 text-sm font-extrabold text-white shadow-sm hover:brightness-95 active:brightness-90 cursor-pointer">
+
+                                            <label className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-[#B9895B] px-5 py-3 text-sm font-extrabold text-white shadow-sm hover:brightness-95 active:brightness-90">
                                                 <ImagePlus size={18} />
                                                 העלאת תמונה
                                                 <input
@@ -529,101 +413,64 @@ const ApplySketchPage = () => {
                                     <img
                                         src={userImage}
                                         alt="Uploaded"
-                                        className="absolute inset-0 object-contain w-full h-full"
+                                        className="absolute inset-0 h-full w-full object-contain"
                                         crossOrigin="anonymous"
                                         draggable={false}
                                     />
                                 )}
 
-                                {ready && currentSketch && isMobile ? (
-                                    <animated.div
-                                        {...overlay.bindMobile()}
-                                        style={overlay.mobileStyle as never}
+                                {ready && currentSketch ? (
+                                    <div
+                                        {...(isMobile ? overlay.bindMobile() : overlay.bindDesktop())}
+                                        style={isMobile ? overlay.mobileStyle : overlay.desktopStyle}
                                     >
                                         <img
                                             src={currentSketch}
                                             alt="sketch"
-                                            className="object-contain w-full h-full pointer-events-none select-none"
-                                            crossOrigin="anonymous"
-                                            draggable={false}
-                                        />
-                                    </animated.div>
-                                ) : ready && currentSketch ? (
-                                    <div {...overlay.bindDesktop()} style={overlay.desktopStyle}>
-                                        <img
-                                            src={currentSketch}
-                                            alt="sketch"
-                                            className="object-contain w-full h-full pointer-events-none select-none"
+                                            className="h-full w-full pointer-events-none select-none object-contain"
                                             crossOrigin="anonymous"
                                             draggable={false}
                                         />
                                     </div>
                                 ) : null}
+
+                                {ready && (
+                                    <div className="absolute left-3 top-3 flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={overlay.rotate}
+                                            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-[#B9895B]/18 bg-white/80 text-[#3B3024] shadow-sm"
+                                            aria-label="סיבוב"
+                                        >
+                                            <RotateCcw size={18} />
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={overlay.reset}
+                                            className="rounded-2xl border border-[#B9895B]/18 bg-white/80 px-4 py-2 text-sm font-extrabold text-[#3B3024] shadow-sm"
+                                        >
+                                            איפוס
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
-                            {userImage && availableSketches.length > 0 && (
-                                <div className="mt-4 rounded-[22px] border border-[#B9895B]/14 bg-white/40 backdrop-blur px-3 py-3">
-                                    <div className="text-xs font-extrabold text-[#3B3024] text-center">
-                                        החלפת סקיצה מהירה
-                                    </div>
-                                    <div className="flex justify-start gap-3 pb-1 mt-3 overflow-auto">
-                                        {availableSketches.map((imgPath, idx) => {
-                                            const fullUrl = joinUrl(VITE_API_URL, imgPath);
-                                            const active = currentSketch === fullUrl;
-
-                                            return (
-                                                <button
-                                                    key={`${imgPath}-strip-${idx}`}
-                                                    type="button"
-                                                    onClick={() => onSelectSketch(imgPath)}
-                                                    className={[
-                                                        "shrink-0 relative h-16 w-16 rounded-2xl border bg-white/55 transition",
-                                                        active
-                                                            ? "border-[#B9895B] ring-2 ring-[#B9895B]/25"
-                                                            : "border-[#B9895B]/14 hover:border-[#B9895B]/45",
-                                                    ].join(" ")}
-                                                    title="בחר סקיצה"
-                                                >
-                                                    <img
-                                                        src={fullUrl}
-                                                        alt="sketch"
-                                                        className="object-contain w-full h-full p-2"
-                                                        loading="lazy"
-                                                        crossOrigin="anonymous"
-                                                        draggable={false}
-                                                    />
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="flex flex-col gap-3 mt-5 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="text-xs sm:text-sm text-[#1E1E1E]/65 text-center sm:text-start">
-                                    {ready ? (
-                                        <span className="inline-flex items-center justify-center gap-2 sm:justify-start">
-                                            <span className="h-2 w-2 rounded-full bg-[#97BE5A]" />
-                                            מוכן.
-                                        </span>
-                                    ) : (
-                                        <span className="inline-flex items-center justify-center gap-2 sm:justify-start">
-                                            <span className="h-2 w-2 rounded-full bg-[#B9895B]" />
-                                            העלה תמונה ואז בחר סקיצה.
-                                        </span>
-                                    )}
+                            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="text-xs font-bold text-[#1E1E1E]/55">
+                                    {ready ? "גרור, סובב, שמור או שלח" : "לא נבחרה עדיין סקיצה"}
                                 </div>
 
-                                <div className="flex flex-wrap justify-center gap-2 sm:justify-end">
+                                <div className="flex flex-col gap-2 sm:flex-row">
                                     <button
                                         type="button"
                                         onClick={handleDownload}
                                         disabled={!ready}
                                         className={[
-                                            "inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-extrabold transition shadow-sm",
+                                            "inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-extrabold transition shadow-sm",
                                             ready
-                                                ? "bg-white/70 text-[#3B3024] border border-[#B9895B]/18 hover:bg-white/80"
-                                                : "bg-white/35 text-[#1E1E1E]/40 border border-[#B9895B]/10 cursor-not-allowed",
+                                                ? "border border-[#B9895B]/18 bg-white/80 text-[#3B3024] hover:bg-white"
+                                                : "cursor-not-allowed border border-[#B9895B]/10 bg-white/40 text-[#1E1E1E]/35",
                                         ].join(" ")}
                                     >
                                         <Download size={18} />
@@ -635,10 +482,10 @@ const ApplySketchPage = () => {
                                         onClick={handleSend}
                                         disabled={!canSend}
                                         className={[
-                                            "inline-flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-extrabold transition shadow-sm",
+                                            "inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-extrabold transition shadow-sm",
                                             canSend
                                                 ? "bg-[#B9895B] text-white hover:brightness-95 active:brightness-90"
-                                                : "bg-[#B9895B]/35 text-white/70 cursor-not-allowed",
+                                                : "cursor-not-allowed bg-[#B9895B]/35 text-white/70",
                                         ].join(" ")}
                                     >
                                         <Mail size={18} />
@@ -646,12 +493,6 @@ const ApplySketchPage = () => {
                                     </button>
                                 </div>
                             </div>
-
-                            {ready && !canSend && (
-                                <div className="mt-3 text-center text-xs text-[#1E1E1E]/60">
-                                    כדי לשלוח לעומר, פתח “פרטי שליחה” ומלא שם וטלפון.
-                                </div>
-                            )}
                         </div>
                     </div>
                 </div>
@@ -680,6 +521,8 @@ const ApplySketchPage = () => {
                     open={sketchPickerOpenMobile}
                     onClose={() => setSketchPickerOpenMobile(false)}
                     apiBase={VITE_API_URL}
+                    activeCat={activeCat}
+                    onChangeCat={setActiveCat}
                     availableSketches={availableSketches}
                     currentSketch={currentSketch}
                     onSelectSketch={onSelectSketch}
@@ -693,12 +536,13 @@ const ApplySketchPage = () => {
                             className="absolute inset-0 bg-black/35"
                             aria-label="סגור"
                         />
-                        <div className="absolute left-0 right-0 bottom-0 rounded-t-[28px] border-t border-[#B9895B]/18 bg-[#F6F1E8] shadow-[0_-18px_70px_rgba(0,0,0,0.22)]">
-                            <div className="px-4 py-4 mx-auto max-w-7xl">
+                        <div className="absolute bottom-0 left-0 right-0 rounded-t-[28px] border-t border-[#B9895B]/18 bg-[#F6F1E8] shadow-[0_-18px_70px_rgba(0,0,0,0.22)]">
+                            <div className="mx-auto max-w-7xl px-4 py-4">
                                 <div className="flex items-center justify-between">
                                     <div className="text-base font-extrabold text-[#3B3024]">
                                         פרטי שליחה
                                     </div>
+
                                     <button
                                         type="button"
                                         onClick={() => setDetailsOpen(false)}
@@ -708,6 +552,7 @@ const ApplySketchPage = () => {
                                         <X size={18} />
                                     </button>
                                 </div>
+
                                 <div className="mt-3">
                                     <DetailsPanel
                                         name={name}

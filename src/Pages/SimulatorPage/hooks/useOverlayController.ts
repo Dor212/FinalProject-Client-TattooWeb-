@@ -7,7 +7,6 @@ import {
     type RefObject,
 } from "react";
 import { useGesture } from "@use-gesture/react";
-import { to, useSpring } from "@react-spring/web";
 import type { Cat, Frame } from "../applySketch.types";
 import { CAT_RULES, OVERLAY_BASE } from "../applySketch.constants";
 
@@ -81,7 +80,6 @@ const loadImageSize = (src: string) =>
 
 export function useOverlayController({
     ready,
-    isMobile,
     activeCat,
     userImage,
     currentSketch,
@@ -109,13 +107,6 @@ export function useOverlayController({
         frameRef.current = frame;
     }, [frame]);
 
-    const [{ x, y, scale, rotateZ }, api] = useSpring(() => ({
-        x: 0,
-        y: 0,
-        scale: 1,
-        rotateZ: 0,
-    }));
-
     const lastInitKeyRef = useRef("");
     const hasUserMovedRef = useRef(false);
     const prevDepsRef = useRef({ userImage, currentSketch, activeCat });
@@ -131,34 +122,16 @@ export function useOverlayController({
     }, [workAreaRef]);
 
     const getSnapshot = useCallback((): OverlaySnapshot => {
-        if (isMobile) {
-            return {
-                translate: [x.get(), y.get()],
-                rotate: rotateZ.get(),
-                scale: scale.get(),
-            };
-        }
-
         return {
             translate: frameRef.current.translate,
             rotate: frameRef.current.rotate,
             scale: frameRef.current.scale[0],
         };
-    }, [isMobile, rotateZ, scale, x, y]);
+    }, []);
 
     const applySnapshot = useCallback(
         (next: OverlaySnapshot) => {
             const clampedScale = clamp(next.scale, scaleMin, scaleMax);
-
-            if (isMobile) {
-                api.start({
-                    x: next.translate[0],
-                    y: next.translate[1],
-                    scale: clampedScale,
-                    rotateZ: next.rotate,
-                });
-                return;
-            }
 
             setFrame({
                 translate: next.translate,
@@ -166,7 +139,7 @@ export function useOverlayController({
                 scale: [clampedScale, clampedScale],
             });
         },
-        [api, isMobile, scaleMax, scaleMin]
+        [scaleMax, scaleMin]
     );
 
     const computeCentered = useCallback(
@@ -306,32 +279,29 @@ export function useOverlayController({
             },
             onDrag: ({ offset: [dx, dy] }) => {
                 hasUserMovedRef.current = true;
-                api.start({ x: dx, y: dy });
+                setFrame((prev) => ({ ...prev, translate: [dx, dy] }));
             },
             onPinchStart: () => {
                 hasUserMovedRef.current = true;
             },
             onPinch: ({ offset: [s, a] }) => {
                 hasUserMovedRef.current = true;
-                api.start({
-                    scale: clamp(s, scaleMin, scaleMax),
-                    rotateZ: a,
-                });
+                const clamped = clamp(s, scaleMin, scaleMax);
+                setFrame((prev) => ({
+                    ...prev,
+                    scale: [clamped, clamped],
+                    rotate: a,
+                }));
             },
         },
         {
             drag: {
-                from: () => {
-                    const snapshot = getSnapshot();
-                    return snapshot.translate;
-                },
+                from: () => frameRef.current.translate,
                 filterTaps: true,
             },
             pinch: {
-                from: () => {
-                    const snapshot = getSnapshot();
-                    return [snapshot.scale, snapshot.rotate] as [number, number];
-                },
+                from: () =>
+                    [frameRef.current.scale[0], frameRef.current.rotate] as [number, number],
                 scaleBounds: { min: scaleMin, max: scaleMax },
                 rubberband: true,
                 preventDefault: true,
@@ -441,7 +411,7 @@ export function useOverlayController({
             if (!nextRect) return;
 
             if (!imageRectRef.current || lastInitKeyRef.current === "") {
-                requestCenter(false);
+                requestCenter(true);
                 return;
             }
 
@@ -452,7 +422,7 @@ export function useOverlayController({
         return () => ro.disconnect();
     }, [getImageRect, ready, remapToNextImageRect, requestCenter, workAreaRef]);
 
-    const desktopStyle = useMemo(
+    const commonStyle = useMemo(
         () => ({
             position: "absolute" as const,
             left: 0,
@@ -470,43 +440,12 @@ export function useOverlayController({
         [frame]
     );
 
-    const mobileTransform = useMemo(
-        () =>
-            to(
-                [x, y, scale, rotateZ],
-                (tx, ty, s, r) => `translate(${tx}px, ${ty}px) rotate(${r}deg) scale(${s})`
-            ),
-        [rotateZ, scale, x, y]
-    );
-
-    const mobileStyle = useMemo(
-        () => ({
-            position: "absolute" as const,
-            left: 0,
-            top: 0,
-            width: OVERLAY_BASE,
-            height: OVERLAY_BASE,
-            opacity: 0.88,
-            touchAction: "none" as const,
-            willChange: "transform",
-            transformOrigin: "center center",
-            cursor: "grab",
-            userSelect: "none" as const,
-            transform: mobileTransform,
-        }),
-        [mobileTransform]
-    );
-
     return {
         frame,
-        x,
-        y,
-        scale,
-        rotateZ,
         bindMobile,
         bindDesktop,
-        mobileStyle,
-        desktopStyle,
+        mobileStyle: commonStyle,
+        desktopStyle: commonStyle,
         resetInit,
         requestCenter,
         rotate,

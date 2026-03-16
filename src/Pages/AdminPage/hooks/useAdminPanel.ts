@@ -68,40 +68,40 @@ export function useAdminPanel(apiBase: string) {
         refreshAll();
     }, [refreshAll]);
 
-   const uploadProduct = useCallback(
-  async (payload: {
-    title: string;
-    price: string;
-    description?: string;
-    image: File | null;
-    stockL?: string;
-    stockXL?: string;
-    stockXXL?: string;
-  }) => {
-    try {
-      const fd = new FormData();
-      fd.append("title", payload.title);
-      fd.append("price", payload.price);
-      if (payload.description) fd.append("description", payload.description);
-      if (payload.image) fd.append("image", payload.image);
-      if (payload.stockL) fd.append("stockL", payload.stockL);
-      if (payload.stockXL) fd.append("stockXL", payload.stockXL);
-      if (payload.stockXXL) fd.append("stockXXL", payload.stockXXL);
+    const uploadProduct = useCallback(
+        async (payload: {
+            title: string;
+            price: string;
+            description?: string;
+            image: File | null;
+            stockL?: string;
+            stockXL?: string;
+            stockXXL?: string;
+        }) => {
+            try {
+                const fd = new FormData();
+                fd.append("title", payload.title);
+                fd.append("price", payload.price);
+                if (payload.description) fd.append("description", payload.description);
+                if (payload.image) fd.append("image", payload.image);
+                if (payload.stockL) fd.append("stockL", payload.stockL);
+                if (payload.stockXL) fd.append("stockXL", payload.stockXL);
+                if (payload.stockXXL) fd.append("stockXXL", payload.stockXXL);
 
-      const res = await axios.post<Product>(`${apiBase}/products/upload`, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+                const res = await axios.post<Product>(`${apiBase}/products/upload`, fd, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                });
 
-      setProducts((prev) => [res.data, ...prev]);
-      toast.success("המוצר הועלה", undefined, 1200);
-      return { ok: true as const };
-    } catch (err: unknown) {
-      toast.error("שגיאה בהעלאת מוצר", getHttpErrorMessage(err, "נסה שוב"));
-      return { ok: false as const };
-    }
-  },
-  [apiBase]
-);
+                setProducts((prev) => [res.data, ...prev]);
+                toast.success("המוצר הועלה", undefined, 1200);
+                return { ok: true as const };
+            } catch (err: unknown) {
+                toast.error("שגיאה בהעלאת מוצר", getHttpErrorMessage(err, "נסה שוב"));
+                return { ok: false as const };
+            }
+        },
+        [apiBase]
+    );
 
     const deleteProduct = useCallback(
         async (id: string) => {
@@ -118,55 +118,74 @@ export function useAdminPanel(apiBase: string) {
         [apiBase]
     );
 
-   const uploadCanvas = useCallback(
-  async (payload: {
-    name: string;
-    size: CanvasSize;
-    image: File | null;
-    variants?: UploadCanvasVariant[];
-  }) => {
-    try {
-      const formData = new FormData();
-      formData.append("name", payload.name);
-      formData.append("size", payload.size);
-      if (payload.image) formData.append("image", payload.image);
+    const uploadCanvas = useCallback(
+        async (payload: {
+            id?: string;
+            name: string;
+            size: CanvasSize;
+            images: File[];
+            variants?: UploadCanvasVariant[];
+        }) => {
+            try {
+                const formData = new FormData();
+                formData.append("name", payload.name);
+                formData.append("size", payload.size);
 
-      const variantsMeta: Array<{ id: string; color: string; label?: string }> = [];
-      const variantImageIds: string[] = [];
+                for (const image of payload.images || []) {
+                    if (image) formData.append("mainImages", image);
+                }
 
-      if (payload.variants?.length) {
-        for (const v of payload.variants) {
-          if (!v.image) continue;
+                const variantsMeta: Array<{ id: string; color: string; label?: string }> = [];
+                const variantImageIds: string[] = [];
 
-          formData.append("variantImages", v.image);
-          variantsMeta.push({
-            id: v.id,
-            color: v.color,
-            label: v.label || "",
-          });
-          variantImageIds.push(v.id);
-        }
-      }
+                if (payload.variants?.length) {
+                    for (const v of payload.variants) {
+                        if (!v.image) continue;
 
-      if (variantsMeta.length > 0) {
-        formData.append("variants", JSON.stringify(variantsMeta));
-        formData.append("variantImageIds", JSON.stringify(variantImageIds));
-      }
+                        formData.append("variantImages", v.image);
+                        variantsMeta.push({
+                            id: v.id,
+                            color: v.color,
+                            label: v.label || "",
+                        });
+                        variantImageIds.push(v.id);
+                    }
+                }
 
-      const res = await axios.post<CanvasItem>(`${apiBase}/canvases/upload`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+                if (variantsMeta.length > 0) {
+                    formData.append("variants", JSON.stringify(variantsMeta));
+                    formData.append("variantImageIds", JSON.stringify(variantImageIds));
+                }
 
-      setCanvases((prev) => [res.data, ...prev]);
-      toast.success("הקאנבס הועלה", undefined, 1200);
-      return { ok: true as const };
-    } catch (err: unknown) {
-      toast.error("שגיאה בהעלאת קאנבס", getHttpErrorMessage(err, "נסה שוב"));
-      return { ok: false as const };
-    }
-  },
-  [apiBase]
-);
+                const isUpdate = Boolean(payload.id);
+                const url = isUpdate ? `${apiBase}/canvases/${payload.id}` : `${apiBase}/canvases/upload`;
+
+                const res = isUpdate
+                    ? await axios.patch<CanvasItem>(url, formData, {
+                        headers: { "Content-Type": "multipart/form-data" },
+                    })
+                    : await axios.post<CanvasItem>(url, formData, {
+                        headers: { "Content-Type": "multipart/form-data" },
+                    });
+
+                setCanvases((prev) =>
+                    isUpdate
+                        ? prev.map((item) => (item._id === res.data._id ? res.data : item))
+                        : [res.data, ...prev]
+                );
+
+                toast.success(isUpdate ? "הקאנבס עודכן" : "הקאנבס הועלה", undefined, 1200);
+                return { ok: true as const };
+            } catch (err: unknown) {
+                toast.error(
+                    payload.id ? "שגיאה בעדכון קאנבס" : "שגיאה בהעלאת קאנבס",
+                    getHttpErrorMessage(err, "נסה שוב")
+                );
+                return { ok: false as const };
+            }
+        },
+        [apiBase]
+    );
 
     const deleteCanvas = useCallback(
         async (id: string) => {

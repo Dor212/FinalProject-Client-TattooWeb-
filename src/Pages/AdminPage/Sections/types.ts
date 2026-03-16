@@ -17,5 +17,6 @@ export type CanvasItem = {
     name: string;
     size: CanvasSize;
     imageUrl: string;
+    imageUrls?: string[];
     variants?: CanvasVariant[];
 };

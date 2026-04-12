@@ -43,7 +43,7 @@
     "react-scroll": "^1.9.3",
     "react-toastify": "^10.0.5",
     "sweetalert2": "^11.14.2",
-    "vite-plugin-pwa": "^1.0.1"
+    "vite-plugin-pwa": "^0.19.8"
   },
   "devDependencies": {
     "@types/react": "^18.2.67",

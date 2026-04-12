@@ -26,9 +26,6 @@ const Header = () => {
   const dispatch = useDispatch();
   const nav = useNavigate();
 
-  const HIDE_HEADER_ROUTES = ["/simulator", "/apply-sketch", "/ApplySketch"];
-  const shouldHideHeader = HIDE_HEADER_ROUTES.some((p) => pathname.startsWith(p));
-
   const HOME_PATH = "/";
   const HOME_LOGO_SECTION_ID = "logo";
 
@@ -102,8 +99,6 @@ const Header = () => {
 
     requestAnimationFrame(tick);
   };
-
-  if (shouldHideHeader) return null;
 
   return (
     <Navbar

@@ -316,9 +316,9 @@ const ApplySketchPage = () => {
     };
 
     return (
-        <div dir="rtl" className="min-h-[100svh] bg-[#F6F1E8] text-[#1E1E1E]">
-            <div className="sticky top-0 z-40 border-b border-[#B9895B]/14 bg-[#F6F1E8]/92 backdrop-blur">
-                <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
+        <div dir="rtl" className="min-h-[100svh] bg-[#F6F1E8] text-[#1E1E1E] pt-[72px] md:pt-[84px]">
+            <div className="sticky top-[72px] md:top-[84px] z-40 border-b border-[#B9895B]/14 bg-[#F6F1E8]/92 backdrop-blur">
+                <div className="flex items-center justify-between gap-3 px-4 py-3 mx-auto max-w-7xl">
                     <div className="flex items-center gap-2">
                         <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-[#B9895B] px-4 py-2.5 text-sm font-extrabold text-white shadow-sm hover:brightness-95 active:brightness-90">
                             <ImagePlus size={18} />
@@ -367,7 +367,7 @@ const ApplySketchPage = () => {
                 </div>
             </div>
 
-            <div className="mx-auto max-w-7xl px-4 py-5">
+            <div className="px-4 py-5 mx-auto max-w-7xl">
                 <div className="grid gap-4 lg:grid-cols-[300px,1fr]">
                     <div className="hidden lg:block">
                         <SketchPickerDesktop
@@ -388,7 +388,7 @@ const ApplySketchPage = () => {
                                 style={{ touchAction: "none" }}
                             >
                                 {!userImage && (
-                                    <div className="absolute inset-0 grid place-items-center p-6">
+                                    <div className="absolute inset-0 grid p-6 place-items-center">
                                         <div className="rounded-[24px] border border-[#B9895B]/14 bg-white/75 px-6 py-6 text-center shadow-sm">
                                             <div className="text-base font-extrabold text-[#3B3024]">
                                                 העלה תמונה כדי להתחיל
@@ -413,7 +413,7 @@ const ApplySketchPage = () => {
                                     <img
                                         src={userImage}
                                         alt="Uploaded"
-                                        className="absolute inset-0 h-full w-full object-contain"
+                                        className="absolute inset-0 object-contain w-full h-full"
                                         crossOrigin="anonymous"
                                         draggable={false}
                                     />
@@ -427,7 +427,7 @@ const ApplySketchPage = () => {
                                         <img
                                             src={currentSketch}
                                             alt="sketch"
-                                            className="h-full w-full pointer-events-none select-none object-contain"
+                                            className="object-contain w-full h-full pointer-events-none select-none"
                                             crossOrigin="anonymous"
                                             draggable={false}
                                         />
@@ -435,7 +435,7 @@ const ApplySketchPage = () => {
                                 ) : null}
 
                                 {ready && (
-                                    <div className="absolute left-3 top-3 flex items-center gap-2">
+                                    <div className="absolute flex items-center gap-2 left-3 top-3">
                                         <button
                                             type="button"
                                             onClick={overlay.rotate}
@@ -456,7 +456,7 @@ const ApplySketchPage = () => {
                                 )}
                             </div>
 
-                            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex flex-col gap-3 mt-4 sm:flex-row sm:items-center sm:justify-between">
                                 <div className="text-xs font-bold text-[#1E1E1E]/55">
                                     {ready ? "גרור, סובב, שמור או שלח" : "לא נבחרה עדיין סקיצה"}
                                 </div>
@@ -537,7 +537,7 @@ const ApplySketchPage = () => {
                             aria-label="סגור"
                         />
                         <div className="absolute bottom-0 left-0 right-0 rounded-t-[28px] border-t border-[#B9895B]/18 bg-[#F6F1E8] shadow-[0_-18px_70px_rgba(0,0,0,0.22)]">
-                            <div className="mx-auto max-w-7xl px-4 py-4">
+                            <div className="px-4 py-4 mx-auto max-w-7xl">
                                 <div className="flex items-center justify-between">
                                     <div className="text-base font-extrabold text-[#3B3024]">
                                         פרטי שליחה
